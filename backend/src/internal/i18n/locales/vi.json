@@ -1,0 +1,22 @@
+{
+  "validation.failed": "Dữ liệu không hợp lệ",
+
+  "validation.full_name.required": "Họ và tên không được để trống",
+  "validation.full_name.length": "Họ và tên phải từ 2 đến 255 ký tự",
+
+  "validation.email.required": "Email không được để trống",
+  "validation.email.invalid": "Địa chỉ email không hợp lệ",
+
+  "validation.password.required": "Mật khẩu không được để trống",
+  "validation.password.length": "Mật khẩu phải từ 8 đến 100 ký tự",
+
+  "validation.address.required": "Địa chỉ không được để trống",
+
+  "validation.phone.required": "Số điện thoại không được để trống",
+  "validation.phone.length": "Số điện thoại tối đa 20 ký tự",
+
+  "error.invalid_payload": "Dữ liệu yêu cầu không hợp lệ",
+  "error.email_already_exists": "Email này đã được đăng ký",
+  "error.invalid_credentials": "Email hoặc mật khẩu không đúng",
+  "error.account_disabled": "Tài khoản của bạn đã bị vô hiệu hóa"
+}

@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"github.com/vlahanam/rol-outfit/src/internal/initialize"
+)
 
 func main() {
-    fmt.Println("Chào mừng bạn đến với dự án Go!")
+	initialize.Run()
 }
