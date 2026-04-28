@@ -2,18 +2,64 @@ package initialize
 
 import (
 	"github.com/gofiber/fiber/v3"
+	"github.com/vlahanam/rol-outfit/src/internal/controllers"
+	"github.com/vlahanam/rol-outfit/src/internal/middleware"
+	"github.com/vlahanam/rol-outfit/src/internal/models"
 	"gorm.io/gorm"
 )
 
 // InitRoutes đăng ký toàn bộ route của ứng dụng vào Fiber app.
-func InitRoutes(app *fiber.App, db *gorm.DB) {
+func InitRoutes(app *fiber.App, db *gorm.DB, jwtSecret string) {
 	api := app.Group("/api")
 
-	// Health check
 	api.Get("/health", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"status": "ok"})
 	})
 
-	// TODO: đăng ký các route theo từng domain (users, products, orders, ...)
-	_ = db
+	v1 := api.Group("/v1")
+
+	// Auth (public)
+	auth := v1.Group("/auth")
+	auth.Post("/register", controllers.Register(db, jwtSecret))
+	auth.Post("/login", controllers.Login(db, jwtSecret))
+
+	// Categories
+	cats := v1.Group("/categories")
+	cats.Get("/", controllers.ListCategories(db))
+	cats.Get("/:id", controllers.GetCategory(db))
+	adminCats := cats.Use(middleware.JWTAuth(jwtSecret), middleware.RequireRole(float64(models.USER_ROLE_ADMIN)))
+	adminCats.Post("/", controllers.CreateCategory(db))
+	adminCats.Put("/:id", controllers.UpdateCategory(db))
+	adminCats.Delete("/:id", controllers.DeleteCategory(db))
+
+	// Products
+	prods := v1.Group("/products")
+	prods.Get("/", controllers.ListProducts(db))
+	prods.Get("/:id", controllers.GetProduct(db))
+	adminProds := prods.Use(middleware.JWTAuth(jwtSecret), middleware.RequireRole(float64(models.USER_ROLE_ADMIN)))
+	adminProds.Post("/", controllers.CreateProduct(db))
+	adminProds.Put("/:id", controllers.UpdateProduct(db))
+	adminProds.Delete("/:id", controllers.DeleteProduct(db))
+
+	// Cart (user auth required)
+	cart := v1.Group("/cart", middleware.JWTAuth(jwtSecret))
+	cart.Get("/", controllers.GetCart(db))
+	cart.Post("/items", controllers.AddCartItem(db))
+	cart.Put("/items/:itemID", controllers.UpdateCartItem(db))
+	cart.Delete("/items/:itemID", controllers.RemoveCartItem(db))
+
+	// Orders (user auth required)
+	orders := v1.Group("/orders", middleware.JWTAuth(jwtSecret))
+	orders.Post("/", controllers.CreateOrder(db))
+	orders.Get("/", controllers.ListOrders(db))
+	orders.Get("/:id", controllers.GetOrder(db))
+	orders.Delete("/:id", controllers.CancelOrder(db))
+
+	// Admin orders
+	adminOrders := v1.Group("/admin/orders",
+		middleware.JWTAuth(jwtSecret),
+		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
+	)
+	adminOrders.Get("/", controllers.ListAllOrders(db))
+	adminOrders.Put("/:id/status", controllers.UpdateOrderStatus(db))
 }

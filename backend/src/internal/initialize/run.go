@@ -14,7 +14,7 @@ func Run() {
 	db := InitDB(cfg)
 
 	app := fiber.New()
-	InitRoutes(app, db)
+	InitRoutes(app, db, cfg.JWTSecret)
 
 	log.Printf("server khởi động tại cổng %s", cfg.AppPort)
 	log.Fatal(app.Listen(":" + cfg.AppPort))

@@ -14,6 +14,7 @@ type AppConfig struct {
 	DBPassword     string
 	DBName         string
 	MigrationsPath string
+	JWTSecret      string
 }
 
 // DSN trả về chuỗi kết nối PostgreSQL cho GORM.
@@ -49,5 +50,6 @@ func LoadConfig() *AppConfig {
 		DBPassword:     getEnv("DB_PASSWORD", ""),
 		DBName:         getEnv("DB_NAME", ""),
 		MigrationsPath: getEnv("MIGRATIONS_PATH", "database/migrations"),
+		JWTSecret:      getEnv("JWT_SECRET", "change-me-in-production"),
 	}
 }
