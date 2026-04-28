@@ -32,6 +32,7 @@ services:
       DB_NAME: ${DB_NAME}
     volumes:
       - ../backend:/app
+      - ../backend/uploads:/app/uploads
       - go_cache:/go/pkg/mod
     depends_on:
       db:
@@ -61,6 +62,7 @@ services:
       - "80:80"
     volumes:
       - ../nginx/conf.d:/etc/nginx/conf.d:ro
+      - ../backend/uploads:/app/uploads:ro
     depends_on:
       - backend
       - frontend

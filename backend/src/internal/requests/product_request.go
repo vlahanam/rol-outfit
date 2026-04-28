@@ -11,6 +11,7 @@ type CreateProductRequest struct {
 	Name         string          `json:"name"`
 	DefaultPrice float64         `json:"default_price"`
 	Description  string          `json:"description"`
+	Avatar       string          `json:"avatar"`
 	Data         json.RawMessage `json:"data"`
 }
 
@@ -34,6 +35,7 @@ type UpdateProductRequest struct {
 	Name         *string         `json:"name"`
 	DefaultPrice *float64        `json:"default_price"`
 	Description  *string         `json:"description"`
+	Avatar       *string         `json:"avatar"`
 	Status       *int8           `json:"status"`
 	Data         json.RawMessage `json:"data"`
 }

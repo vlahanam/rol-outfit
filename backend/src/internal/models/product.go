@@ -21,6 +21,7 @@ type Product struct {
 	Description  string          `gorm:"column:description"`
 	Status       int8            `gorm:"column:status"`
 	Data         json.RawMessage `gorm:"column:data;type:jsonb"`
+	Avatar       string          `gorm:"column:avatar"`
 	CreatedAt    time.Time       `gorm:"column:created_at"`
 	UpdatedAt    time.Time       `gorm:"column:updated_at"`
 	DeletedAt    gorm.DeletedAt  `gorm:"column:deleted_at;index"`

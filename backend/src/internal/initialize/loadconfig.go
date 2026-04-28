@@ -3,6 +3,7 @@ package initialize
 import (
 	"fmt"
 	"os"
+	"strconv"
 )
 
 // AppConfig chứa toàn bộ cấu hình ứng dụng được nạp từ biến môi trường.
@@ -15,6 +16,9 @@ type AppConfig struct {
 	DBName         string
 	MigrationsPath string
 	JWTSecret      string
+	UploadDir      string
+	UploadURL      string
+	UploadMaxSize  int64
 }
 
 // DSN trả về chuỗi kết nối PostgreSQL cho GORM.
@@ -40,6 +44,15 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+func getEnvInt64(key string, fallback int64) int64 {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
+			return n
+		}
+	}
+	return fallback
+}
+
 // LoadConfig nạp cấu hình từ biến môi trường với giá trị mặc định hợp lý.
 func LoadConfig() *AppConfig {
 	return &AppConfig{
@@ -51,5 +64,8 @@ func LoadConfig() *AppConfig {
 		DBName:         getEnv("DB_NAME", ""),
 		MigrationsPath: getEnv("MIGRATIONS_PATH", "database/migrations"),
 		JWTSecret:      getEnv("JWT_SECRET", "change-me-in-production"),
+		UploadDir:      getEnv("UPLOAD_DIR", "/app/uploads"),
+		UploadURL:      getEnv("UPLOAD_URL", "/uploads"),
+		UploadMaxSize:  getEnvInt64("UPLOAD_MAX_SIZE", 10*1024*1024), // default 10 MB
 	}
 }

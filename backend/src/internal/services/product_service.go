@@ -69,6 +69,7 @@ func (s *productService) Create(ctx context.Context, req *requests.CreateProduct
 		Slug:         slug,
 		DefaultPrice: req.DefaultPrice,
 		Description:  req.Description,
+		Avatar:       req.Avatar,
 		Status:       models.PRODUCT_STATUS_ACTIVE,
 		Data:         req.Data,
 	}
@@ -114,6 +115,9 @@ func (s *productService) Update(ctx context.Context, id string, req *requests.Up
 	}
 	if len(req.Data) > 0 {
 		fields["data"] = req.Data
+	}
+	if req.Avatar != nil {
+		fields["avatar"] = *req.Avatar
 	}
 
 	if len(fields) == 0 {

@@ -16,6 +16,7 @@ type ProductDTO struct {
 	Description  string          `json:"description"`
 	Status       int8            `json:"status"`
 	Data         json.RawMessage `json:"data,omitempty"`
+	Avatar       string          `json:"avatar,omitempty"`
 	CreatedAt    string          `json:"created_at"`
 	UpdatedAt    string          `json:"updated_at"`
 }
@@ -30,6 +31,7 @@ func ToProductDTO(p *models.Product) *ProductDTO {
 		Description:  p.Description,
 		Status:       p.Status,
 		Data:         p.Data,
+		Avatar:       p.Avatar,
 		CreatedAt:    p.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:    p.UpdatedAt.Format(time.RFC3339),
 	}

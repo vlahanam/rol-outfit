@@ -1,2 +1,4 @@
 .claude/
 docker/.env
+backend/uploads/*
+!backend/uploads/.gitkeep

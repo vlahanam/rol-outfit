@@ -5,11 +5,13 @@ import (
 	"github.com/vlahanam/rol-outfit/src/internal/controllers"
 	"github.com/vlahanam/rol-outfit/src/internal/middleware"
 	"github.com/vlahanam/rol-outfit/src/internal/models"
+	"github.com/vlahanam/rol-outfit/src/internal/services"
 	"gorm.io/gorm"
 )
 
 // InitRoutes đăng ký toàn bộ route của ứng dụng vào Fiber app.
-func InitRoutes(app *fiber.App, db *gorm.DB, jwtSecret string) {
+func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
+	jwtSecret := cfg.JWTSecret
 	api := app.Group("/api")
 
 	api.Get("/health", func(c fiber.Ctx) error {
@@ -62,4 +64,14 @@ func InitRoutes(app *fiber.App, db *gorm.DB, jwtSecret string) {
 	)
 	adminOrders.Get("/", controllers.ListAllOrders(db))
 	adminOrders.Put("/:id/status", controllers.UpdateOrderStatus(db))
+
+	// Uploads
+	uploadSvc := services.NewUploadService(cfg.UploadDir, cfg.UploadURL)
+	uploads := v1.Group("/uploads", middleware.JWTAuth(jwtSecret))
+	uploads.Post("/", controllers.UploadFile(uploadSvc, cfg.UploadMaxSize))
+	adminUploads := v1.Group("/uploads",
+		middleware.JWTAuth(jwtSecret),
+		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
+	)
+	adminUploads.Delete("/:filename", controllers.DeleteFile(uploadSvc))
 }
