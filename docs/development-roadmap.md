@@ -11,6 +11,8 @@ High-level project phases and milestones. For detailed implementation plans, see
 - [x] Full CRUD for core entities (Categories, Products, Cart, Orders)
 - [x] i18n support (Vietnamese, Japanese)
 - [x] API error handling and validation
+- [x] Database seed script for local development
+- [x] Unicode normalization in slug generation
 
 **Completeness:** 100%
 

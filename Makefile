@@ -27,4 +27,7 @@ backend-shell:
 frontend-shell:
 	$(COMPOSE) exec frontend sh
 
-.PHONY: up down logs build rebuild ps db-shell backend-shell frontend-shell
+seed:
+	$(COMPOSE) exec backend go run ./src/cmd/seed/main.go
+
+.PHONY: up down logs build rebuild ps db-shell backend-shell frontend-shell seed

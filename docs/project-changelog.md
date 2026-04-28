@@ -5,6 +5,17 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Database Seed Script** (2026-04-28)
+  - New standalone seed command: `backend/src/cmd/seed/main.go`
+  - Make target `make seed` seeds database with 3 users (1 admin + 2 customers), 4 categories, and 12 products
+  - Idempotent design — safe to re-run, skips existing rows via upsert logic
+  - Enables fast local development without manual data entry
+
+- **Unicode Normalization in Slugs** (2026-04-28)
+  - Enhanced `common.Slugify` function using `golang.org/x/text` for proper Unicode normalization
+  - Fixes slug generation for accented characters (e.g., "Áo Nam" → "ao-nam" instead of "o-nam")
+  - Applied retroactively to category and product slug generation
+
 - **Product Avatar & File Upload** (2026-04-28)
   - New `avatar TEXT NULL` column to products table (migration 000008)
   - Avatar field integration into Product model, DTOs, Create/Update requests
