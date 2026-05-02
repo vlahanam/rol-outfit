@@ -1,37 +1,52 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { ProductItem } from '@/components/ProductItem';
 import { Footer } from '@/components/Footer';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
+import type { ApiResponse, Product, Category } from '@/types/api';
+
+function formatPrice(value: number): string {
+  return value.toLocaleString('vi-VN') + '₫';
+}
 
 export default function ShopPage() {
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState('Tất cả');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const categories = ['Tất cả', 'Áo', 'Quần', 'Giày Dép', 'Phụ Kiện'];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [prodRes, catRes] = await Promise.all([
+          api.get<ApiResponse<Product[]>>('/products?limit=50'),
+          api.get<ApiResponse<Category[]>>('/categories?limit=50'),
+        ]);
+        setProducts(prodRes.data ?? []);
+        setCategories(catRes.data ?? []);
+      } catch {
+        // keep empty lists on error
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
-  const allProducts = [
-    { name: 'Áo Thun Cotton Logo', price: '720.000₫', image: 'https://images.unsplash.com/photo-1599012307530-d163bd04ecab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400', category: 'Áo', isNew: true },
-    { name: 'Vest Công Sở May Đo', price: '4.480.000₫', image: 'https://images.unsplash.com/photo-1687481795360-77c1115d26c6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400', category: 'Áo', isNew: true },
-    { name: 'Áo Len Tròn Cổ', price: '2.840.000₫', image: 'https://images.unsplash.com/photo-1732257119942-a19648e482f2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400', category: 'Áo', isNew: false },
-    { name: 'Cặp Da Cao Cấp', price: '8.360.000₫', image: 'https://images.unsplash.com/photo-1721884258091-4fe7b737fb08?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400', category: 'Phụ Kiện', isNew: false },
-    { name: 'Giày Tây Cổ Điển', price: '1.780.000₫', image: 'https://images.unsplash.com/photo-1770226415002-dbbd40327ec7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400', category: 'Giày Dép', isNew: false },
-    { name: 'Áo Sơ Mi Casual', price: '1.040.000₫', image: 'https://images.unsplash.com/photo-1769981653696-5ce5a59263bf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400', category: 'Áo', isNew: true },
-    { name: 'Áo Khoác Mùa Đông', price: '3.720.000₫', image: 'https://images.unsplash.com/photo-1705675451868-014a161e591b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400', category: 'Áo', isNew: true },
-    { name: 'Giày Thể Thao', price: '1.900.000₫', image: 'https://images.unsplash.com/photo-1721884258144-5d788061e4c4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400', category: 'Giày Dép', isNew: true },
-    { name: 'Quần Jeans Denim', price: '1.560.000₫', image: 'https://images.unsplash.com/photo-1627342229908-71efbac25f08?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400', category: 'Quần', isNew: false },
-    { name: 'Đầm Mùa Hè', price: '2.240.000₫', image: 'https://images.unsplash.com/photo-1732257119942-a19648e482f2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400', category: 'Áo', isNew: false },
-    { name: 'Quần Kaki Slim Fit', price: '890.000₫', image: 'https://images.unsplash.com/photo-1599012307530-d163bd04ecab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400', category: 'Quần', isNew: true },
-    { name: 'Túi Xách Da Thật', price: '3.200.000₫', image: 'https://images.unsplash.com/photo-1721884258091-4fe7b737fb08?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400', category: 'Phụ Kiện', isNew: false },
-  ];
+  const filtered = products
+    .filter((p) => !selectedCategory || p.category_id === selectedCategory)
+    .sort((a, b) => {
+      if (sortBy === 'price-low') return a.default_price - b.default_price;
+      if (sortBy === 'price-high') return b.default_price - a.default_price;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
 
-  const filteredProducts = allProducts.filter((product) =>
-    selectedCategory === 'Tất cả' || product.category === selectedCategory
-  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -48,17 +63,23 @@ export default function ShopPage() {
 
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="flex-1 flex gap-2 overflow-x-auto pb-2">
-            {categories.map((category) => (
+            <button
+              onClick={() => setSelectedCategory('')}
+              className={`px-4 py-2 rounded-full whitespace-nowrap transition-colors ${
+                selectedCategory === '' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Tất cả
+            </button>
+            {categories.map((cat) => (
               <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
                 className={`px-4 py-2 rounded-full whitespace-nowrap transition-colors ${
-                  selectedCategory === category
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                  selectedCategory === cat.id ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                {category}
+                {cat.name}
               </button>
             ))}
           </div>
@@ -76,19 +97,27 @@ export default function ShopPage() {
 
         <div className="mb-4">
           <p className="text-gray-600">
-            Hiển thị <span className="font-semibold">{filteredProducts.length}</span> sản phẩm
+            Hiển thị <span className="font-semibold">{filtered.length}</span> sản phẩm
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-          {filteredProducts.map((product, idx) => (
-            <div key={idx} onClick={() => router.push('/product/1')} className="cursor-pointer">
-              <ProductItem {...product} />
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center py-12 text-gray-500">Đang tải...</div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            {filtered.map((product) => (
+              <div key={product.id} onClick={() => router.push(`/product/${product.id}`)} className="cursor-pointer">
+                <ProductItem
+                  name={product.name}
+                  price={formatPrice(product.default_price)}
+                  image={product.avatar || 'https://images.unsplash.com/photo-1599012307530-d163bd04ecab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400'}
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
-        {filteredProducts.length === 0 && (
+        {!loading && filtered.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-500">Không tìm thấy sản phẩm nào</p>
           </div>

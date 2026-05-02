@@ -1,60 +1,63 @@
 'use client';
 
-import { useState, Fragment } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { Plus, Search, ChevronDown, ChevronRight, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DeleteConfirmModal } from '@/components/admin/DeleteConfirmModal';
-
-const mockProducts = [
-  {
-    id: 1,
-    name: 'Áo Thun Cotton Premium',
-    category: 'Áo',
-    price: '720.000₫',
-    status: 'Còn hàng',
-    variants: [
-      { id: 1, sku: 'ATC-S-TRANG', color: 'Trắng', size: 'S', stock: 50 },
-      { id: 2, sku: 'ATC-M-TRANG', color: 'Trắng', size: 'M', stock: 30 },
-      { id: 3, sku: 'ATC-S-DEN', color: 'Đen', size: 'S', stock: 20 },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Quần Jeans Denim',
-    category: 'Quần',
-    price: '1.560.000₫',
-    status: 'Còn hàng',
-    variants: [
-      { id: 4, sku: 'QJD-30-XANH', color: 'Xanh', size: '30', stock: 15 },
-      { id: 5, sku: 'QJD-32-XANH', color: 'Xanh', size: '32', stock: 10 },
-    ],
-  },
-  {
-    id: 3,
-    name: 'Giày Thể Thao',
-    category: 'Giày',
-    price: '1.900.000₫',
-    status: 'Hết hàng',
-    variants: [],
-  },
-];
+import { api } from '@/lib/api';
+import type { ApiResponse, Product, Category } from '@/types/api';
 
 export default function ListProductPage() {
   const router = useRouter();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [expandedIds, setExpandedIds] = useState<number[]>([]);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [expandedIds, setExpandedIds] = useState<string[]>([]);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = mockProducts.filter((p) => {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [prodRes, catRes] = await Promise.all([
+          api.get<ApiResponse<Product[]>>('/products?limit=100'),
+          api.get<ApiResponse<Category[]>>('/categories?limit=50'),
+        ]);
+        setProducts(prodRes.data ?? []);
+        setCategories(catRes.data ?? []);
+      } catch {
+        // keep empty on error
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const categoryName = (id: string) => categories.find((c) => c.id === id)?.name ?? id;
+
+  const filtered = products.filter((p) => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    const matchCategory = categoryFilter === '' || p.category === categoryFilter;
+    const matchCategory = categoryFilter === '' || p.category_id === categoryFilter;
     return matchSearch && matchCategory;
   });
 
-  const toggleExpand = (id: number) => {
+  const toggleExpand = (id: string) => {
     setExpandedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await api.delete(`/products/${deleteId}`);
+      setProducts((prev) => prev.filter((p) => p.id !== deleteId));
+    } catch {
+      // ignore
+    } finally {
+      setDeleteId(null);
+    }
   };
 
   return (
@@ -88,93 +91,77 @@ export default function ListProductPage() {
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Tất cả danh mục</option>
-            <option value="Áo">Áo</option>
-            <option value="Quần">Quần</option>
-            <option value="Giày">Giày</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
           </select>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-max">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Tên Sản Phẩm</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Danh Mục</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Giá</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Trạng Thái</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Hành Động</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filtered.map((product) => (
-                <Fragment key={product.id}>
-                  <tr className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
-                      <button onClick={() => toggleExpand(product.id)} className="flex items-center gap-1">
-                        {expandedIds.includes(product.id) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                        #{product.id}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">{product.name}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{product.category}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{product.price}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${product.status === 'Còn hàng' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {product.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => router.push(`/admin/products/${product.id}`)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                          <Pencil className="w-4 h-4" />
+        {loading ? (
+          <div className="p-8 text-center text-gray-500">Đang tải...</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-max">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Tên Sản Phẩm</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Danh Mục</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Giá</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Trạng Thái</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Hành Động</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filtered.map((product) => (
+                  <Fragment key={product.id}>
+                    <tr className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                        <button onClick={() => toggleExpand(product.id)} className="flex items-center gap-1">
+                          {expandedIds.includes(product.id) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                          {product.name}
                         </button>
-                        <button onClick={() => setDeleteId(product.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  {expandedIds.includes(product.id) && product.variants.length > 0 && (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-2 bg-gray-50">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="text-xs text-gray-500 uppercase">
-                              <th className="text-left py-2 pr-4 whitespace-nowrap">SKU</th>
-                              <th className="text-left py-2 pr-4 whitespace-nowrap">Màu</th>
-                              <th className="text-left py-2 pr-4 whitespace-nowrap">Size</th>
-                              <th className="text-left py-2 whitespace-nowrap">Tồn Kho</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {product.variants.map((v) => (
-                              <tr key={v.id}>
-                                <td className="py-1.5 pr-4 font-mono text-xs whitespace-nowrap">{v.sku}</td>
-                                <td className="py-1.5 pr-4 whitespace-nowrap">{v.color}</td>
-                                <td className="py-1.5 pr-4 whitespace-nowrap">{v.size}</td>
-                                <td className="py-1.5 whitespace-nowrap">{v.stock}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{categoryName(product.category_id)}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{product.default_price.toLocaleString('vi-VN')}₫</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${product.status === 1 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {product.status === 1 ? 'Hiển thị' : 'Ẩn'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => router.push(`/admin/products/${product.id}`)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => setDeleteId(product.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  )}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    {expandedIds.includes(product.id) && product.description && (
+                      <tr>
+                        <td colSpan={5} className="px-10 py-3 bg-gray-50 text-sm text-gray-600">
+                          {product.description}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <DeleteConfirmModal
         isOpen={deleteId !== null}
         title="Xóa Sản Phẩm"
         message="Bạn có chắc chắn muốn xóa sản phẩm này? Hành động này không thể hoàn tác."
-        onConfirm={() => { console.log('Delete product', deleteId); setDeleteId(null); }}
+        onConfirm={handleDelete}
         onClose={() => setDeleteId(null)}
       />
     </div>
   );
 }
+

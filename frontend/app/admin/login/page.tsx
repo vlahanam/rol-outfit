@@ -3,17 +3,35 @@
 import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { api, ApiError } from '@/lib/api';
+import { setTokens, decodeJwt } from '@/lib/auth';
+import type { ApiResponse, AuthTokens } from '@/types/api';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && password) {
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await api.post<ApiResponse<AuthTokens>>('/auth/login', { email, password });
+      const claims = decodeJwt(res.data.access_token);
+      if (!claims || claims.role !== 1) {
+        setError('Tài khoản không có quyền truy cập admin');
+        return;
+      }
+      setTokens(res.data.access_token, res.data.refresh_token);
       router.push('/admin/dashboard');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Đăng nhập thất bại');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,11 +93,16 @@ export default function AdminLoginPage() {
               </label>
             </div>
 
+            {error && (
+              <p className="text-sm text-red-600 text-center">{error}</p>
+            )}
+
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60"
             >
-              Đăng Nhập
+              {loading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
             </button>
           </form>
 

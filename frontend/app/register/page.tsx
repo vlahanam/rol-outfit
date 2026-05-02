@@ -3,8 +3,13 @@
 import { useState } from 'react';
 import { ArrowLeft, User, Mail, Lock, Eye, EyeOff, Phone, MapPin } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { api, ApiError } from '@/lib/api';
+import { setTokens } from '@/lib/auth';
+import type { ApiResponse, AuthTokens } from '@/types/api';
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -13,14 +18,32 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      alert('Mật khẩu không khớp!');
+      setError('Mật khẩu không khớp!');
       return;
     }
-    console.log('Register:', { name, email, phone, address, password });
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await api.post<ApiResponse<AuthTokens>>('/auth/register', {
+        full_name: name,
+        email,
+        phone,
+        address,
+        password,
+      });
+      setTokens(res.data.access_token, res.data.refresh_token);
+      router.push('/');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Đăng ký thất bại');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -161,11 +184,16 @@ export default function RegisterPage() {
               </label>
             </div>
 
+            {error && (
+              <p className="text-sm text-red-600 text-center">{error}</p>
+            )}
+
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60"
             >
-              Đăng Ký
+              {loading ? 'Đang đăng ký...' : 'Đăng Ký'}
             </button>
           </form>
 

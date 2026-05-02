@@ -1,16 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, Search } from 'lucide-react';
 import Link from 'next/link';
+import { api } from '@/lib/api';
+import type { ApiResponse, Order } from '@/types/api';
 
-const mockOrders = [
-  { id: 1, customer: 'Nguyễn Văn A', total: '2.160.000₫', status: 'Hoàn thành', date: '29/04/2026' },
-  { id: 2, customer: 'Trần Thị B', total: '720.000₫', status: 'Đang giao', date: '29/04/2026' },
-  { id: 3, customer: 'Lê Văn C', total: '7.800.000₫', status: 'Chờ xử lý', date: '28/04/2026' },
-  { id: 4, customer: 'Phạm Thị D', total: '3.100.000₫', status: 'Đã hủy', date: '27/04/2026' },
-  { id: 5, customer: 'Hoàng Văn E', total: '1.500.000₫', status: 'Hoàn thành', date: '27/04/2026' },
-];
+// status code → label
+const STATUS_LABEL: Record<number, string> = {
+  1: 'Chờ xử lý',
+  2: 'Đang giao',
+  3: 'Hoàn thành',
+  4: 'Đã hủy',
+};
 
 const statusColors: Record<string, string> = {
   'Hoàn thành': 'bg-green-100 text-green-700',
@@ -20,12 +22,32 @@ const statusColors: Record<string, string> = {
 };
 
 export default function ListOrderPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
-  const filtered = mockOrders.filter((o) => {
-    const matchSearch = o.customer.toLowerCase().includes(search.toLowerCase()) || `${o.id}`.includes(search);
-    const matchStatus = statusFilter === '' || o.status === statusFilter;
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const res = await api.get<ApiResponse<Order[]>>('/admin/orders?limit=100');
+        setOrders(res.data ?? []);
+      } catch {
+        setOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
+  }, []);
+
+  const filtered = orders.filter((o) => {
+    const label = STATUS_LABEL[o.status] ?? '';
+    const matchSearch =
+      o.id.toLowerCase().includes(search.toLowerCase()) ||
+      o.phone.includes(search) ||
+      o.shipping_address.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === '' || label === statusFilter;
     return matchSearch && matchStatus;
   });
 
@@ -61,41 +83,55 @@ export default function ListOrderPage() {
           </select>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-max">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Mã ĐH</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Khách Hàng</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Tổng Tiền</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Trạng Thái</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Ngày Đặt</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Hành Động</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filtered.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">#ORD-{String(order.id).padStart(3, '0')}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{order.customer}</td>
-                  <td className="px-6 py-4 text-sm font-medium text-blue-600 whitespace-nowrap">{order.total}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${statusColors[order.status] ?? 'bg-gray-100 text-gray-700'}`}>
-                      {order.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{order.date}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Link href={`/admin/orders/${order.id}`} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-block">
-                      <Eye className="w-4 h-4" />
-                    </Link>
-                  </td>
+        {loading ? (
+          <div className="p-8 text-center text-gray-500">Đang tải...</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-max">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Mã ĐH</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Địa chỉ giao</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Tổng Tiền</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Trạng Thái</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Ngày Đặt</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Hành Động</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filtered.map((order) => {
+                  const label = STATUS_LABEL[order.status] ?? 'Không rõ';
+                  return (
+                    <tr key={order.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                        {order.id.slice(0, 8).toUpperCase()}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">{order.shipping_address}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-blue-600 whitespace-nowrap">
+                        {order.total_price.toLocaleString('vi-VN')}₫
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${statusColors[label] ?? 'bg-gray-100 text-gray-700'}`}>
+                          {label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
+                        {new Date(order.created_at).toLocaleDateString('vi-VN')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Link href={`/admin/orders/${order.id}`} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-block">
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+

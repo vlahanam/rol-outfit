@@ -1,54 +1,82 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Minus, Plus, Trash2, ArrowLeft, ShoppingBag } from 'lucide-react';
 import { Footer } from '@/components/Footer';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
+import { isLoggedIn } from '@/lib/auth';
+import type { ApiResponse, Cart, CartItem, Product } from '@/types/api';
 
-interface CartItem {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
-  size: string;
-  color: string;
-  quantity: number;
+interface RichCartItem extends CartItem {
+  productName: string;
+  productImage: string;
 }
 
+const FALLBACK_IMG = 'https://images.unsplash.com/photo-1599012307530-d163bd04ecab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400';
+
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: 1,
-      name: 'Áo Thun Cotton Premium',
-      price: 720000,
-      image: 'https://images.unsplash.com/photo-1599012307530-d163bd04ecab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
-      size: 'M',
-      color: 'Xanh Dương',
-      quantity: 2,
-    },
-    {
-      id: 2,
-      name: 'Quần Jeans Denim',
-      price: 1560000,
-      image: 'https://images.unsplash.com/photo-1627342229908-71efbac25f08?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
-      size: 'L',
-      color: 'Đen',
-      quantity: 1,
-    },
-  ]);
+  const router = useRouter();
+  const [cartItems, setCartItems] = useState<RichCartItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const updateQuantity = (id: number, newQuantity: number) => {
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      router.push('/login');
+      return;
+    }
+    const fetchCart = async () => {
+      try {
+        const res = await api.get<ApiResponse<Cart>>('/cart');
+        const items = res.data?.items ?? [];
+        // Enrich items with product info
+        const rich = await Promise.all(
+          items.map(async (item) => {
+            try {
+              const pRes = await api.get<ApiResponse<Product>>(`/products/${item.product_id}`);
+              return {
+                ...item,
+                productName: pRes.data.name,
+                productImage: pRes.data.avatar || FALLBACK_IMG,
+              };
+            } catch {
+              return { ...item, productName: item.product_id, productImage: FALLBACK_IMG };
+            }
+          }),
+        );
+        setCartItems(rich);
+      } catch {
+        setCartItems([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCart();
+  }, [router]);
+
+  const updateQuantity = async (id: string, newQuantity: number) => {
     if (newQuantity < 1) return;
-    setCartItems((items) =>
-      items.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item))
-    );
+    try {
+      await api.put(`/cart/items/${id}`, { quantity: newQuantity });
+      setCartItems((items) =>
+        items.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item)),
+      );
+    } catch {
+      // ignore
+    }
   };
 
-  const removeItem = (id: number) => {
-    setCartItems((items) => items.filter((item) => item.id !== id));
+  const removeItem = async (id: string) => {
+    try {
+      await api.delete(`/cart/items/${id}`);
+      setCartItems((items) => items.filter((item) => item.id !== id));
+    } catch {
+      // ignore
+    }
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = cartItems.reduce((sum, item) => sum + item.price_at_add * item.quantity, 0);
   const shipping = subtotal >= 500000 ? 0 : 30000;
   const total = subtotal + shipping;
 
@@ -62,7 +90,9 @@ export default function CartPage() {
 
         <h1 className="text-3xl font-bold mb-8">Giỏ Hàng ({cartItems.length})</h1>
 
-        {cartItems.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-12 text-gray-500">Đang tải...</div>
+        ) : cartItems.length === 0 ? (
           <div className="bg-white rounded-lg p-12 text-center">
             <ShoppingBag className="w-16 h-16 mx-auto mb-4 text-gray-400" />
             <h2 className="text-xl font-semibold mb-2">Giỏ hàng trống</h2>
@@ -81,24 +111,18 @@ export default function CartPage() {
                     className={`p-6 flex gap-4 ${index !== cartItems.length - 1 ? 'border-b border-gray-200' : ''}`}
                   >
                     <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      <img src={item.productImage} alt={item.productName} className="w-full h-full object-cover" />
                     </div>
 
                     <div className="flex-1">
                       <div className="flex justify-between mb-2">
-                        <h3 className="font-semibold text-gray-900">{item.name}</h3>
+                        <h3 className="font-semibold text-gray-900">{item.productName}</h3>
                         <button
                           onClick={() => removeItem(item.id)}
                           className="text-gray-400 hover:text-red-500 transition-colors"
                         >
                           <Trash2 className="w-5 h-5" />
                         </button>
-                      </div>
-
-                      <div className="text-sm text-gray-600 mb-3">
-                        <span>Màu: {item.color}</span>
-                        <span className="mx-2">|</span>
-                        <span>Size: {item.size}</span>
                       </div>
 
                       <div className="flex items-center justify-between">
@@ -119,7 +143,7 @@ export default function CartPage() {
                         </div>
 
                         <p className="text-lg font-bold text-blue-600">
-                          {(item.price * item.quantity).toLocaleString('vi-VN')}₫
+                          {(item.price_at_add * item.quantity).toLocaleString('vi-VN')}₫
                         </p>
                       </div>
                     </div>
