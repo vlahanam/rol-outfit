@@ -15,37 +15,47 @@ import (
 	"gorm.io/gorm"
 )
 
-// ListProducts GET /api/v1/products?category_id=&page=&limit=
-func ListProducts(db *gorm.DB) fiber.Handler {
+// ListWidgets GET /api/v1/widgets?parent_id=<uuid>
+func ListWidgets(db *gorm.DB) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		var p common.Paging
 		if err := ctx.Bind().Query(&p); err != nil {
 			p = common.Paging{}
 		}
 		p.Process()
-		categoryID := ctx.Query("category_id")
 		offset := (p.Page - 1) * p.Limit
 
-		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductService(repo)
+		var parentID *string
+		if raw := ctx.Query("parent_id"); raw != "" {
+			if _, err := uuid.Parse(raw); err != nil {
+				lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+				return ctx.Status(fiber.StatusBadRequest).JSON(
+					common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_id")),
+				)
+			}
+			parentID = &raw
+		}
 
-		products, total, err := svc.List(ctx.Context(), categoryID, offset, p.Limit)
+		repo := repositories.NewPostgreSQLStorage(db)
+		svc := services.NewWidgetService(repo)
+
+		widgets, total, err := svc.List(ctx.Context(), parentID, offset, p.Limit)
 		if err != nil {
-			slog.Error("ListProducts failed", "error", err)
+			slog.Error("ListWidgets failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
 
-		result := make([]*dto.ProductDTO, 0, len(products))
-		for _, p := range products {
-			result = append(result, dto.ToProductDTO(p))
+		result := make([]*dto.WidgetDTO, 0, len(widgets))
+		for _, w := range widgets {
+			result = append(result, dto.ToWidgetDTO(w))
 		}
 		p.Total = total
 		return ctx.JSON(common.SuccessResponse(result, p, nil))
 	}
 }
 
-// GetProduct GET /api/v1/products/:id
-func GetProduct(db *gorm.DB) fiber.Handler {
+// GetWidget GET /api/v1/widgets/:id
+func GetWidget(db *gorm.DB) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		id := ctx.Params("id")
@@ -57,28 +67,28 @@ func GetProduct(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductService(repo)
+		svc := services.NewWidgetService(repo)
 
-		p, err := svc.GetByID(ctx.Context(), id)
+		w, err := svc.GetByID(ctx.Context(), id)
 		if err != nil {
-			if errors.Is(err, services.ErrProductNotFound) {
+			if errors.Is(err, services.ErrWidgetNotFound) {
 				return ctx.Status(fiber.StatusNotFound).JSON(
-					common.ErrNotFound.WithReason(i18n.T(lang, "error.product_not_found")),
+					common.ErrNotFound.WithReason(i18n.T(lang, "error.widget_not_found")),
 				)
 			}
-			slog.Error("GetProduct failed", "error", err)
+			slog.Error("GetWidget failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
-		return ctx.JSON(common.ResponseData(dto.ToProductDTO(p)))
+		return ctx.JSON(common.ResponseData(dto.ToWidgetDTO(w)))
 	}
 }
 
-// CreateProduct POST /api/v1/products [admin]
-func CreateProduct(db *gorm.DB) fiber.Handler {
+// CreateWidget POST /api/v1/widgets [admin]
+func CreateWidget(db *gorm.DB) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 
-		var req requests.CreateProductRequest
+		var req requests.CreateWidgetRequest
 		if err := ctx.Bind().JSON(&req); err != nil {
 			return ctx.Status(fiber.StatusBadRequest).JSON(
 				common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_payload")),
@@ -93,30 +103,45 @@ func CreateProduct(db *gorm.DB) fiber.Handler {
 			return ctx.Status(fiber.StatusBadRequest).JSON(resp)
 		}
 
-		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductService(repo)
-
-		p, err := svc.Create(ctx.Context(), &req)
-		if err != nil {
-			if errors.Is(err, services.ErrProductSlugTaken) {
-				return ctx.Status(fiber.StatusConflict).JSON(
-					common.ErrConflict.WithReason(i18n.T(lang, "error.product_slug_taken")),
+		// Validate parent_id format if provided
+		if req.ParentID != nil {
+			if _, err := uuid.Parse(*req.ParentID); err != nil {
+				return ctx.Status(fiber.StatusBadRequest).JSON(
+					common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_id")),
 				)
 			}
-			slog.Error("CreateProduct failed", "error", err)
+		}
+
+		repo := repositories.NewPostgreSQLStorage(db)
+		svc := services.NewWidgetService(repo)
+
+		w, err := svc.Create(ctx.Context(), &req)
+		if err != nil {
+			if errors.Is(err, services.ErrWidgetNotFound) {
+				return ctx.Status(fiber.StatusNotFound).JSON(
+					common.ErrNotFound.WithReason(i18n.T(lang, "error.widget_not_found")),
+				)
+			}
+			slog.Error("CreateWidget failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
-		return ctx.Status(fiber.StatusCreated).JSON(common.ResponseData(dto.ToProductDTO(p)))
+		return ctx.Status(fiber.StatusCreated).JSON(common.ResponseData(dto.ToWidgetDTO(w)))
 	}
 }
 
-// UpdateProduct PUT /api/v1/products/:id [admin]
-func UpdateProduct(db *gorm.DB) fiber.Handler {
+// UpdateWidget PUT /api/v1/widgets/:id [admin]
+func UpdateWidget(db *gorm.DB) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		id := ctx.Params("id")
 
-		var req requests.UpdateProductRequest
+		if _, err := uuid.Parse(id); err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(
+				common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_id")),
+			)
+		}
+
+		var req requests.UpdateWidgetRequest
 		if err := ctx.Bind().JSON(&req); err != nil {
 			return ctx.Status(fiber.StatusBadRequest).JSON(
 				common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_payload")),
@@ -132,44 +157,45 @@ func UpdateProduct(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductService(repo)
+		svc := services.NewWidgetService(repo)
 
 		if err := svc.Update(ctx.Context(), id, &req); err != nil {
-			if errors.Is(err, services.ErrProductNotFound) {
+			if errors.Is(err, services.ErrWidgetNotFound) {
 				return ctx.Status(fiber.StatusNotFound).JSON(
-					common.ErrNotFound.WithReason(i18n.T(lang, "error.product_not_found")),
+					common.ErrNotFound.WithReason(i18n.T(lang, "error.widget_not_found")),
 				)
 			}
-			if errors.Is(err, services.ErrProductSlugTaken) {
-				return ctx.Status(fiber.StatusConflict).JSON(
-					common.ErrConflict.WithReason(i18n.T(lang, "error.product_slug_taken")),
-				)
-			}
-			slog.Error("UpdateProduct failed", "error", err)
+			slog.Error("UpdateWidget failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
-		return ctx.SendStatus(fiber.StatusNoContent)
+		return ctx.JSON(common.ResponseData(fiber.Map{"updated": true}))
 	}
 }
 
-// DeleteProduct DELETE /api/v1/products/:id [admin]
-func DeleteProduct(db *gorm.DB) fiber.Handler {
+// DeleteWidget DELETE /api/v1/widgets/:id [admin]
+func DeleteWidget(db *gorm.DB) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		id := ctx.Params("id")
 
+		if _, err := uuid.Parse(id); err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(
+				common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_id")),
+			)
+		}
+
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductService(repo)
+		svc := services.NewWidgetService(repo)
 
 		if err := svc.Delete(ctx.Context(), id); err != nil {
-			if errors.Is(err, services.ErrProductNotFound) {
+			if errors.Is(err, services.ErrWidgetNotFound) {
 				return ctx.Status(fiber.StatusNotFound).JSON(
-					common.ErrNotFound.WithReason(i18n.T(lang, "error.product_not_found")),
+					common.ErrNotFound.WithReason(i18n.T(lang, "error.widget_not_found")),
 				)
 			}
-			slog.Error("DeleteProduct failed", "error", err)
+			slog.Error("DeleteWidget failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
-		return ctx.SendStatus(fiber.StatusNoContent)
+		return ctx.JSON(common.ResponseData(fiber.Map{"deleted": true}))
 	}
 }

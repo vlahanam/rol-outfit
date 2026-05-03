@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS products (
     slug          TEXT           NOT NULL,
     default_price NUMERIC(12, 2) NOT NULL DEFAULT 0,
     description   TEXT,
+    avatar        TEXT,
     status        SMALLINT       NOT NULL DEFAULT 1,
     data          JSONB,
     created_at    TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
@@ -18,6 +19,7 @@ COMMENT ON COLUMN products.name          IS 'Tên sản phẩm';
 COMMENT ON COLUMN products.slug          IS 'Đường dẫn thân thiện URL của sản phẩm';
 COMMENT ON COLUMN products.default_price IS 'Giá mặc định của sản phẩm';
 COMMENT ON COLUMN products.description   IS 'Mô tả sản phẩm';
+COMMENT ON COLUMN products.avatar        IS 'URL ảnh đại diện sản phẩm (NULL nếu chưa có)';
 COMMENT ON COLUMN products.status        IS 'Trạng thái sản phẩm (1: hiển thị, 2: ẩn)';
 COMMENT ON COLUMN products.data          IS 'Dữ liệu thuộc tính mở rộng dạng JSON';
 COMMENT ON COLUMN products.created_at    IS 'Thời điểm tạo bản ghi';

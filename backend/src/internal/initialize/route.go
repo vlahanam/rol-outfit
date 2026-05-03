@@ -74,4 +74,13 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
 	)
 	adminUploads.Delete("/:filename", controllers.DeleteFile(uploadSvc))
+
+	// Widgets
+	widgets := v1.Group("/widgets")
+	widgets.Get("/", controllers.ListWidgets(db))
+	widgets.Get("/:id", controllers.GetWidget(db))
+	adminWidgets := widgets.Use(middleware.JWTAuth(jwtSecret), middleware.RequireRole(float64(models.USER_ROLE_ADMIN)))
+	adminWidgets.Post("/", controllers.CreateWidget(db))
+	adminWidgets.Put("/:id", controllers.UpdateWidget(db))
+	adminWidgets.Delete("/:id", controllers.DeleteWidget(db))
 }

@@ -34,6 +34,12 @@ func RunAll(db *gorm.DB) error {
 	}
 	log.Printf("[products] tạo mới: %d, bỏ qua: %d", prodsRes.Created, prodsRes.Skipped)
 
+	widgetsRes, err := SeedWidgets(db)
+	if err != nil {
+		return err
+	}
+	log.Printf("[widgets] tạo mới: %d, bỏ qua: %d", widgetsRes.Created, widgetsRes.Skipped)
+
 	log.Println("=== seed kết thúc ===")
 	return nil
 }

@@ -27,6 +27,7 @@
   "validation.shipping_address.required": "配送先住所は必須です",
 
   "error.invalid_payload": "リクエストの形式が正しくありません",
+  "error.invalid_id": "IDが無効です",
   "error.email_already_exists": "このメールアドレスはすでに登録されています",
   "error.invalid_credentials": "メールアドレスまたはパスワードが正しくありません",
   "error.account_disabled": "アカウントが無効化されています",
@@ -51,5 +52,11 @@
   "error.invalid_order_status": "注文ステータスが正しくありません",
 
   "validation.order_status.required": "注文ステータスは必須です",
-  "validation.order_status.invalid": "注文ステータスは1から6の間で入力してください"
+  "validation.order_status.invalid": "注文ステータスは1から6の間で入力してください",
+  
+  "error.widget_not_found": "ウィジェットが見つかりません",
+
+  "validation.type.required": "ウィジェットタイプは必須です",
+  "validation.type.invalid": "ウィジェットタイプが無効です",
+  "validation.display_order.min": "表示順は0以上である必要があります"
 }

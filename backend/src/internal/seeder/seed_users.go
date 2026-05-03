@@ -23,7 +23,7 @@ var users = []seedUser{
 	{
 		FullName: "Quản Trị Viên",
 		Email:    "admin@rol-outfit.com",
-		Password: "Admin@123",
+		Password: "123456789",
 		Phone:    "0900000001",
 		Address:  "Trụ sở Rol Outfit, TP. Hồ Chí Minh",
 		Role:     models.USER_ROLE_ADMIN,
@@ -31,7 +31,7 @@ var users = []seedUser{
 	{
 		FullName: "Nguyễn Văn A",
 		Email:    "customer1@rol-outfit.com",
-		Password: "Customer@123",
+		Password: "123456789",
 		Phone:    "0900000002",
 		Address:  "123 Lê Lợi, Quận 1, TP. Hồ Chí Minh",
 		Role:     models.USER_ROLE_CUSTOMER,
@@ -39,7 +39,7 @@ var users = []seedUser{
 	{
 		FullName: "Trần Thị B",
 		Email:    "customer2@rol-outfit.com",
-		Password: "Customer@123",
+		Password: "123456789",
 		Phone:    "0900000003",
 		Address:  "456 Trần Hưng Đạo, Quận 5, TP. Hồ Chí Minh",
 		Role:     models.USER_ROLE_CUSTOMER,
