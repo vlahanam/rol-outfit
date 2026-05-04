@@ -83,4 +83,19 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	adminWidgets.Post("/", controllers.CreateWidget(db))
 	adminWidgets.Put("/:id", controllers.UpdateWidget(db))
 	adminWidgets.Delete("/:id", controllers.DeleteWidget(db))
+
+	// Users — self profile
+	me := v1.Group("/users", middleware.JWTAuth(jwtSecret))
+	me.Get("/me", controllers.GetMe(db))
+	me.Put("/me", controllers.UpdateMe(db))
+
+	// Admin users
+	adminUsers := v1.Group("/admin/users",
+		middleware.JWTAuth(jwtSecret),
+		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
+	)
+	adminUsers.Get("/", controllers.ListUsers(db))
+	adminUsers.Get("/:id", controllers.GetUser(db))
+	adminUsers.Put("/:id", controllers.UpdateUser(db))
+	adminUsers.Delete("/:id", controllers.DeleteUser(db))
 }

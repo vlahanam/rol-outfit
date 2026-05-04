@@ -54,8 +54,11 @@
   "validation.order_status.required": "Trạng thái đơn hàng không được để trống",
   "validation.order_status.invalid": "Trạng thái đơn hàng không hợp lệ (phải từ 1 đến 6)",
 
+  "error.user_not_found": "Người dùng không tồn tại",
+  "error.user_email_taken": "Email này đã được sử dụng bởi tài khoản khác",
+
   "error.widget_not_found": "Widget không tồn tại",
-  
+
   "validation.type.required": "Loại widget không được để trống",
   "validation.type.invalid": "Loại widget không hợp lệ",
   "validation.display_order.min": "Thứ tự hiển thị phải lớn hơn hoặc bằng 0"

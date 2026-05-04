@@ -53,7 +53,10 @@
 
   "validation.order_status.required": "注文ステータスは必須です",
   "validation.order_status.invalid": "注文ステータスは1から6の間で入力してください",
-  
+
+  "error.user_not_found": "ユーザーが見つかりません",
+  "error.user_email_taken": "このメールアドレスはすでに別のアカウントで使用されています",
+
   "error.widget_not_found": "ウィジェットが見つかりません",
 
   "validation.type.required": "ウィジェットタイプは必須です",
