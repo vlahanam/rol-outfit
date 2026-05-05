@@ -32,17 +32,17 @@ High-level project phases and milestones. For detailed implementation plans, see
 
 ---
 
-## Phase 3: Frontend Development (PLANNED)
-**Status:** 📋 Planned | **Target:** May 2026
+## Phase 3: Frontend Development (IN PROGRESS)
+**Status:** ⏳ In Progress | **Target:** May 2026
 
-- [ ] Next.js frontend setup with TailwindCSS
+- [x] Next.js frontend setup with TailwindCSS
 - [ ] Authentication UI (login, registration)
 - [ ] Product catalog and search
 - [ ] Shopping cart and checkout
 - [ ] Order history and tracking
-- [ ] Admin dashboard
+- [x] Admin dashboard — User CRUD (list, create, edit, delete)
 
-**Completeness:** 0%
+**Completeness:** 20%
 
 ---
 

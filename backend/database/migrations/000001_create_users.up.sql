@@ -28,6 +28,7 @@ COMMENT ON COLUMN users.updated_at IS 'Thời điểm cập nhật lần cuối'
 COMMENT ON COLUMN users.deleted_at IS 'Thời điểm xóa mềm (NULL nếu chưa xóa)';
 
 CREATE UNIQUE INDEX idx_users_email   ON users (email);
+CREATE UNIQUE INDEX idx_users_phone   ON users (phone);
 CREATE INDEX        idx_users_status  ON users (status);
 CREATE INDEX        idx_users_role    ON users (role);
 CREATE INDEX        idx_users_deleted ON users (deleted_at);

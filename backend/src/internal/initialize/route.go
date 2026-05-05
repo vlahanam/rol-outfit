@@ -94,6 +94,7 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 		middleware.JWTAuth(jwtSecret),
 		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
 	)
+	adminUsers.Post("/", controllers.CreateUser(db))
 	adminUsers.Get("/", controllers.ListUsers(db))
 	adminUsers.Get("/:id", controllers.GetUser(db))
 	adminUsers.Put("/:id", controllers.UpdateUser(db))

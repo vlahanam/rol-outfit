@@ -78,10 +78,57 @@ func UpdateMe(db *gorm.DB) fiber.Handler {
 					common.ErrNotFound.WithReason(i18n.T(lang, "error.user_not_found")),
 				)
 			}
+			if errors.Is(err, services.ErrUserPhoneTaken) {
+				return ctx.Status(fiber.StatusConflict).JSON(
+					common.ErrConflict.WithReason(i18n.T(lang, "error.phone_already_exists")),
+				)
+			}
 			slog.Error("UpdateMe failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
 		return ctx.SendStatus(fiber.StatusNoContent)
+	}
+}
+
+// CreateUser POST /api/v1/admin/users [admin]
+func CreateUser(db *gorm.DB) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+
+		var req requests.CreateAdminUserRequest
+		if err := ctx.Bind().JSON(&req); err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(
+				common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_payload")),
+			)
+		}
+		if err := req.Validate(); err != nil {
+			details := common.ParseValidationErrors(err, lang)
+			resp := common.ErrBadRequest.WithReason(i18n.T(lang, "validation.failed"))
+			if details != nil {
+				resp = resp.WithDetails(details)
+			}
+			return ctx.Status(fiber.StatusBadRequest).JSON(resp)
+		}
+
+		repo := repositories.NewPostgreSQLStorage(db)
+		svc := services.NewUserService(repo)
+
+		u, err := svc.Create(ctx.Context(), &req)
+		if err != nil {
+			if errors.Is(err, services.ErrUserEmailTaken) {
+				return ctx.Status(fiber.StatusConflict).JSON(
+					common.ErrConflict.WithReason(i18n.T(lang, "error.email_already_exists")),
+				)
+			}
+			if errors.Is(err, services.ErrUserPhoneTaken) {
+				return ctx.Status(fiber.StatusConflict).JSON(
+					common.ErrConflict.WithReason(i18n.T(lang, "error.phone_already_exists")),
+				)
+			}
+			slog.Error("CreateUser failed", "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+		return ctx.Status(fiber.StatusCreated).JSON(common.ResponseData(dto.ToUserDTO(u)))
 	}
 }
 
@@ -181,6 +228,11 @@ func UpdateUser(db *gorm.DB) fiber.Handler {
 			if errors.Is(err, services.ErrUserEmailTaken) {
 				return ctx.Status(fiber.StatusConflict).JSON(
 					common.ErrConflict.WithReason(i18n.T(lang, "error.email_already_exists")),
+				)
+			}
+			if errors.Is(err, services.ErrUserPhoneTaken) {
+				return ctx.Status(fiber.StatusConflict).JSON(
+					common.ErrConflict.WithReason(i18n.T(lang, "error.phone_already_exists")),
 				)
 			}
 			slog.Error("UpdateUser failed", "error", err)

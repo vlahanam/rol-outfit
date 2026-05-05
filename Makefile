@@ -13,7 +13,7 @@ build:
 	$(COMPOSE) build
 
 rebuild:
-	$(COMPOSE) up -d --build
+	$(COMPOSE) up -d --build --force-recreate
 
 ps:
 	$(COMPOSE) ps

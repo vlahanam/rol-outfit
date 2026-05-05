@@ -29,6 +29,7 @@
   "error.invalid_payload": "リクエストの形式が正しくありません",
   "error.invalid_id": "IDが無効です",
   "error.email_already_exists": "このメールアドレスはすでに登録されています",
+  "error.phone_already_exists": "この電話番号はすでに別のアカウントで使用されています",
   "error.invalid_credentials": "メールアドレスまたはパスワードが正しくありません",
   "error.account_disabled": "アカウントが無効化されています",
 

@@ -16,6 +16,7 @@ import (
 // Các lỗi nghiệp vụ của auth
 var (
 	ErrEmailAlreadyExists = errors.New("email already exists")
+	ErrPhoneAlreadyExists = errors.New("phone already exists")
 	ErrInvalidCredentials = errors.New("invalid email or password")
 	ErrUserNotActive      = errors.New("user account is not active")
 )
@@ -49,6 +50,17 @@ func (s *authService) Register(ctx context.Context, req *requests.RegisterReques
 		return nil, ErrEmailAlreadyExists
 	}
 
+	// Kiểm tra phone đã tồn tại chưa
+	if req.Phone != "" {
+		phoneTaken, err := s.userRepo.FindByPhone(ctx, req.Phone)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check existing phone: %w", err)
+		}
+		if phoneTaken != nil {
+			return nil, ErrPhoneAlreadyExists
+		}
+	}
+
 	// Hash password trước khi lưu vào database
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -65,6 +77,9 @@ func (s *authService) Register(ctx context.Context, req *requests.RegisterReques
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
+		if errors.Is(err, repositories.ErrDuplicatePhone) {
+			return nil, ErrPhoneAlreadyExists
+		}
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 

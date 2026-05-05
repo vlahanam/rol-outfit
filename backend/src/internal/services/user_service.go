@@ -5,17 +5,21 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/vlahanam/rol-outfit/src/internal/models"
 	"github.com/vlahanam/rol-outfit/src/internal/repositories"
 	"github.com/vlahanam/rol-outfit/src/internal/requests"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
-	ErrUserNotFound  = errors.New("user not found")
+	ErrUserNotFound   = errors.New("user not found")
 	ErrUserEmailTaken = errors.New("email already taken by another user")
+	ErrUserPhoneTaken = errors.New("phone already taken by another user")
 )
 
 type UserService interface {
+	Create(ctx context.Context, req *requests.CreateAdminUserRequest) (*models.User, error)
 	List(ctx context.Context, offset, limit int) ([]*models.User, int64, error)
 	GetByID(ctx context.Context, id string) (*models.User, error)
 	Update(ctx context.Context, id string, req *requests.UpdateUserRequest) error
@@ -29,6 +33,61 @@ type userService struct {
 
 func NewUserService(repo repositories.UserRepository) UserService {
 	return &userService{repo: repo}
+}
+
+func (s *userService) Create(ctx context.Context, req *requests.CreateAdminUserRequest) (*models.User, error) {
+	existing, err := s.repo.FindByEmail(ctx, req.Email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check email: %w", err)
+	}
+	if existing != nil {
+		return nil, ErrUserEmailTaken
+	}
+
+	if req.Phone != "" {
+		phoneTaken, err := s.repo.FindByPhone(ctx, req.Phone)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check phone: %w", err)
+		}
+		if phoneTaken != nil {
+			return nil, ErrUserPhoneTaken
+		}
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	role := models.USER_ROLE_CUSTOMER
+	if req.Role != nil {
+		role = *req.Role
+	}
+	status := models.USER_STATUS_ACTIVE
+	if req.Status != nil {
+		status = *req.Status
+	}
+
+	user := &models.User{
+		ID:       uuid.New().String(),
+		FullName: req.FullName,
+		Email:    req.Email,
+		Password: string(hash),
+		Address:  req.Address,
+		Phone:    req.Phone,
+		Role:     role,
+		Status:   status,
+	}
+	if err := s.repo.Create(ctx, user); err != nil {
+		if errors.Is(err, repositories.ErrDuplicateEmail) {
+			return nil, ErrUserEmailTaken
+		}
+		if errors.Is(err, repositories.ErrDuplicatePhone) {
+			return nil, ErrUserPhoneTaken
+		}
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+	return user, nil
 }
 
 func (s *userService) List(ctx context.Context, offset, limit int) ([]*models.User, int64, error) {
@@ -66,6 +125,17 @@ func (s *userService) Update(ctx context.Context, id string, req *requests.Updat
 		}
 	}
 
+	// Check phone uniqueness if changing
+	if req.Phone != nil && *req.Phone != "" && *req.Phone != existing.Phone {
+		phoneTaken, err := s.repo.FindByPhone(ctx, *req.Phone)
+		if err != nil {
+			return fmt.Errorf("failed to check phone: %w", err)
+		}
+		if phoneTaken != nil {
+			return ErrUserPhoneTaken
+		}
+	}
+
 	fields := map[string]interface{}{}
 	if req.FullName != nil {
 		fields["full_name"] = *req.FullName
@@ -89,7 +159,19 @@ func (s *userService) Update(ctx context.Context, id string, req *requests.Updat
 	if len(fields) == 0 {
 		return nil
 	}
-	return s.repo.Update(ctx, id, fields)
+	if err := s.repo.Update(ctx, id, fields); err != nil {
+		if errors.Is(err, repositories.ErrNotFound) {
+			return ErrUserNotFound
+		}
+		if errors.Is(err, repositories.ErrDuplicateEmail) {
+			return ErrUserEmailTaken
+		}
+		if errors.Is(err, repositories.ErrDuplicatePhone) {
+			return ErrUserPhoneTaken
+		}
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+	return nil
 }
 
 func (s *userService) UpdateMe(ctx context.Context, id string, req *requests.UpdateMeRequest) error {

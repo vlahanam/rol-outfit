@@ -94,6 +94,38 @@ export interface Order {
   updated_at: string;
 }
 
+// User
+export interface User {
+  id: string;
+  full_name: string;
+  email: string;
+  address: string;
+  phone: string;
+  role: number;   // 1=admin, 2=customer
+  status: number; // 1=active, 0=locked
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateUserPayload {
+  full_name: string;
+  email: string;
+  password: string;
+  address: string;
+  phone: string;
+  role?: number;
+  status?: number;
+}
+
+export interface UpdateUserPayload {
+  full_name?: string;
+  email?: string;
+  address?: string;
+  phone?: string;
+  role?: number;
+  status?: number;
+}
+
 // Error response from backend
 export interface ApiErrorBody {
   error: string;

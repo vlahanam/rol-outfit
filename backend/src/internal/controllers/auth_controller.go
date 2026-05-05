@@ -46,6 +46,11 @@ func Register(db *gorm.DB, jwtSecret string) fiber.Handler {
 					common.ErrConflict.WithReason(i18n.T(lang, "error.email_already_exists")),
 				)
 			}
+			if errors.Is(err, services.ErrPhoneAlreadyExists) {
+				return ctx.Status(fiber.StatusConflict).JSON(
+					common.ErrConflict.WithReason(i18n.T(lang, "error.phone_already_exists")),
+				)
+			}
 			slog.Error("Register failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(
 				common.ErrInternalServerError,

@@ -5,6 +5,12 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Admin User CRUD** (2026-05-04)
+  - Backend: `POST /api/v1/admin/users` endpoint for admin user creation with role/status control
+  - Frontend: User type, API client namespace (`api.adminUsers`), and role/status label mappings
+  - Frontend: Admin user list, create, edit pages with real API integration, loading/error states
+  - Database error handling: `ErrDuplicateEmail`, `ErrNotFound` sentinels with pgconn mapping
+
 - **Database Seed Script** (2026-04-28)
   - New standalone seed command: `backend/src/cmd/seed/main.go`
   - Make target `make seed` seeds database with 3 users (1 admin + 2 customers), 4 categories, and 12 products
