@@ -62,5 +62,10 @@
 
   "validation.type.required": "ウィジェットタイプは必須です",
   "validation.type.invalid": "ウィジェットタイプが無効です",
-  "validation.display_order.min": "表示順は0以上である必要があります"
+  "validation.display_order.min": "表示順は0以上である必要があります",
+
+  "error.variant_not_found": "商品バリエーションが見つかりません",
+  "validation.attributes.required": "バリエーションの属性は必須です",
+  "validation.attributes.invalid": "バリエーションの属性が正しくありません",
+  "validation.stock.min": "在庫数は0以上にしてください"
 }

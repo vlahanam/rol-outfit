@@ -1,18 +1,16 @@
 package requests
 
 import (
-	"encoding/json"
-
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 type CreateProductRequest struct {
-	CategoryID   string          `json:"category_id"`
-	Name         string          `json:"name"`
-	DefaultPrice float64         `json:"default_price"`
-	Description  string          `json:"description"`
-	Avatar       string          `json:"avatar"`
-	Data         json.RawMessage `json:"data"`
+	CategoryID     string   `json:"category_id"`
+	Name           string   `json:"name"`
+	DefaultPrice   float64  `json:"default_price"`
+	Description    string   `json:"description"`
+	Avatar         string   `json:"avatar"`
+	AttributeNames []string `json:"attribute_names"`
 }
 
 func (r CreateProductRequest) Validate() error {
@@ -31,13 +29,13 @@ func (r CreateProductRequest) Validate() error {
 }
 
 type UpdateProductRequest struct {
-	CategoryID   *string         `json:"category_id"`
-	Name         *string         `json:"name"`
-	DefaultPrice *float64        `json:"default_price"`
-	Description  *string         `json:"description"`
-	Avatar       *string         `json:"avatar"`
-	Status       *int8           `json:"status"`
-	Data         json.RawMessage `json:"data"`
+	CategoryID     *string  `json:"category_id"`
+	Name           *string  `json:"name"`
+	DefaultPrice   *float64 `json:"default_price"`
+	Description    *string  `json:"description"`
+	Avatar         *string  `json:"avatar"`
+	Status         *int8    `json:"status"`
+	AttributeNames []string `json:"attribute_names"`
 }
 
 func (r UpdateProductRequest) Validate() error {

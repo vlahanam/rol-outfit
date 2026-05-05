@@ -1,13 +1,49 @@
-'use client';
+"use client";
 
-import { Menu, Bell, User, LogOut } from 'lucide-react';
-import Link from 'next/link';
+import { Menu, User, LogOut } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface AdminHeaderProps {
   onMenuClick: () => void;
 }
 
+const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
+  "/admin/dashboard": {
+    title: "Admin Dashboard",
+    subtitle: "Quản lý hệ thống RolOutfit",
+  },
+  "/admin/users": {
+    title: "Quản Lý Người Dùng",
+    subtitle: "Danh sách tất cả người dùng",
+  },
+  "/admin/products": {
+    title: "Quản Lý Sản Phẩm",
+    subtitle: "Danh sách tất cả sản phẩm",
+  },
+  "/admin/carts": {
+    title: "Quản Lý Giỏ Hàng",
+    subtitle: "Danh sách tất cả giỏ hàng",
+  },
+  "/admin/orders": {
+    title: "Quản Lý Đơn Hàng",
+    subtitle: "Danh sách tất cả đơn hàng",
+  },
+};
+
+function getPageInfo(pathname: string) {
+  for (const [path, info] of Object.entries(PAGE_TITLES)) {
+    if (pathname === path || pathname.startsWith(path + "/")) {
+      return info;
+    }
+  }
+  return { title: "Admin Dashboard", subtitle: "Quản lý hệ thống RolOutfit" };
+}
+
 export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
+  const pathname = usePathname();
+  const { title, subtitle } = getPageInfo(pathname);
+
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
       <div className="flex items-center justify-between px-6 py-4">
@@ -19,8 +55,8 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
             <Menu className="w-6 h-6" />
           </button>
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Admin Dashboard</h2>
-            <p className="text-sm text-gray-500">Quản lý hệ thống RolOutfit</p>
+            <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+            <p className="text-sm text-gray-500">{subtitle}</p>
           </div>
         </div>
 

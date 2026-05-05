@@ -63,15 +63,15 @@ func (s *productService) Create(ctx context.Context, req *requests.CreateProduct
 	}
 
 	p := &models.Product{
-		ID:           uuid.New().String(),
-		CategoryID:   req.CategoryID,
-		Name:         req.Name,
-		Slug:         slug,
-		DefaultPrice: req.DefaultPrice,
-		Description:  req.Description,
-		Avatar:       req.Avatar,
-		Status:       models.PRODUCT_STATUS_ACTIVE,
-		Data:         req.Data,
+		ID:             uuid.New().String(),
+		CategoryID:     req.CategoryID,
+		Name:           req.Name,
+		Slug:           slug,
+		DefaultPrice:   req.DefaultPrice,
+		Description:    req.Description,
+		Avatar:         req.Avatar,
+		Status:         models.PRODUCT_STATUS_ACTIVE,
+		AttributeNames: models.StringSlice(req.AttributeNames),
 	}
 	if err := s.repo.CreateProduct(ctx, p); err != nil {
 		return nil, fmt.Errorf("failed to create product: %w", err)
@@ -113,8 +113,8 @@ func (s *productService) Update(ctx context.Context, id string, req *requests.Up
 	if req.Status != nil {
 		fields["status"] = *req.Status
 	}
-	if len(req.Data) > 0 {
-		fields["data"] = req.Data
+	if req.AttributeNames != nil {
+		fields["attribute_names"] = models.StringSlice(req.AttributeNames)
 	}
 	if req.Avatar != nil {
 		fields["avatar"] = *req.Avatar

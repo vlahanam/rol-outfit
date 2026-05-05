@@ -34,6 +34,12 @@ func RunAll(db *gorm.DB) error {
 	}
 	log.Printf("[products] tạo mới: %d, bỏ qua: %d", prodsRes.Created, prodsRes.Skipped)
 
+	variantsRes, err := SeedProductVariants(db)
+	if err != nil {
+		return err
+	}
+	log.Printf("[product_variants] tạo mới: %d, bỏ qua: %d", variantsRes.Created, variantsRes.Skipped)
+
 	widgetsRes, err := SeedWidgets(db)
 	if err != nil {
 		return err

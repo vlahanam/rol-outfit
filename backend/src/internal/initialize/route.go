@@ -43,6 +43,15 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	adminProds.Put("/:id", controllers.UpdateProduct(db))
 	adminProds.Delete("/:id", controllers.DeleteProduct(db))
 
+	// Product Variants (nested under products)
+	variants := v1.Group("/products/:productID/variants")
+	variants.Get("/", controllers.ListVariants(db))
+	variants.Get("/:id", controllers.GetVariant(db))
+	adminVariants := variants.Use(middleware.JWTAuth(jwtSecret), middleware.RequireRole(float64(models.USER_ROLE_ADMIN)))
+	adminVariants.Post("/", controllers.CreateVariant(db))
+	adminVariants.Put("/:id", controllers.UpdateVariant(db))
+	adminVariants.Delete("/:id", controllers.DeleteVariant(db))
+
 	// Cart (user auth required)
 	cart := v1.Group("/cart", middleware.JWTAuth(jwtSecret))
 	cart.Get("/", controllers.GetCart(db))
