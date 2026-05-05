@@ -13,7 +13,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi">
+    <html lang="vn">
       <body className="min-h-screen bg-white antialiased">
         {children}
         <Toaster position="top-right" richColors />

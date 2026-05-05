@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import { X } from 'lucide-react';
-import Link from 'next/link';
+import { X } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 
 interface MobileSidebarProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface MobileSidebarProps {
 }
 
 export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
+  const t = useTranslations("MobileSidebar");
   return (
     <>
       {isOpen && (
@@ -18,12 +20,17 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         />
       )}
 
-      <div className={`fixed top-0 left-0 h-full w-[280px] bg-white z-50 transform transition-transform duration-300 lg:hidden ${
-        isOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+      <div
+        className={`fixed top-0 left-0 h-full w-[280px] bg-white z-50 transform transition-transform duration-300 lg:hidden ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-xl font-bold text-blue-600">RolOutfit</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+          >
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -36,7 +43,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 onClick={onClose}
                 className="w-full text-left block px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
               >
-                Cửa Hàng
+                {t("shop")}
               </Link>
             </li>
             <li>
@@ -45,7 +52,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 onClick={onClose}
                 className="w-full text-left block px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
               >
-                Hàng Mới
+                {t("newArrivals")}
               </Link>
             </li>
           </ul>
@@ -58,14 +65,14 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
               onClick={onClose}
               className="w-full block text-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Đăng Nhập
+              {t("login")}
             </Link>
             <Link
               href="/register"
               onClick={onClose}
               className="w-full block text-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              Đăng Ký
+              {t("register")}
             </Link>
           </div>
         </div>

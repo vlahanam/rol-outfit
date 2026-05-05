@@ -1,13 +1,28 @@
-'use client';
+"use client";
 
-import { Search, ShoppingCart, User, Menu } from 'lucide-react';
-import Link from 'next/link';
+import { Search, ShoppingCart, User, Menu } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { Link, useRouter, usePathname } from "@/i18n/navigation";
+import { useLocale } from "next-intl";
+import { routing } from "@/i18n/routing";
 
 interface HeaderProps {
   onMenuClick: () => void;
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
+  const t = useTranslations("Header");
+  const router = useRouter();
+  const pathname = usePathname();
+  const locale = useLocale();
+
+  function switchLocale() {
+    const locales = routing.locales as readonly string[];
+    const nextLocale =
+      locales.find((l) => l !== locale) ?? routing.defaultLocale;
+    router.replace(pathname, { locale: nextLocale });
+  }
+
   return (
     <header className="bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 py-4">
@@ -20,8 +35,18 @@ export function Header({ onMenuClick }: HeaderProps) {
               <h1 className="text-2xl font-bold text-blue-600">RolOutfit</h1>
             </Link>
             <nav className="hidden lg:flex items-center gap-6">
-              <Link href="/shop" className="text-gray-700 hover:text-blue-600 transition-colors">Cửa Hàng</Link>
-              <Link href="/new-arrivals" className="text-gray-700 hover:text-blue-600 transition-colors">Hàng Mới</Link>
+              <Link
+                href="/shop"
+                className="text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                {t("shop")}
+              </Link>
+              <Link
+                href="/new-arrivals"
+                className="text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                {t("newArrivals")}
+              </Link>
             </nav>
           </div>
 
@@ -30,13 +55,19 @@ export function Header({ onMenuClick }: HeaderProps) {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Tìm kiếm sản phẩm..."
+                placeholder={t("searchPlaceholder")}
                 className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
           <div className="flex items-center gap-4">
+            <button
+              onClick={switchLocale}
+              className="text-sm font-medium px-2 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              {t("switchLang")}
+            </button>
             <button className="md:hidden">
               <Search className="w-6 h-6 text-gray-700" />
             </button>

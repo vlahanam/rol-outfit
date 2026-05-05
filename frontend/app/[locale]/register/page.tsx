@@ -11,14 +11,17 @@ import {
   Phone,
   MapPin,
 } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import { api, ApiError } from "@/lib/api";
 import { setTokens } from "@/lib/auth";
-import { registerSchema } from "@/lib/validations";
+import { createRegisterSchema } from "@/lib/validations";
 import type { ApiResponse, AuthTokens } from "@/types/api";
 
 export default function RegisterPage() {
+  const t = useTranslations("RegisterPage");
+  const tCommon = useTranslations("Common");
+  const tVal = useTranslations("Validation");
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -39,7 +42,8 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
 
-    const result = registerSchema.safeParse({
+    const schema = createRegisterSchema(tVal);
+    const result = schema.safeParse({
       name,
       email,
       phone,
@@ -68,7 +72,7 @@ export default function RegisterPage() {
       setTokens(res.data.access_token, res.data.refresh_token);
       router.push("/");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Đăng ký thất bại");
+      setError(err instanceof ApiError ? err.message : t("registerFailed"));
     } finally {
       setLoading(false);
     }
@@ -82,21 +86,23 @@ export default function RegisterPage() {
           className="flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-6 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span>Về trang chủ</span>
+          <span>{tCommon("backToHome")}</span>
         </Link>
 
         <div className="bg-white rounded-2xl shadow-sm p-8">
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-blue-600">RolOutfit</h1>
-              <h2 className="text-xl font-semibold text-gray-900">Đăng Ký</h2>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {t("title")}
+              </h2>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Họ và tên
+                {t("name")}
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -107,18 +113,18 @@ export default function RegisterPage() {
                     setName(e.target.value);
                     clearFieldError("name");
                   }}
-                  placeholder="Nguyễn Văn A"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder={t("namePlaceholder")}
+                  className={`w-full pl-10 pr-4 py-3 border ${fieldErrors.name ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 />
               </div>
               {fieldErrors.name && (
-                <p className="mt-1 text-xs text-red-600">{fieldErrors.name}</p>
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>
               )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email
+                {t("email")}
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -130,17 +136,17 @@ export default function RegisterPage() {
                     clearFieldError("email");
                   }}
                   placeholder="example@email.com"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full pl-10 pr-4 py-3 border ${fieldErrors.email ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 />
               </div>
               {fieldErrors.email && (
-                <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
               )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Số điện thoại
+                {t("phone")}
               </label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -151,18 +157,18 @@ export default function RegisterPage() {
                     setPhone(e.target.value);
                     clearFieldError("phone");
                   }}
-                  placeholder="0123456789"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder={t("phonePlaceholder")}
+                  className={`w-full pl-10 pr-4 py-3 border ${fieldErrors.phone ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 />
               </div>
               {fieldErrors.phone && (
-                <p className="mt-1 text-xs text-red-600">{fieldErrors.phone}</p>
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.phone}</p>
               )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Địa chỉ
+                {t("address")}
               </label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -173,12 +179,12 @@ export default function RegisterPage() {
                     setAddress(e.target.value);
                     clearFieldError("address");
                   }}
-                  placeholder="Địa chỉ của bạn"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder={t("addressPlaceholder")}
+                  className={`w-full pl-10 pr-4 py-3 border ${fieldErrors.address ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 />
               </div>
               {fieldErrors.address && (
-                <p className="mt-1 text-xs text-red-600">
+                <p className="mt-1 text-sm text-red-600">
                   {fieldErrors.address}
                 </p>
               )}
@@ -186,7 +192,7 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mật khẩu
+                {t("password")}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -198,7 +204,7 @@ export default function RegisterPage() {
                     clearFieldError("password");
                   }}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full pl-10 pr-12 py-3 border ${fieldErrors.password ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 />
                 <button
                   type="button"
@@ -213,7 +219,7 @@ export default function RegisterPage() {
                 </button>
               </div>
               {fieldErrors.password && (
-                <p className="mt-1 text-xs text-red-600">
+                <p className="mt-1 text-sm text-red-600">
                   {fieldErrors.password}
                 </p>
               )}
@@ -221,7 +227,7 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Xác nhận mật khẩu
+                {t("confirmPassword")}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -233,7 +239,7 @@ export default function RegisterPage() {
                     clearFieldError("confirmPassword");
                   }}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full pl-10 pr-12 py-3 border ${fieldErrors.confirmPassword ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 />
                 <button
                   type="button"
@@ -248,7 +254,7 @@ export default function RegisterPage() {
                 </button>
               </div>
               {fieldErrors.confirmPassword && (
-                <p className="mt-1 text-xs text-red-600">
+                <p className="mt-1 text-sm text-red-600">
                   {fieldErrors.confirmPassword}
                 </p>
               )}
@@ -261,13 +267,13 @@ export default function RegisterPage() {
                 className="w-4 h-4 mt-1 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <label htmlFor="terms" className="text-sm text-gray-600">
-                Tôi đồng ý với{" "}
+                {t("agreeTerms")}{" "}
                 <a href="#" className="text-blue-600 hover:text-blue-700">
-                  Điều khoản dịch vụ
+                  {t("termsOfService")}
                 </a>{" "}
-                và{" "}
+                {t("and")}{" "}
                 <a href="#" className="text-blue-600 hover:text-blue-700">
-                  Chính sách bảo mật
+                  {t("privacyPolicy")}
                 </a>
               </label>
             </div>
@@ -281,18 +287,18 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60"
             >
-              {loading ? "Đang đăng ký..." : "Đăng Ký"}
+              {loading ? t("submitting") : t("submit")}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-gray-600 text-sm">
-              Đã có tài khoản?{" "}
+              {t("hasAccount")}{" "}
               <Link
                 href="/login"
                 className="text-blue-600 font-semibold hover:text-blue-700"
               >
-                Đăng nhập
+                {t("loginNow")}
               </Link>
             </p>
           </div>
