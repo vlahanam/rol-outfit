@@ -5,6 +5,13 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Variant Edit & List Images** (2026-05-07)
+  - Frontend: New edit variant page at `/admin/products/[id]/variants/[variantId]` with full form (avatar, attributes, price, stock, status)
+  - Frontend: Product avatar display in admin products list page
+  - Frontend: Variant images display in expandable "Biến Thể Sản Phẩm" sub-table on products list page
+  - Frontend: New component `product-list-variants-table.tsx` for variant image display in list view
+  - Frontend: Edit button added to variants table on product edit page (`product-variants-table.tsx`)
+
 - **Product & Variant Image Upload** (2026-05-07)
   - Backend: `POST /api/v1/uploads` admin-only endpoint with MIME validation (JPEG, PNG, WebP, GIF), max size enforcement
   - Backend: Avatar field validation in `CreateProductRequest.Validate()` with i18n error keys (vi.json, ja.json)

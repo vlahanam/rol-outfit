@@ -30,11 +30,15 @@ High-level project phases and milestones. For detailed implementation plans, see
   - [x] Frontend: ImageUploader component with upload-then-reference flow
   - [x] Frontend: Add Product page with product & variant avatars
   - [x] Frontend: Edit Product page with product & variant avatars
+- [x] Product and variant images display in admin list pages
+  - [x] Product avatar display in admin products list
+  - [x] Variant images display in expandable variants sub-table (list page)
+- [x] Variant edit page with full form (avatar, attributes, price, stock, status)
 - [ ] Product image gallery (multiple images per product)
 - [ ] Image optimization and resizing
 - [ ] CDN integration planning
 
-**Completeness:** 67%
+**Completeness:** 75%
 
 ---
 

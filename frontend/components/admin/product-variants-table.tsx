@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { ImageIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { createVariantSchema } from "@/lib/validations";
 import { ImageUploader } from "@/components/admin/image-uploader";
@@ -41,6 +42,7 @@ export function ProductVariantsTable({
   onVariantAdded,
   onVariantDeleted,
 }: Props) {
+  const router = useRouter();
   const attrNames = product.attribute_names ?? [];
 
   const [showAdd, setShowAdd] = useState(false);
@@ -167,13 +169,22 @@ export function ProductVariantsTable({
                       </span>
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
-                      <button
-                        onClick={() => setDeleteId(v.id)}
-                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
-                        title="Xóa biến thể"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => router.push(`/admin/products/${product.id}/variants/${v.id}`)}
+                          className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg"
+                          title="Chỉnh sửa biến thể"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteId(v.id)}
+                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
+                          title="Xóa biến thể"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

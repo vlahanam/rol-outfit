@@ -15,6 +15,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { DeleteConfirmModal } from "@/components/admin/DeleteConfirmModal";
+import { ProductListVariantsTable } from "@/components/admin/product-list-variants-table";
 import { api } from "@/lib/api";
 import type { ApiResponse, AdminProduct, Category } from "@/types/api";
 
@@ -245,6 +246,7 @@ export default function ListProductPage() {
                                   alt={product.name}
                                   width={48}
                                   height={48}
+                                  unoptimized
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
@@ -323,118 +325,13 @@ export default function ListProductPage() {
                       {/* Variants row */}
                       {isExpanded && hasVariants && (
                         <tr>
-                          <td colSpan={7} className="px-6 py-4 bg-gray-50">
-                            <div className="ml-16">
-                              <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                                Biến Thể Sản Phẩm
-                              </h4>
-                              <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
-                                <table className="w-full min-w-max">
-                                  <thead className="bg-gray-100">
-                                    <tr>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 whitespace-nowrap">
-                                        SKU
-                                      </th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 whitespace-nowrap">
-                                        Giá
-                                      </th>
-                                      {product.attribute_names.map((attr) => (
-                                        <th
-                                          key={attr}
-                                          className="px-4 py-2 text-left text-xs font-medium text-gray-600 whitespace-nowrap capitalize"
-                                        >
-                                          {attr}
-                                        </th>
-                                      ))}
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 whitespace-nowrap">
-                                        Tồn Kho
-                                      </th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 whitespace-nowrap">
-                                        Đã Bán
-                                      </th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 whitespace-nowrap">
-                                        Trạng Thái
-                                      </th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 whitespace-nowrap">
-                                        Hành Động
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-gray-200">
-                                    {product.variants.map((variant) => {
-                                      const vBadge = stockBadge(variant.stock);
-                                      return (
-                                        <tr
-                                          key={variant.id}
-                                          className="hover:bg-gray-50"
-                                        >
-                                          <td className="px-4 py-2 text-xs text-gray-500 font-mono whitespace-nowrap">
-                                            {variant.id.slice(0, 8)}
-                                          </td>
-                                          <td className="px-4 py-2 text-xs font-medium text-gray-900 whitespace-nowrap">
-                                            {variant.price.toLocaleString(
-                                              "vi-VN",
-                                            )}
-                                            ₫
-                                          </td>
-                                          {product.attribute_names.map(
-                                            (attr) => (
-                                              <td
-                                                key={attr}
-                                                className="px-4 py-2 text-xs text-gray-900 whitespace-nowrap"
-                                              >
-                                                {variant.attributes?.[attr] ??
-                                                  "—"}
-                                              </td>
-                                            ),
-                                          )}
-                                          <td className="px-4 py-2 text-xs text-gray-900 whitespace-nowrap">
-                                            {variant.stock}
-                                          </td>
-                                          <td className="px-4 py-2 text-xs text-gray-600 whitespace-nowrap">
-                                            {variant.sold}
-                                          </td>
-                                          <td className="px-4 py-2 whitespace-nowrap">
-                                            <span
-                                              className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${vBadge.cls}`}
-                                            >
-                                              {vBadge.label}
-                                            </span>
-                                          </td>
-                                          <td className="px-4 py-2 whitespace-nowrap">
-                                            <div className="flex items-center gap-1">
-                                              <button
-                                                onClick={() =>
-                                                  router.push(
-                                                    `/admin/products/${product.id}/variants/${variant.id}`,
-                                                  )
-                                                }
-                                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                title="Chỉnh sửa biến thể"
-                                              >
-                                                <Edit className="w-3.5 h-3.5" />
-                                              </button>
-                                              <button
-                                                onClick={() =>
-                                                  setDeleteVariant({
-                                                    productId: product.id,
-                                                    variantId: variant.id,
-                                                  })
-                                                }
-                                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                title="Xóa biến thể"
-                                              >
-                                                <Trash2 className="w-3.5 h-3.5" />
-                                              </button>
-                                            </div>
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
+                          <td colSpan={7} className="p-0 bg-gray-50">
+                            <ProductListVariantsTable
+                              product={product}
+                              onDeleteVariant={(variantId) =>
+                                setDeleteVariant({ productId: product.id, variantId })
+                              }
+                            />
                           </td>
                         </tr>
                       )}
