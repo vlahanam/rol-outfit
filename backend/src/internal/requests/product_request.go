@@ -25,6 +25,9 @@ func (r CreateProductRequest) Validate() error {
 		validation.Field(&r.DefaultPrice,
 			validation.Min(float64(0)).Error("validation.price.invalid"),
 		),
+		validation.Field(&r.Avatar,
+			validation.Required.Error("validation.avatar.required"),
+		),
 	)
 }
 

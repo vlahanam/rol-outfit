@@ -20,6 +20,7 @@
 
   "validation.category_id.required": "Danh mục không được để trống",
   "validation.price.invalid": "Giá sản phẩm không hợp lệ",
+  "validation.avatar.required": "Ảnh sản phẩm không được để trống",
 
   "validation.product_id.required": "Sản phẩm không được để trống",
   "validation.quantity.min": "Số lượng phải ít nhất là 1",

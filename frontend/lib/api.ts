@@ -177,4 +177,38 @@ export const api = {
       });
     },
   },
+
+  uploads: {
+    async upload(file: File): Promise<string> {
+      const token = getToken();
+      const form = new FormData();
+      form.append("file", file);
+
+      const headers: Record<string, string> = { "Accept-Language": "vi" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch(`${BASE}/uploads`, {
+        method: "POST",
+        headers,
+        body: form,
+      });
+
+      if (!res.ok) {
+        const body: ApiErrorBody = await res
+          .json()
+          .catch(() => ({ error: "Upload failed" }));
+        throw new ApiError(
+          res.status,
+          body.reason ?? body.error ?? "Upload failed",
+        );
+      }
+
+      const data: { url: string } = await res.json();
+      return data.url;
+    },
+
+    delete(filename: string): Promise<void> {
+      return request<void>(`/uploads/${filename}`, { method: "DELETE" });
+    },
+  },
 };

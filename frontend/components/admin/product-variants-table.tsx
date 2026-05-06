@@ -2,10 +2,27 @@
 
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
+import Image from "next/image";
+import { ImageIcon } from "lucide-react";
 import { api } from "@/lib/api";
 import { createVariantSchema } from "@/lib/validations";
+import { ImageUploader } from "@/components/admin/image-uploader";
 import { DeleteConfirmModal } from "@/components/admin/DeleteConfirmModal";
 import type { AdminProduct, ProductVariant } from "@/types/api";
+
+function VariantAvatarCell({ src }: { src?: string }) {
+  if (!src)
+    return (
+      <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center">
+        <ImageIcon className="w-4 h-4 text-gray-400" />
+      </div>
+    );
+  return (
+    <div className="relative w-10 h-10 rounded overflow-hidden border border-gray-200">
+      <Image src={src} alt="variant" fill unoptimized className="object-cover" />
+    </div>
+  );
+}
 
 type Props = {
   product: AdminProduct;
@@ -39,6 +56,7 @@ export function ProductVariantsTable({
       ...attrNames.map((k) => [k, ""]),
       ["price", ""],
       ["stock", ""],
+      ["avatar", ""],
     ]);
     setNewVariant(empty);
     setAddErrors({});
@@ -63,7 +81,12 @@ export function ProductVariantsTable({
       const attrs = Object.fromEntries(attrNames.map((k) => [k, newVariant[k]]));
       const { data: created } = await api.adminProducts.createVariant(
         product.id,
-        { attributes: attrs, price: Number(newVariant.price), stock: Number(newVariant.stock) },
+        {
+          attributes: attrs,
+          price: Number(newVariant.price),
+          stock: Number(newVariant.stock),
+          avatar: newVariant.avatar || undefined,
+        },
       );
       onVariantAdded(created);
       setShowAdd(false);
@@ -112,6 +135,7 @@ export function ProductVariantsTable({
                     {attr}
                   </th>
                 ))}
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Ảnh</th>
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Giá</th>
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Tồn Kho</th>
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Đã Bán</th>
@@ -129,6 +153,9 @@ export function ProductVariantsTable({
                         {v.attributes?.[attr] ?? "—"}
                       </td>
                     ))}
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      <VariantAvatarCell src={v.avatar} />
+                    </td>
                     <td className="px-4 py-2 font-medium whitespace-nowrap">
                       {v.price.toLocaleString("vi-VN")}₫
                     </td>
@@ -170,6 +197,13 @@ export function ProductVariantsTable({
                       )}
                     </td>
                   ))}
+                  <td className="px-4 py-2">
+                    <ImageUploader
+                      value={newVariant.avatar ?? ""}
+                      onChange={(url) => setNewVariant((p) => ({ ...p, avatar: url }))}
+                      label=""
+                    />
+                  </td>
                   <td className="px-4 py-2">
                     <input
                       value={newVariant.price ?? ""}

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { addProductSchema, createVariantSchema } from "@/lib/validations";
+import { ImageUploader } from "@/components/admin/image-uploader";
 import type { ApiResponse, Category } from "@/types/api";
 
 type Variant = Record<string, string> & { price: string; stock: string };
@@ -19,6 +20,7 @@ export default function AddProductPage() {
   const [categoryId, setCategoryId] = useState("");
   const [defaultPrice, setDefaultPrice] = useState("");
   const [description, setDescription] = useState("");
+  const [productAvatar, setProductAvatar] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Attribute names (defines variant columns)
@@ -68,6 +70,7 @@ export default function AddProductPage() {
       ...attributeNames.map((k) => [k, ""]),
       ["price", ""],
       ["stock", ""],
+      ["avatar", ""],
     ]) as Variant;
     setVariants((prev) => [...prev, empty]);
   };
@@ -113,6 +116,10 @@ export default function AddProductPage() {
       setFieldErrors(errors);
       return;
     }
+    if (!productAvatar) {
+      setFieldErrors((p) => ({ ...p, avatar: "Vui lòng chọn ảnh sản phẩm" }));
+      return;
+    }
     setFieldErrors({});
 
     // Validate variants
@@ -145,6 +152,7 @@ export default function AddProductPage() {
         default_price: Number(defaultPrice),
         description,
         attribute_names: attributeNames,
+        avatar: productAvatar,
       });
 
       if (variants.length > 0) {
@@ -157,6 +165,7 @@ export default function AddProductPage() {
               attributes: attrs,
               price: Number(v.price),
               stock: Number(v.stock),
+              avatar: v.avatar || undefined,
             });
           }),
         );
@@ -205,6 +214,16 @@ export default function AddProductPage() {
           <h2 className="text-lg font-semibold text-gray-900">
             Thông Tin Cơ Bản
           </h2>
+          <ImageUploader
+            value={productAvatar}
+            onChange={(url) => {
+              setProductAvatar(url);
+              if (url) setFieldErrors((p) => { const n = { ...p }; delete n.avatar; return n; });
+            }}
+            required
+            label="Ảnh sản phẩm"
+            error={fieldErrors.avatar}
+          />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -360,7 +379,7 @@ export default function AddProductPage() {
               <div
                 className="grid gap-3 text-xs font-medium text-gray-500 uppercase px-1"
                 style={{
-                  gridTemplateColumns: `repeat(${attributeNames.length + 2}, minmax(0, 1fr)) 2rem`,
+                  gridTemplateColumns: `repeat(${attributeNames.length + 2}, minmax(0, 1fr)) 5rem 2rem`,
                 }}
               >
                 {attributeNames.map((attr) => (
@@ -368,6 +387,7 @@ export default function AddProductPage() {
                 ))}
                 <span>Giá (₫)</span>
                 <span>Tồn kho</span>
+                <span>Ảnh</span>
                 <span />
               </div>
 
@@ -376,7 +396,7 @@ export default function AddProductPage() {
                   key={i}
                   className="grid gap-3 items-start"
                   style={{
-                    gridTemplateColumns: `repeat(${attributeNames.length + 2}, minmax(0, 1fr)) 2rem`,
+                    gridTemplateColumns: `repeat(${attributeNames.length + 2}, minmax(0, 1fr)) 5rem 2rem`,
                   }}
                 >
                   {attributeNames.map((attr) => (
@@ -425,6 +445,13 @@ export default function AddProductPage() {
                         {variantErrors[i].stock}
                       </p>
                     )}
+                  </div>
+                  <div>
+                    <ImageUploader
+                      value={variant.avatar ?? ""}
+                      onChange={(url) => updateVariant(i, "avatar", url)}
+                      label="Ảnh"
+                    />
                   </div>
                   <button
                     type="button"

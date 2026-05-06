@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { Pencil, Save, X } from "lucide-react";
+import Image from "next/image";
 import { api } from "@/lib/api";
+import { ImageUploader } from "@/components/admin/image-uploader";
 import type { AdminProduct, Category } from "@/types/api";
 
 const STATUS_LABEL: Record<number, string> = { 1: "Hiển thị", 2: "Ẩn" };
@@ -21,6 +23,7 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
     default_price: String(product.default_price),
     description: product.description ?? "",
     status: String(product.status),
+    avatar: product.avatar ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +41,7 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
         default_price: Number(form.default_price),
         description: form.description,
         status: Number(form.status),
+        avatar: form.avatar || undefined,
       });
       onSaved({
         name: form.name,
@@ -45,6 +49,7 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
         default_price: Number(form.default_price),
         description: form.description,
         status: Number(form.status),
+        avatar: form.avatar || undefined,
       });
       setEditMode(false);
     } catch (err) {
@@ -55,12 +60,18 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
   };
 
   const handleCancel = () => {
+    if (form.avatar && form.avatar !== (product.avatar ?? "")) {
+      api.uploads
+        .delete(form.avatar.split("/").pop()?.split("?")[0] ?? "")
+        .catch(() => {});
+    }
     setForm({
       name: product.name,
       category_id: product.category_id,
       default_price: String(product.default_price),
       description: product.description ?? "",
       status: String(product.status),
+      avatar: product.avatar ?? "",
     });
     setEditMode(false);
     setError(null);
@@ -104,6 +115,13 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
 
       {editMode ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <ImageUploader
+              value={form.avatar}
+              onChange={(url) => setForm((p) => ({ ...p, avatar: url }))}
+              label="Ảnh sản phẩm"
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Tên sản phẩm
@@ -210,6 +228,14 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
             <div className="md:col-span-2">
               <span className="text-gray-500">Mô tả:</span>
               <span className="ml-2">{product.description}</span>
+            </div>
+          )}
+          {product.avatar && (
+            <div className="md:col-span-2 mt-2">
+              <span className="text-sm text-gray-500 block mb-2">Ảnh sản phẩm:</span>
+              <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200">
+                <Image src={product.avatar} alt={product.name} fill unoptimized className="object-cover" />
+              </div>
             </div>
           )}
         </div>

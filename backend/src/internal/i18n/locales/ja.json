@@ -20,6 +20,7 @@
 
   "validation.category_id.required": "カテゴリは必須です",
   "validation.price.invalid": "価格が正しくありません",
+  "validation.avatar.required": "商品画像は必須です",
 
   "validation.product_id.required": "商品は必須です",
   "validation.quantity.min": "数量は1以上にしてください",

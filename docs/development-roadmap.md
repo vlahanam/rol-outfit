@@ -19,16 +19,22 @@ High-level project phases and milestones. For detailed implementation plans, see
 ---
 
 ## Phase 2: File Management & Media (IN PROGRESS)
-**Status:** ⏳ In Progress | **Target:** April 2026
+**Status:** ⏳ In Progress | **Target:** May 2026
 
 - [x] Product avatar storage and retrieval
 - [x] File upload service with MIME validation
 - [x] Secure file deletion (admin-only)
+- [x] Frontend image upload component and API helpers
+- [x] Admin product form integration — product avatar (required) + variant avatars (optional)
+  - [x] Backend: Avatar required validation on CreateProductRequest
+  - [x] Frontend: ImageUploader component with upload-then-reference flow
+  - [x] Frontend: Add Product page with product & variant avatars
+  - [x] Frontend: Edit Product page with product & variant avatars
 - [ ] Product image gallery (multiple images per product)
 - [ ] Image optimization and resizing
 - [ ] CDN integration planning
 
-**Completeness:** 40%
+**Completeness:** 67%
 
 ---
 
@@ -42,8 +48,9 @@ High-level project phases and milestones. For detailed implementation plans, see
 - [ ] Order history and tracking
 - [x] Admin dashboard — User CRUD (list, create, edit, delete)
 - [x] Admin dashboard — Product CRUD with variants (add, edit, delete products + variant management)
+- [x] Admin dashboard — Product & variant image upload UI with reusable ImageUploader component
 
-**Completeness:** 25%
+**Completeness:** 35%
 
 ---
 

@@ -82,14 +82,13 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	adminProductsGroup.Get("/", controllers.AdminListProducts(db))
 	adminProductsGroup.Get("/:id", controllers.AdminGetProduct(db))
 
-	// Uploads
+	// Uploads (admin-only)
 	uploadSvc := services.NewUploadService(cfg.UploadDir, cfg.UploadURL)
-	uploads := v1.Group("/uploads", middleware.JWTAuth(jwtSecret))
-	uploads.Post("/", controllers.UploadFile(uploadSvc, cfg.UploadMaxSize))
 	adminUploads := v1.Group("/uploads",
 		middleware.JWTAuth(jwtSecret),
 		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
 	)
+	adminUploads.Post("/", controllers.UploadFile(uploadSvc, cfg.UploadMaxSize))
 	adminUploads.Delete("/:filename", controllers.DeleteFile(uploadSvc))
 
 	// Widgets

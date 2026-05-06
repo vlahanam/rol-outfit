@@ -5,6 +5,15 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Product & Variant Image Upload** (2026-05-07)
+  - Backend: `POST /api/v1/uploads` admin-only endpoint with MIME validation (JPEG, PNG, WebP, GIF), max size enforcement
+  - Backend: Avatar field validation in `CreateProductRequest.Validate()` with i18n error keys (vi.json, ja.json)
+  - Frontend: `api.uploads.upload(file)` and `api.uploads.delete(filename)` helpers in `lib/api.ts`
+  - Frontend: New reusable `components/admin/image-uploader.tsx` with upload-then-reference flow, best-effort old file deletion, file size validation, spinner overlay
+  - Frontend: Add Product page — product avatar (required) + per-variant avatar (optional) image upload fields
+  - Frontend: Edit Product page — avatar field in `product-info-panel.tsx` (form/view/edit with cancel-cleanup), variant avatars in `product-variants-table.tsx` (Ảnh column with ImageUploader in add row)
+  - Type update: `CreateProductPayload.avatar` changed from optional to required
+
 - **Admin Product Management with Variants** (2026-05-07)
   - Backend: `GET /api/v1/admin/products/:id` endpoint returns product with all variants (any status)
   - Backend: Variant attribute validation — variant attributes must match `product.attribute_names`

@@ -155,7 +155,7 @@ export interface CreateProductPayload {
   name: string;
   default_price: number;
   description?: string;
-  avatar?: string;
+  avatar: string;
   attribute_names: string[];
 }
 
