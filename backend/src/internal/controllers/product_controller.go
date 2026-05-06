@@ -173,3 +173,35 @@ func DeleteProduct(db *gorm.DB) fiber.Handler {
 		return ctx.SendStatus(fiber.StatusNoContent)
 	}
 }
+
+// AdminListProducts GET /api/v1/admin/products?category_id=&search=&page=&limit= [admin]
+// Returns products with their variants, aggregated stock/sold totals, suitable for admin management.
+func AdminListProducts(db *gorm.DB) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		var p common.Paging
+		if err := ctx.Bind().Query(&p); err != nil {
+			p = common.Paging{}
+		}
+		p.Process()
+
+		categoryID := ctx.Query("category_id")
+		search := ctx.Query("search")
+		offset := (p.Page - 1) * p.Limit
+
+		repo := repositories.NewPostgreSQLStorage(db)
+		svc := services.NewProductService(repo)
+
+		products, total, err := svc.AdminList(ctx.Context(), categoryID, search, offset, p.Limit)
+		if err != nil {
+			slog.Error("AdminListProducts failed", "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+
+		result := make([]*dto.ProductWithVariantsDTO, 0, len(products))
+		for _, pw := range products {
+			result = append(result, dto.ToProductWithVariantsDTO(pw))
+		}
+		p.Total = total
+		return ctx.JSON(common.SuccessResponse(result, p, nil))
+	}
+}

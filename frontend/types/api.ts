@@ -50,10 +50,33 @@ export interface Product {
   default_price: number;
   description: string;
   status: number;
+  attribute_names: string[];
   data?: unknown;
   avatar?: string;
   created_at: string;
   updated_at: string;
+}
+
+// ProductVariant
+export interface ProductVariant {
+  id: string;
+  product_id: string;
+  attributes: Record<string, string>;
+  price: number;
+  stock: number;
+  sold: number;
+  avatar?: string;
+  status: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Admin product (product + aggregated stats + variants)
+export interface AdminProduct extends Product {
+  total_stock: number;
+  total_sold: number;
+  variant_count: number;
+  variants: ProductVariant[];
 }
 
 // Cart
@@ -101,7 +124,7 @@ export interface User {
   email: string;
   address: string;
   phone: string;
-  role: number;   // 1=admin, 2=customer
+  role: number; // 1=admin, 2=customer
   status: number; // 1=active, 0=locked
   created_at: string;
   updated_at: string;

@@ -104,3 +104,9 @@ type Product struct {
 }
 
 func (Product) TableName() string { return "products" }
+
+// ProductWithVariants is used by admin queries that need product + all its variants.
+type ProductWithVariants struct {
+	*Product
+	Variants []*ProductVariant
+}

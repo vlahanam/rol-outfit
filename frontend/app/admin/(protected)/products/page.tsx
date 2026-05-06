@@ -8,28 +8,59 @@ import {
   ChevronRight,
   Edit,
   Trash2,
+  ImageIcon,
+  Copy,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { DeleteConfirmModal } from "@/components/admin/DeleteConfirmModal";
 import { api } from "@/lib/api";
-import type { ApiResponse, Product, Category } from "@/types/api";
+import type { ApiResponse, AdminProduct, Category } from "@/types/api";
+
+function stockBadge(stock: number): { label: string; cls: string } {
+  if (stock === 0) return { label: "Hết hàng", cls: "bg-red-100 text-red-700" };
+  if (stock <= 20)
+    return { label: "Sắp hết", cls: "bg-yellow-100 text-yellow-700" };
+  return { label: "Còn hàng", cls: "bg-green-100 text-green-700" };
+}
+
+function copyToClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text: string) {
+  const el = document.createElement("input");
+  el.value = text;
+  document.body.appendChild(el);
+  el.select();
+  document.execCommand("copy");
+  document.body.removeChild(el);
+}
 
 export default function ListProductPage() {
   const router = useRouter();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<AdminProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
-  const [expandedIds, setExpandedIds] = useState<string[]>([]);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteVariant, setDeleteVariant] = useState<{
+    productId: string;
+    variantId: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [prodRes, catRes] = await Promise.all([
-          api.get<ApiResponse<Product[]>>("/products?limit=100"),
+          api.adminProducts.list({ limit: 100 }),
           api.get<ApiResponse<Category[]>>("/categories?limit=50"),
         ]);
         setProducts(prodRes.data ?? []);
@@ -44,7 +75,7 @@ export default function ListProductPage() {
   }, []);
 
   const categoryName = (id: string) =>
-    categories.find((c) => c.id === id)?.name ?? id;
+    categories.find((c) => c.id === id)?.name ?? "—";
 
   const filtered = products.filter((p) => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -54,9 +85,11 @@ export default function ListProductPage() {
   });
 
   const toggleExpand = (id: string) => {
-    setExpandedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   };
 
   const handleDelete = async () => {
@@ -71,12 +104,38 @@ export default function ListProductPage() {
     }
   };
 
+  const handleDeleteVariant = async () => {
+    if (!deleteVariant) return;
+    const { productId, variantId } = deleteVariant;
+    try {
+      await api.delete(`/products/${productId}/variants/${variantId}`);
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id !== productId
+            ? p
+            : {
+                ...p,
+                variants: p.variants.filter((v) => v.id !== variantId),
+                variant_count: p.variant_count - 1,
+              },
+        ),
+      );
+    } catch {
+      // ignore
+    } finally {
+      setDeleteVariant(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Quản Lý Sản Phẩm</h1>
-          <p className="text-gray-600">Danh sách tất cả sản phẩm</p>
+          <p className="text-gray-600 text-sm">
+            Danh sách tất cả sản phẩm trong kho
+          </p>
         </div>
         <Link
           href="/admin/products/add"
@@ -88,6 +147,7 @@ export default function ListProductPage() {
       </div>
 
       <div className="bg-white rounded-lg shadow-sm">
+        {/* Filters */}
         <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -115,19 +175,29 @@ export default function ListProductPage() {
 
         {loading ? (
           <div className="p-8 text-center text-gray-500">Đang tải...</div>
+        ) : filtered.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">
+            Không có sản phẩm nào.
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-max">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
-                    Tên Sản Phẩm
+                    Sản Phẩm
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
                     Danh Mục
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
                     Giá
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
+                    Tồn Kho
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
+                    Đã Bán
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
                     Trạng Thái
@@ -138,67 +208,239 @@ export default function ListProductPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filtered.map((product) => (
-                  <Fragment key={product.id}>
-                    <tr className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
-                        <button
-                          onClick={() => toggleExpand(product.id)}
-                          className="flex items-center gap-1"
-                        >
-                          {expandedIds.includes(product.id) ? (
-                            <ChevronDown className="w-4 h-4" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4" />
-                          )}
-                          {product.name}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
-                        {categoryName(product.category_id)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
-                        {product.default_price.toLocaleString("vi-VN")}₫
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${product.status === 1 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
-                        >
-                          {product.status === 1 ? "Hiển thị" : "Ẩn"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() =>
-                              router.push(`/admin/products/${product.id}`)
-                            }
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                {filtered.map((product) => {
+                  const badge = stockBadge(product.total_stock);
+                  const isExpanded = expandedIds.has(product.id);
+                  const hasVariants = product.variant_count > 0;
+
+                  return (
+                    <Fragment key={product.id}>
+                      {/* Product row */}
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            {/* Expand toggle */}
+                            <button
+                              onClick={() => toggleExpand(product.id)}
+                              className="p-1 hover:bg-gray-200 rounded transition-colors"
+                              aria-label={isExpanded ? "Thu gọn" : "Mở rộng"}
+                              disabled={!hasVariants}
+                            >
+                              {hasVariants ? (
+                                isExpanded ? (
+                                  <ChevronDown className="w-4 h-4 text-gray-600" />
+                                ) : (
+                                  <ChevronRight className="w-4 h-4 text-gray-600" />
+                                )
+                              ) : (
+                                <span className="w-4 h-4 inline-block" />
+                              )}
+                            </button>
+
+                            {/* Avatar */}
+                            <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                              {product.avatar ? (
+                                <Image
+                                  src={product.avatar}
+                                  alt={product.name}
+                                  width={48}
+                                  height={48}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <ImageIcon className="w-5 h-5 text-gray-400" />
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Name + ID */}
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {product.name}
+                              </p>
+                              <div className="flex items-center gap-1">
+                                <p className="text-xs text-gray-400 font-mono">
+                                  #{product.id.slice(0, 8)}
+                                </p>
+                                <button
+                                  onClick={() => copyToClipboard(product.id)}
+                                  className="p-0.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                                  title="Copy ID"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </button>
+                              </div>
+                              {hasVariants && (
+                                <p className="text-xs text-gray-500">
+                                  {product.variant_count} biến thể
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
+                          {categoryName(product.category_id)}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                          {product.default_price.toLocaleString("vi-VN")}₫
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
+                          {product.total_stock}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
+                          {product.total_sold}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${badge.cls}`}
                           >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setDeleteId(product.id)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    {expandedIds.includes(product.id) &&
-                      product.description && (
+                            {badge.label}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() =>
+                                router.push(`/admin/products/${product.id}`)
+                              }
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="Chỉnh sửa"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setDeleteId(product.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Xóa"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* Variants row */}
+                      {isExpanded && hasVariants && (
                         <tr>
-                          <td
-                            colSpan={5}
-                            className="px-10 py-3 bg-gray-50 text-sm text-gray-600"
-                          >
-                            {product.description}
+                          <td colSpan={7} className="px-6 py-4 bg-gray-50">
+                            <div className="ml-16">
+                              <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                                Biến Thể Sản Phẩm
+                              </h4>
+                              <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+                                <table className="w-full min-w-max">
+                                  <thead className="bg-gray-100">
+                                    <tr>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 whitespace-nowrap">
+                                        SKU
+                                      </th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 whitespace-nowrap">
+                                        Giá
+                                      </th>
+                                      {product.attribute_names.map((attr) => (
+                                        <th
+                                          key={attr}
+                                          className="px-4 py-2 text-left text-xs font-medium text-gray-600 whitespace-nowrap capitalize"
+                                        >
+                                          {attr}
+                                        </th>
+                                      ))}
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 whitespace-nowrap">
+                                        Tồn Kho
+                                      </th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 whitespace-nowrap">
+                                        Đã Bán
+                                      </th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 whitespace-nowrap">
+                                        Trạng Thái
+                                      </th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 whitespace-nowrap">
+                                        Hành Động
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-200">
+                                    {product.variants.map((variant) => {
+                                      const vBadge = stockBadge(variant.stock);
+                                      return (
+                                        <tr
+                                          key={variant.id}
+                                          className="hover:bg-gray-50"
+                                        >
+                                          <td className="px-4 py-2 text-xs text-gray-500 font-mono whitespace-nowrap">
+                                            {variant.id.slice(0, 8)}
+                                          </td>
+                                          <td className="px-4 py-2 text-xs font-medium text-gray-900 whitespace-nowrap">
+                                            {variant.price.toLocaleString(
+                                              "vi-VN",
+                                            )}
+                                            ₫
+                                          </td>
+                                          {product.attribute_names.map(
+                                            (attr) => (
+                                              <td
+                                                key={attr}
+                                                className="px-4 py-2 text-xs text-gray-900 whitespace-nowrap"
+                                              >
+                                                {variant.attributes?.[attr] ??
+                                                  "—"}
+                                              </td>
+                                            ),
+                                          )}
+                                          <td className="px-4 py-2 text-xs text-gray-900 whitespace-nowrap">
+                                            {variant.stock}
+                                          </td>
+                                          <td className="px-4 py-2 text-xs text-gray-600 whitespace-nowrap">
+                                            {variant.sold}
+                                          </td>
+                                          <td className="px-4 py-2 whitespace-nowrap">
+                                            <span
+                                              className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${vBadge.cls}`}
+                                            >
+                                              {vBadge.label}
+                                            </span>
+                                          </td>
+                                          <td className="px-4 py-2 whitespace-nowrap">
+                                            <div className="flex items-center gap-1">
+                                              <button
+                                                onClick={() =>
+                                                  router.push(
+                                                    `/admin/products/${product.id}/variants/${variant.id}`,
+                                                  )
+                                                }
+                                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                title="Chỉnh sửa biến thể"
+                                              >
+                                                <Edit className="w-3.5 h-3.5" />
+                                              </button>
+                                              <button
+                                                onClick={() =>
+                                                  setDeleteVariant({
+                                                    productId: product.id,
+                                                    variantId: variant.id,
+                                                  })
+                                                }
+                                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Xóa biến thể"
+                                              >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                              </button>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
                           </td>
                         </tr>
                       )}
-                  </Fragment>
-                ))}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -211,6 +453,13 @@ export default function ListProductPage() {
         message="Bạn có chắc chắn muốn xóa sản phẩm này? Hành động này không thể hoàn tác."
         onConfirm={handleDelete}
         onClose={() => setDeleteId(null)}
+      />
+      <DeleteConfirmModal
+        isOpen={deleteVariant !== null}
+        title="Xóa Biến Thể"
+        message="Bạn có chắc chắn muốn xóa biến thể này? Hành động này không thể hoàn tác."
+        onConfirm={handleDeleteVariant}
+        onClose={() => setDeleteVariant(null)}
       />
     </div>
   );
