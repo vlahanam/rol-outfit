@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -12,8 +13,9 @@ import (
 )
 
 var (
-	ErrVariantNotFound  = errors.New("variant not found")
-	ErrVariantForbidden = errors.New("variant does not belong to product")
+	ErrVariantNotFound           = errors.New("variant not found")
+	ErrVariantForbidden          = errors.New("variant does not belong to product")
+	ErrVariantAttributesMismatch = errors.New("variant attributes do not match product attribute_names")
 )
 
 type ProductVariantService interface {
@@ -25,11 +27,36 @@ type ProductVariantService interface {
 }
 
 type productVariantService struct {
-	repo repositories.ProductVariantRepository
+	repo     repositories.ProductVariantRepository
+	prodRepo repositories.ProductRepository
 }
 
-func NewProductVariantService(repo repositories.ProductVariantRepository) ProductVariantService {
-	return &productVariantService{repo: repo}
+func NewProductVariantService(repo repositories.ProductVariantRepository, prodRepo repositories.ProductRepository) ProductVariantService {
+	return &productVariantService{repo: repo, prodRepo: prodRepo}
+}
+
+// validateAttributes ensures raw JSON keys match product's attribute_names exactly.
+func validateAttributes(raw json.RawMessage, attrNames models.StringSlice) error {
+	if len(attrNames) == 0 {
+		return nil
+	}
+	var attrs map[string]interface{}
+	if err := json.Unmarshal(raw, &attrs); err != nil {
+		return ErrVariantAttributesMismatch
+	}
+	expected := make(map[string]struct{}, len(attrNames))
+	for _, k := range attrNames {
+		expected[k] = struct{}{}
+	}
+	if len(attrs) != len(expected) {
+		return ErrVariantAttributesMismatch
+	}
+	for k := range expected {
+		if _, ok := attrs[k]; !ok {
+			return ErrVariantAttributesMismatch
+		}
+	}
+	return nil
 }
 
 func (s *productVariantService) List(ctx context.Context, productID string, offset, limit int) ([]*models.ProductVariant, int64, error) {
@@ -51,6 +78,17 @@ func (s *productVariantService) GetByID(ctx context.Context, productID, id strin
 }
 
 func (s *productVariantService) Create(ctx context.Context, productID string, req *requests.CreateVariantRequest) (*models.ProductVariant, error) {
+	product, err := s.prodRepo.FindProductByIDNoFilter(ctx, productID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch product: %w", err)
+	}
+	if product == nil {
+		return nil, ErrVariantNotFound
+	}
+	if err := validateAttributes(req.Attributes, product.AttributeNames); err != nil {
+		return nil, err
+	}
+
 	v := &models.ProductVariant{
 		ID:         uuid.New().String(),
 		ProductID:  productID,
@@ -80,6 +118,16 @@ func (s *productVariantService) Update(ctx context.Context, productID, id string
 
 	fields := map[string]interface{}{}
 	if len(req.Attributes) > 0 {
+		product, err := s.prodRepo.FindProductByIDNoFilter(ctx, productID)
+		if err != nil {
+			return fmt.Errorf("failed to fetch product: %w", err)
+		}
+		if product == nil {
+			return ErrVariantForbidden
+		}
+		if err := validateAttributes(req.Attributes, product.AttributeNames); err != nil {
+			return err
+		}
 		fields["attributes"] = req.Attributes
 	}
 	if req.Price != nil {

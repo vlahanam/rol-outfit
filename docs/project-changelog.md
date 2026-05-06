@@ -5,6 +5,13 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Admin Product Management with Variants** (2026-05-07)
+  - Backend: `GET /api/v1/admin/products/:id` endpoint returns product with all variants (any status)
+  - Backend: Variant attribute validation — variant attributes must match `product.attribute_names`
+  - Frontend: Add product page wired to real API with dynamic attribute/variant fields
+  - Frontend: Edit product page fully rewritten — API-driven, inline info/attribute editing, complete variant CRUD
+  - New frontend components: `product-info-panel`, `product-attr-names-panel`, `product-variants-table`
+
 - **Admin User CRUD** (2026-05-04)
   - Backend: `POST /api/v1/admin/users` endpoint for admin user creation with role/status control
   - Frontend: User type, API client namespace (`api.adminUsers`), and role/status label mappings

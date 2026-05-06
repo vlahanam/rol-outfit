@@ -34,7 +34,7 @@ func ListVariants(db *gorm.DB) fiber.Handler {
 		offset := (p.Page - 1) * p.Limit
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductVariantService(repo)
+		svc := services.NewProductVariantService(repo, repo)
 
 		variants, total, err := svc.List(ctx.Context(), productID, offset, p.Limit)
 		if err != nil {
@@ -67,7 +67,7 @@ func GetVariant(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductVariantService(repo)
+		svc := services.NewProductVariantService(repo, repo)
 
 		v, err := svc.GetByID(ctx.Context(), productID, id)
 		if err != nil {
@@ -110,10 +110,15 @@ func CreateVariant(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductVariantService(repo)
+		svc := services.NewProductVariantService(repo, repo)
 
 		v, err := svc.Create(ctx.Context(), productID, &req)
 		if err != nil {
+			if errors.Is(err, services.ErrVariantAttributesMismatch) {
+				return ctx.Status(fiber.StatusBadRequest).JSON(
+					common.ErrBadRequest.WithReason(i18n.T(lang, "error.variant_attributes_mismatch")),
+				)
+			}
 			slog.Error("CreateVariant failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
@@ -152,12 +157,17 @@ func UpdateVariant(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductVariantService(repo)
+		svc := services.NewProductVariantService(repo, repo)
 
 		if err := svc.Update(ctx.Context(), productID, id, &req); err != nil {
 			if errors.Is(err, services.ErrVariantNotFound) || errors.Is(err, services.ErrVariantForbidden) {
 				return ctx.Status(fiber.StatusNotFound).JSON(
 					common.ErrNotFound.WithReason(i18n.T(lang, "error.variant_not_found")),
+				)
+			}
+			if errors.Is(err, services.ErrVariantAttributesMismatch) {
+				return ctx.Status(fiber.StatusBadRequest).JSON(
+					common.ErrBadRequest.WithReason(i18n.T(lang, "error.variant_attributes_mismatch")),
 				)
 			}
 			slog.Error("UpdateVariant failed", "error", err)
@@ -183,7 +193,7 @@ func DeleteVariant(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductVariantService(repo)
+		svc := services.NewProductVariantService(repo, repo)
 
 		if err := svc.Delete(ctx.Context(), productID, id); err != nil {
 			if errors.Is(err, services.ErrVariantNotFound) || errors.Is(err, services.ErrVariantForbidden) {

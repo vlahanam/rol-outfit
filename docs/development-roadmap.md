@@ -41,8 +41,9 @@ High-level project phases and milestones. For detailed implementation plans, see
 - [ ] Shopping cart and checkout
 - [ ] Order history and tracking
 - [x] Admin dashboard — User CRUD (list, create, edit, delete)
+- [x] Admin dashboard — Product CRUD with variants (add, edit, delete products + variant management)
 
-**Completeness:** 20%
+**Completeness:** 25%
 
 ---
 

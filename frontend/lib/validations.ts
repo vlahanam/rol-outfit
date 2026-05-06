@@ -77,26 +77,43 @@ export const editUserSchema = z.object({
   status: z.string(),
 });
 
-export const variantSchema = z.object({
-  color: z.string().min(1, "Vui lòng nhập màu sắc"),
-  size: z.string().min(1, "Vui lòng nhập size"),
-  price: z
-    .string()
-    .min(1, "Vui lòng nhập giá")
-    .refine((v) => !isNaN(Number(v)) && Number(v) > 0, "Giá phải lớn hơn 0"),
-  stock: z
-    .string()
-    .min(1, "Vui lòng nhập tồn kho")
-    .refine(
-      (v) => !isNaN(Number(v)) && Number(v) >= 0,
-      "Tồn kho không được âm",
-    ),
-  sku: z.string().optional(),
-});
+// Dynamic variant schema — attribute fields derived from product's attribute_names.
+export function createVariantSchema(attributeNames: string[]) {
+  const attrShape = Object.fromEntries(
+    attributeNames.map((name) => [
+      name,
+      z.string().min(1, `Vui lòng nhập ${name}`),
+    ]),
+  );
+  return z.object({
+    ...attrShape,
+    price: z
+      .string()
+      .min(1, "Vui lòng nhập giá")
+      .refine(
+        (v) => !isNaN(Number(v)) && Number(v) > 0,
+        "Giá phải lớn hơn 0",
+      ),
+    stock: z
+      .string()
+      .min(1, "Vui lòng nhập tồn kho")
+      .refine(
+        (v) => !isNaN(Number(v)) && Number(v) >= 0,
+        "Tồn kho không được âm",
+      ),
+  });
+}
 
 export const addProductSchema = z.object({
   name: z.string().min(1, "Vui lòng nhập tên sản phẩm"),
-  category: z.string().min(1, "Vui lòng chọn danh mục"),
+  category_id: z.string().min(1, "Vui lòng chọn danh mục"),
+  default_price: z
+    .string()
+    .min(1, "Vui lòng nhập giá mặc định")
+    .refine(
+      (v) => !isNaN(Number(v)) && Number(v) >= 0,
+      "Giá không hợp lệ",
+    ),
   description: z.string().optional(),
 });
 
@@ -105,4 +122,3 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type AddUserInput = z.infer<typeof addUserSchema>;
 export type EditUserInput = z.infer<typeof editUserSchema>;
 export type AddProductInput = z.infer<typeof addProductSchema>;
-export type VariantInput = z.infer<typeof variantSchema>;

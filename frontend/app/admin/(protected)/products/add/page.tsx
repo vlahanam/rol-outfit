@@ -1,76 +1,108 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, Plus, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { addProductSchema, variantSchema } from "@/lib/validations";
+import { api } from "@/lib/api";
+import { addProductSchema, createVariantSchema } from "@/lib/validations";
+import type { ApiResponse, Category } from "@/types/api";
 
-type Attribute = { key: string; value: string };
-type Variant = {
-  color: string;
-  size: string;
-  price: string;
-  stock: string;
-  sku: string;
-};
+type Variant = Record<string, string> & { price: string; stock: string };
 
 export default function AddProductPage() {
   const router = useRouter();
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  // Basic info
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [defaultPrice, setDefaultPrice] = useState("");
   const [description, setDescription] = useState("");
-  const [attributes, setAttributes] = useState<Attribute[]>([
-    { key: "", value: "" },
-  ]);
-  const [variants, setVariants] = useState<Variant[]>([
-    { color: "", size: "", price: "", stock: "", sku: "" },
-  ]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Attribute names (defines variant columns)
+  const [attributeNames, setAttributeNames] = useState<string[]>([]);
+  const [newAttrInput, setNewAttrInput] = useState("");
+
+  // Variants (dynamic fields)
+  const [variants, setVariants] = useState<Variant[]>([]);
   const [variantErrors, setVariantErrors] = useState<
     Record<number, Record<string, string>>
   >({});
 
-  const addAttribute = () =>
-    setAttributes((prev) => [...prev, { key: "", value: "" }]);
-  const removeAttribute = (i: number) =>
-    setAttributes((prev) => prev.filter((_, idx) => idx !== i));
-  const updateAttribute = (
-    i: number,
-    field: keyof Attribute,
-    value: string,
-  ) => {
-    setAttributes((prev) =>
-      prev.map((a, idx) => (idx === i ? { ...a, [field]: value } : a)),
+  // Submit state
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api
+      .get<ApiResponse<Category[]>>("/categories?limit=50")
+      .then((res) => setCategories(res.data ?? []))
+      .catch(() => {});
+  }, []);
+
+  // Attribute name management
+  const addAttributeName = () => {
+    const trimmed = newAttrInput.trim();
+    if (!trimmed || attributeNames.includes(trimmed)) return;
+    setAttributeNames((prev) => [...prev, trimmed]);
+    setVariants((prev) => prev.map((v) => ({ ...v, [trimmed]: "" })));
+    setNewAttrInput("");
+  };
+
+  const removeAttributeName = (name: string) => {
+    setAttributeNames((prev) => prev.filter((a) => a !== name));
+    setVariants((prev) =>
+      prev.map((v) => {
+        const next = { ...v };
+        delete next[name];
+        return next;
+      }),
     );
   };
 
-  const addVariant = () =>
-    setVariants((prev) => [
-      ...prev,
-      { color: "", size: "", price: "", stock: "", sku: "" },
-    ]);
+  // Variant management
+  const addVariant = () => {
+    const empty = Object.fromEntries([
+      ...attributeNames.map((k) => [k, ""]),
+      ["price", ""],
+      ["stock", ""],
+    ]) as Variant;
+    setVariants((prev) => [...prev, empty]);
+  };
+
   const removeVariant = (i: number) => {
     setVariants((prev) => prev.filter((_, idx) => idx !== i));
     setVariantErrors((prev) => {
-      const next = { ...prev };
-      delete next[i];
+      const next: Record<number, Record<string, string>> = {};
+      Object.entries(prev).forEach(([key, val]) => {
+        const k = Number(key);
+        if (k < i) next[k] = val;
+        else if (k > i) next[k - 1] = val;
+      });
       return next;
     });
   };
-  const updateVariant = (i: number, field: keyof Variant, value: string) => {
+
+  const updateVariant = (i: number, field: string, value: string) => {
     setVariants((prev) =>
       prev.map((v, idx) => (idx === i ? { ...v, [field]: value } : v)),
     );
-    setVariantErrors((prev) => ({ ...prev, [i]: { ...prev[i], [field]: "" } }));
+    setVariantErrors((prev) => ({
+      ...prev,
+      [i]: { ...prev[i], [field]: "" },
+    }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate product fields
     const productResult = addProductSchema.safeParse({
       name,
-      category,
+      category_id: categoryId,
+      default_price: defaultPrice,
       description,
     });
     if (!productResult.success) {
@@ -83,10 +115,12 @@ export default function AddProductPage() {
     }
     setFieldErrors({});
 
+    // Validate variants
+    const varSchema = createVariantSchema(attributeNames);
     const newVariantErrors: Record<number, Record<string, string>> = {};
     let hasVariantError = false;
     variants.forEach((variant, i) => {
-      const result = variantSchema.safeParse(variant);
+      const result = varSchema.safeParse(variant);
       if (!result.success) {
         hasVariantError = true;
         const errors: Record<string, string> = {};
@@ -102,14 +136,46 @@ export default function AddProductPage() {
     }
     setVariantErrors({});
 
-    console.log("Add product:", {
-      name,
-      category,
-      description,
-      attributes,
-      variants,
-    });
-    router.push("/admin/products");
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const { data: created } = await api.adminProducts.create({
+        name,
+        category_id: categoryId,
+        default_price: Number(defaultPrice),
+        description,
+        attribute_names: attributeNames,
+      });
+
+      if (variants.length > 0) {
+        const results = await Promise.allSettled(
+          variants.map((v) => {
+            const attrs = Object.fromEntries(
+              attributeNames.map((k) => [k, v[k]]),
+            );
+            return api.adminProducts.createVariant(created.id, {
+              attributes: attrs,
+              price: Number(v.price),
+              stock: Number(v.stock),
+            });
+          }),
+        );
+        const failed = results.filter((r) => r.status === "rejected").length;
+        if (failed > 0) {
+          // Redirect to edit page so admin can fix remaining variants
+          router.push(
+            `/admin/products/${created.id}?warn=${failed}_variants_failed`,
+          );
+          return;
+        }
+      }
+
+      router.push("/admin/products");
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Có lỗi xảy ra");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -127,7 +193,14 @@ export default function AddProductPage() {
         </div>
       </div>
 
+      {submitError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+          {submitError}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Basic Info */}
         <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
           <h2 className="text-lg font-semibold text-gray-900">
             Thông Tin Cơ Bản
@@ -156,22 +229,44 @@ export default function AddProductPage() {
                 Danh mục <span className="text-red-500">*</span>
               </label>
               <select
-                value={category}
+                value={categoryId}
                 onChange={(e) => {
-                  setCategory(e.target.value);
-                  setFieldErrors((p) => ({ ...p, category: "" }));
+                  setCategoryId(e.target.value);
+                  setFieldErrors((p) => ({ ...p, category_id: "" }));
                 }}
-                className={`w-full px-3 py-2 border ${fieldErrors.category ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                className={`w-full px-3 py-2 border ${fieldErrors.category_id ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
               >
                 <option value="">Chọn danh mục</option>
-                <option value="Áo">Áo</option>
-                <option value="Quần">Quần</option>
-                <option value="Giày">Giày</option>
-                <option value="Phụ kiện">Phụ kiện</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
               </select>
-              {fieldErrors.category && (
+              {fieldErrors.category_id && (
                 <p className="mt-1 text-sm text-red-600">
-                  {fieldErrors.category}
+                  {fieldErrors.category_id}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Giá mặc định (₫) <span className="text-red-500">*</span>
+              </label>
+              <input
+                value={defaultPrice}
+                onChange={(e) => {
+                  setDefaultPrice(e.target.value);
+                  setFieldErrors((p) => ({ ...p, default_price: "" }));
+                }}
+                type="number"
+                min="0"
+                placeholder="150000"
+                className={`w-full px-3 py-2 border ${fieldErrors.default_price ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              />
+              {fieldErrors.default_price && (
+                <p className="mt-1 text-sm text-red-600">
+                  {fieldErrors.default_price}
                 </p>
               )}
             </div>
@@ -183,109 +278,133 @@ export default function AddProductPage() {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={4}
+              rows={3}
               placeholder="Mô tả chi tiết sản phẩm..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
           </div>
         </div>
 
+        {/* Attribute Names */}
         <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Thuộc Tính</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Tên Thuộc Tính Biến Thể
+          </h2>
+          <p className="text-sm text-gray-500">
+            Định nghĩa các thuộc tính của biến thể (ví dụ: Size, Màu sắc).
+            Thêm thuộc tính trước khi thêm biến thể.
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            {attributeNames.map((name) => (
+              <span
+                key={name}
+                className="flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+              >
+                {name}
+                <button
+                  type="button"
+                  onClick={() => removeAttributeName(name)}
+                  className="hover:text-blue-600 ml-0.5"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              value={newAttrInput}
+              onChange={(e) => setNewAttrInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addAttributeName();
+                }
+              }}
+              placeholder="Nhập tên thuộc tính (vd: Size, Màu sắc)"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
             <button
               type="button"
-              onClick={addAttribute}
-              className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+              onClick={addAttributeName}
+              className="flex items-center gap-1 px-3 py-2 text-sm text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50"
             >
               <Plus className="w-4 h-4" /> Thêm
             </button>
           </div>
-          <div className="space-y-3">
-            {attributes.map((attr, i) => (
-              <div key={i} className="flex gap-3 items-center">
-                <input
-                  value={attr.key}
-                  onChange={(e) => updateAttribute(i, "key", e.target.value)}
-                  placeholder="Tên thuộc tính"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <input
-                  value={attr.value}
-                  onChange={(e) => updateAttribute(i, "value", e.target.value)}
-                  placeholder="Giá trị"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeAttribute(i)}
-                  className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
         </div>
 
+        {/* Variants */}
         <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Biến Thể</h2>
             <button
               type="button"
               onClick={addVariant}
-              className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+              disabled={attributeNames.length === 0}
+              className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Plus className="w-4 h-4" /> Thêm
             </button>
           </div>
-          <div className="space-y-3">
-            {variants.map((variant, i) => (
+
+          {attributeNames.length === 0 && (
+            <p className="text-sm text-gray-400 italic">
+              Thêm thuộc tính trước khi thêm biến thể.
+            </p>
+          )}
+
+          {variants.length > 0 && (
+            <div className="space-y-3">
+              {/* Column headers */}
               <div
-                key={i}
-                className="p-3 border border-gray-200 rounded-lg space-y-2"
+                className="grid gap-3 text-xs font-medium text-gray-500 uppercase px-1"
+                style={{
+                  gridTemplateColumns: `repeat(${attributeNames.length + 2}, minmax(0, 1fr)) 2rem`,
+                }}
               >
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 items-start">
-                  <div>
-                    <input
-                      value={variant.color}
-                      onChange={(e) =>
-                        updateVariant(i, "color", e.target.value)
-                      }
-                      placeholder="Màu sắc"
-                      className={`w-full px-3 py-2 border ${variantErrors[i]?.color ? "border-red-500" : "border-gray-300"} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                    />
-                    {variantErrors[i]?.color && (
-                      <p className="mt-0.5 text-sm text-red-600">
-                        {variantErrors[i].color}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <input
-                      value={variant.size}
-                      onChange={(e) => updateVariant(i, "size", e.target.value)}
-                      placeholder="Size"
-                      className={`w-full px-3 py-2 border ${variantErrors[i]?.size ? "border-red-500" : "border-gray-300"} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                    />
-                    {variantErrors[i]?.size && (
-                      <p className="mt-0.5 text-sm text-red-600">
-                        {variantErrors[i].size}
-                      </p>
-                    )}
-                  </div>
+                {attributeNames.map((attr) => (
+                  <span key={attr}>{attr}</span>
+                ))}
+                <span>Giá (₫)</span>
+                <span>Tồn kho</span>
+                <span />
+              </div>
+
+              {variants.map((variant, i) => (
+                <div
+                  key={i}
+                  className="grid gap-3 items-start"
+                  style={{
+                    gridTemplateColumns: `repeat(${attributeNames.length + 2}, minmax(0, 1fr)) 2rem`,
+                  }}
+                >
+                  {attributeNames.map((attr) => (
+                    <div key={attr}>
+                      <input
+                        value={variant[attr] ?? ""}
+                        onChange={(e) => updateVariant(i, attr, e.target.value)}
+                        placeholder={attr}
+                        className={`w-full px-3 py-2 border ${variantErrors[i]?.[attr] ? "border-red-500" : "border-gray-300"} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                      />
+                      {variantErrors[i]?.[attr] && (
+                        <p className="mt-0.5 text-xs text-red-600">
+                          {variantErrors[i][attr]}
+                        </p>
+                      )}
+                    </div>
+                  ))}
                   <div>
                     <input
                       value={variant.price}
-                      onChange={(e) =>
-                        updateVariant(i, "price", e.target.value)
-                      }
-                      placeholder="Giá (₫)"
+                      onChange={(e) => updateVariant(i, "price", e.target.value)}
+                      placeholder="Giá"
                       type="number"
+                      min="0"
                       className={`w-full px-3 py-2 border ${variantErrors[i]?.price ? "border-red-500" : "border-gray-300"} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
                     {variantErrors[i]?.price && (
-                      <p className="mt-0.5 text-sm text-red-600">
+                      <p className="mt-0.5 text-xs text-red-600">
                         {variantErrors[i].price}
                       </p>
                     )}
@@ -298,41 +417,35 @@ export default function AddProductPage() {
                       }
                       placeholder="Tồn kho"
                       type="number"
+                      min="0"
                       className={`w-full px-3 py-2 border ${variantErrors[i]?.stock ? "border-red-500" : "border-gray-300"} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
                     {variantErrors[i]?.stock && (
-                      <p className="mt-0.5 text-sm text-red-600">
+                      <p className="mt-0.5 text-xs text-red-600">
                         {variantErrors[i].stock}
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 col-span-2 md:col-span-1">
-                    <input
-                      value={variant.sku}
-                      onChange={(e) => updateVariant(i, "sku", e.target.value)}
-                      placeholder="SKU"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeVariant(i)}
-                      className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg flex-shrink-0"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeVariant(i)}
+                    className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg mt-1"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3">
           <button
             type="submit"
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            disabled={submitting}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
           >
-            Tạo Sản Phẩm
+            {submitting ? "Đang tạo..." : "Tạo Sản Phẩm"}
           </button>
           <Link
             href="/admin/products"

@@ -116,6 +116,12 @@ func UpdateProduct(db *gorm.DB) fiber.Handler {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		id := ctx.Params("id")
 
+		if _, err := uuid.Parse(id); err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(
+				common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_id")),
+			)
+		}
+
 		var req requests.UpdateProductRequest
 		if err := ctx.Bind().JSON(&req); err != nil {
 			return ctx.Status(fiber.StatusBadRequest).JSON(
@@ -158,6 +164,12 @@ func DeleteProduct(db *gorm.DB) fiber.Handler {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		id := ctx.Params("id")
 
+		if _, err := uuid.Parse(id); err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(
+				common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_id")),
+			)
+		}
+
 		repo := repositories.NewPostgreSQLStorage(db)
 		svc := services.NewProductService(repo)
 
@@ -171,6 +183,35 @@ func DeleteProduct(db *gorm.DB) fiber.Handler {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
 		return ctx.SendStatus(fiber.StatusNoContent)
+	}
+}
+
+// AdminGetProduct GET /api/v1/admin/products/:id [admin]
+func AdminGetProduct(db *gorm.DB) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+		id := ctx.Params("id")
+
+		if _, err := uuid.Parse(id); err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(
+				common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_id")),
+			)
+		}
+
+		repo := repositories.NewPostgreSQLStorage(db)
+		svc := services.NewProductService(repo)
+
+		pw, err := svc.AdminGetByID(ctx.Context(), id)
+		if err != nil {
+			if errors.Is(err, services.ErrProductNotFound) {
+				return ctx.Status(fiber.StatusNotFound).JSON(
+					common.ErrNotFound.WithReason(i18n.T(lang, "error.product_not_found")),
+				)
+			}
+			slog.Error("AdminGetProduct failed", "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+		return ctx.JSON(common.ResponseData(dto.ToProductWithVariantsDTO(pw)))
 	}
 }
 

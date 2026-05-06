@@ -21,6 +21,7 @@ type ProductService interface {
 	List(ctx context.Context, categoryID string, offset, limit int) ([]*models.Product, int64, error)
 	AdminList(ctx context.Context, categoryID, search string, offset, limit int) ([]*models.ProductWithVariants, int64, error)
 	GetByID(ctx context.Context, id string) (*models.Product, error)
+	AdminGetByID(ctx context.Context, id string) (*models.ProductWithVariants, error)
 	Create(ctx context.Context, req *requests.CreateProductRequest) (*models.Product, error)
 	Update(ctx context.Context, id string, req *requests.UpdateProductRequest) error
 	Delete(ctx context.Context, id string) error
@@ -51,6 +52,17 @@ func (s *productService) GetByID(ctx context.Context, id string) (*models.Produc
 		return nil, ErrProductNotFound
 	}
 	return p, nil
+}
+
+func (s *productService) AdminGetByID(ctx context.Context, id string) (*models.ProductWithVariants, error) {
+	pw, err := s.repo.FindProductByIDAdmin(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get admin product: %w", err)
+	}
+	if pw == nil {
+		return nil, ErrProductNotFound
+	}
+	return pw, nil
 }
 
 func (s *productService) Create(ctx context.Context, req *requests.CreateProductRequest) (*models.Product, error) {
@@ -85,7 +97,7 @@ func (s *productService) Create(ctx context.Context, req *requests.CreateProduct
 }
 
 func (s *productService) Update(ctx context.Context, id string, req *requests.UpdateProductRequest) error {
-	existing, err := s.repo.FindProductByID(ctx, id)
+	existing, err := s.repo.FindProductByIDNoFilter(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to find product: %w", err)
 	}
@@ -132,7 +144,7 @@ func (s *productService) Update(ctx context.Context, id string, req *requests.Up
 }
 
 func (s *productService) Delete(ctx context.Context, id string) error {
-	existing, err := s.repo.FindProductByID(ctx, id)
+	existing, err := s.repo.FindProductByIDNoFilter(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to find product: %w", err)
 	}

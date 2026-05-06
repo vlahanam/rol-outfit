@@ -65,6 +65,7 @@
   "validation.display_order.min": "Thứ tự hiển thị phải lớn hơn hoặc bằng 0",
 
   "error.variant_not_found": "Biến thể sản phẩm không tồn tại",
+  "error.variant_attributes_mismatch": "Thuộc tính biến thể không khớp với danh sách thuộc tính sản phẩm",
   "validation.attributes.required": "Thuộc tính biến thể không được để trống",
   "validation.attributes.invalid": "Thuộc tính biến thể không hợp lệ",
   "validation.stock.min": "Số lượng tồn kho không được âm"

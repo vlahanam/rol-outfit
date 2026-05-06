@@ -149,6 +149,41 @@ export interface UpdateUserPayload {
   status?: number;
 }
 
+// Product mutation payloads
+export interface CreateProductPayload {
+  category_id: string;
+  name: string;
+  default_price: number;
+  description?: string;
+  avatar?: string;
+  attribute_names: string[];
+}
+
+export interface UpdateProductPayload {
+  category_id?: string;
+  name?: string;
+  default_price?: number;
+  description?: string;
+  avatar?: string;
+  status?: number;
+  attribute_names?: string[];
+}
+
+export interface CreateVariantPayload {
+  attributes: Record<string, string>;
+  price: number;
+  stock: number;
+  avatar?: string;
+}
+
+export interface UpdateVariantPayload {
+  attributes?: Record<string, string>;
+  price?: number;
+  stock?: number;
+  avatar?: string;
+  status?: number;
+}
+
 // Error response from backend
 export interface ApiErrorBody {
   error: string;

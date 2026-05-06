@@ -14,6 +14,8 @@ import (
 type ProductRepository interface {
 	CreateProduct(ctx context.Context, p *models.Product) error
 	FindProductByID(ctx context.Context, id string) (*models.Product, error)
+	FindProductByIDNoFilter(ctx context.Context, id string) (*models.Product, error)
+	FindProductByIDAdmin(ctx context.Context, id string) (*models.ProductWithVariants, error)
 	FindProductBySlug(ctx context.Context, slug string) (*models.Product, error)
 	ListProducts(ctx context.Context, categoryID string, offset, limit int) ([]*models.Product, int64, error)
 	UpdateProduct(ctx context.Context, id string, fields map[string]interface{}) error
@@ -99,6 +101,44 @@ func (r *postgreStorage) SoftDeleteProduct(ctx context.Context, id string) error
 		return fmt.Errorf("product not found or already deleted")
 	}
 	return nil
+}
+
+// FindProductByIDNoFilter fetches a product by ID ignoring status — used internally (e.g. variant validation).
+func (r *postgreStorage) FindProductByIDNoFilter(ctx context.Context, id string) (*models.Product, error) {
+	var p models.Product
+	err := r.db.WithContext(ctx).
+		Where("id = ? AND deleted_at IS NULL", id).
+		First(&p).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find product (no filter): %w", err)
+	}
+	return &p, nil
+}
+
+// FindProductByIDAdmin fetches a non-deleted product with all its variants — for admin detail view.
+func (r *postgreStorage) FindProductByIDAdmin(ctx context.Context, id string) (*models.ProductWithVariants, error) {
+	var p models.Product
+	err := r.db.WithContext(ctx).
+		Where("id = ? AND deleted_at IS NULL", id).
+		First(&p).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find product (admin): %w", err)
+	}
+
+	var variants []*models.ProductVariant
+	if err := r.db.WithContext(ctx).
+		Where("product_id = ?", id).
+		Order("created_at ASC").
+		Find(&variants).Error; err != nil {
+		return nil, fmt.Errorf("failed to fetch variants for admin product: %w", err)
+	}
+	return &models.ProductWithVariants{Product: &p, Variants: variants}, nil
 }
 
 // ListAdminProductsWithVariants fetches all non-deleted products (any status) with their variants.

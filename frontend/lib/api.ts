@@ -5,6 +5,12 @@ import type {
   CreateUserPayload,
   UpdateUserPayload,
   AdminProduct,
+  Product,
+  ProductVariant,
+  CreateProductPayload,
+  UpdateProductPayload,
+  CreateVariantPayload,
+  UpdateVariantPayload,
 } from "@/types/api";
 
 const BASE = "/api/v1";
@@ -127,6 +133,48 @@ export const api = {
       return request<ApiResponse<AdminProduct[]>>(
         `/admin/products${query ? `?${query}` : ""}`,
       );
+    },
+    get(id: string): Promise<{ data: AdminProduct }> {
+      return request<{ data: AdminProduct }>(`/admin/products/${id}`);
+    },
+    create(body: CreateProductPayload): Promise<{ data: Product }> {
+      return request<{ data: Product }>(`/products`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+    },
+    update(id: string, body: UpdateProductPayload): Promise<void> {
+      return request<void>(`/products/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+      });
+    },
+    remove(id: string): Promise<void> {
+      return request<void>(`/products/${id}`, { method: "DELETE" });
+    },
+    createVariant(
+      productId: string,
+      body: CreateVariantPayload,
+    ): Promise<{ data: ProductVariant }> {
+      return request<{ data: ProductVariant }>(
+        `/products/${productId}/variants`,
+        { method: "POST", body: JSON.stringify(body) },
+      );
+    },
+    updateVariant(
+      productId: string,
+      variantId: string,
+      body: UpdateVariantPayload,
+    ): Promise<void> {
+      return request<void>(`/products/${productId}/variants/${variantId}`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+      });
+    },
+    removeVariant(productId: string, variantId: string): Promise<void> {
+      return request<void>(`/products/${productId}/variants/${variantId}`, {
+        method: "DELETE",
+      });
     },
   },
 };
