@@ -64,6 +64,7 @@ export interface Product {
   attribute_names: string[];
   data?: unknown;
   avatar?: string;
+  tags?: Tag[];
   created_at: string;
   updated_at: string;
 }
@@ -82,12 +83,13 @@ export interface ProductVariant {
   updated_at: string;
 }
 
-// Admin product (product + aggregated stats + variants)
+// Admin product (product + aggregated stats + variants + tags)
 export interface AdminProduct extends Product {
   total_stock: number;
   total_sold: number;
   variant_count: number;
   variants: ProductVariant[];
+  tags: Tag[];
 }
 
 // Cart
@@ -193,6 +195,29 @@ export interface UpdateVariantPayload {
   stock?: number;
   avatar?: string;
   status?: number;
+}
+
+// Tag
+export interface Tag {
+  id: string;
+  name: string;
+  slug: string;
+  start_at: string | null;
+  end_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateTagPayload {
+  name: string;
+  start_at?: string | null;
+  end_at?: string | null;
+}
+
+export interface UpdateTagPayload {
+  name?: string;
+  start_at?: string | null;
+  end_at?: string | null;
 }
 
 // Error response from backend

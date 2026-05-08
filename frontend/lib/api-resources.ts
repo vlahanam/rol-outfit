@@ -14,6 +14,9 @@ import type {
   Category,
   CreateCategoryPayload,
   UpdateCategoryPayload,
+  Tag,
+  CreateTagPayload,
+  UpdateTagPayload,
 } from "@/types/api";
 import { ApiError, BASE, getToken, request } from "@/lib/api-client";
 
@@ -103,6 +106,12 @@ export const adminProducts = {
       method: "DELETE",
     });
   },
+  assignTags(productId: string, tagIds: string[]): Promise<void> {
+    return request<void>(`/products/${productId}/tags`, {
+      method: "PUT",
+      body: JSON.stringify({ tag_ids: tagIds }),
+    });
+  },
 };
 
 export const adminCategories = {
@@ -132,6 +141,31 @@ export const adminCategories = {
   },
   remove(id: string): Promise<void> {
     return request<void>(`/categories/${id}`, { method: "DELETE" });
+  },
+};
+
+export const adminTags = {
+  list(params?: { page?: number; limit?: number }): Promise<ApiResponse<Tag[]>> {
+    const qs = new URLSearchParams();
+    if (params?.page) qs.set("page", String(params.page));
+    if (params?.limit) qs.set("limit", String(params.limit));
+    const query = qs.toString();
+    return request<ApiResponse<Tag[]>>(`/admin/tags${query ? `?${query}` : ""}`);
+  },
+  listAll(): Promise<ApiResponse<Tag[]>> {
+    return request<ApiResponse<Tag[]>>(`/admin/tags?limit=100`);
+  },
+  get(id: string): Promise<{ data: Tag }> {
+    return request<{ data: Tag }>(`/admin/tags/${id}`);
+  },
+  create(body: CreateTagPayload): Promise<{ data: Tag }> {
+    return request<{ data: Tag }>(`/tags`, { method: "POST", body: JSON.stringify(body) });
+  },
+  update(id: string, body: UpdateTagPayload): Promise<void> {
+    return request<void>(`/tags/${id}`, { method: "PUT", body: JSON.stringify(body) });
+  },
+  remove(id: string): Promise<void> {
+    return request<void>(`/tags/${id}`, { method: "DELETE" });
   },
 };
 

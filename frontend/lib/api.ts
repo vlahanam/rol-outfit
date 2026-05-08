@@ -4,6 +4,7 @@ import {
   adminUsers,
   adminProducts,
   adminCategories,
+  adminTags,
   uploads,
 } from "@/lib/api-resources";
 
@@ -62,5 +63,6 @@ export const api = {
   adminUsers,
   adminProducts,
   adminCategories,
+  adminTags,
   uploads,
 };

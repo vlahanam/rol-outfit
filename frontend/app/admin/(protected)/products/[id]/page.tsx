@@ -8,7 +8,8 @@ import { api } from "@/lib/api";
 import { ProductInfoPanel } from "@/components/admin/product-info-panel";
 import { ProductAttrNamesPanel } from "@/components/admin/product-attr-names-panel";
 import { ProductVariantsTable } from "@/components/admin/product-variants-table";
-import type { ApiResponse, AdminProduct, Category, ProductVariant } from "@/types/api";
+import { ProductTagsPanel } from "@/components/admin/product-tags-panel";
+import type { ApiResponse, AdminProduct, Category, ProductVariant, Tag } from "@/types/api";
 
 export default function AdminProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -40,6 +41,9 @@ export default function AdminProductDetailPage() {
 
   const handleAttrNamesSaved = (names: string[]) =>
     setProduct((prev) => (prev ? { ...prev, attribute_names: names } : prev));
+
+  const handleTagsSaved = (tags: Tag[]) =>
+    setProduct((prev) => (prev ? { ...prev, tags } : prev));
 
   const handleVariantAdded = (v: ProductVariant) =>
     setProduct((prev) =>
@@ -95,6 +99,12 @@ export default function AdminProductDetailPage() {
         productId={id}
         attrNames={product.attribute_names ?? []}
         onSaved={handleAttrNamesSaved}
+      />
+
+      <ProductTagsPanel
+        productId={id}
+        currentTags={product.tags ?? []}
+        onSaved={handleTagsSaved}
       />
 
       <ProductVariantsTable

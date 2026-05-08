@@ -36,11 +36,13 @@ High-level project phases and milestones. For detailed implementation plans, see
   - [x] Variant images display in expandable variants sub-table (list page)
 - [x] Variant edit page with full form (avatar, attributes, price, stock, status)
 - [x] Product variant CRUD endpoints (list, get, create, update, delete)
-- [ ] Product image gallery (multiple images per product)
+- [x] Product image gallery (multiple images per product)
+  - [x] Backend: Product GET endpoints now include tags
+  - [x] Frontend: Multi-image gallery component with variant images
 - [ ] Image optimization and resizing
 - [ ] CDN integration planning
 
-**Completeness:** 80%
+**Completeness:** 85%
 
 ---
 
@@ -53,6 +55,16 @@ High-level project phases and milestones. For detailed implementation plans, see
 - [x] Admin dashboard — Product & variant image upload UI with reusable ImageUploader component
 - [x] Product variant list view with images
 - [x] Variant edit form with all fields (avatar, attributes, price, stock, status)
+- [x] Admin dashboard — Tag CRUD (list, create, edit, delete) with time-window activation
+  - [x] Backend: Tags table with start_at/end_at time windows
+  - [x] Backend: Product-tag assignment with max-3 tags per product
+  - [x] Frontend: Tags management pages (list, create, edit)
+  - [x] Frontend: Product tag assignment panel on product edit page
+- [x] User product detail page enhancement
+  - [x] Variant picker (color/size) with availability awareness
+  - [x] Active tag badges display
+  - [x] Multi-image gallery (product + variant images)
+  - [x] Dynamic price updates on variant selection
 - [ ] Authentication UI (login, registration) — public pages
 - [ ] Product catalog and search — public pages
 - [ ] Shopping cart UI — public pages
@@ -60,7 +72,7 @@ High-level project phases and milestones. For detailed implementation plans, see
 - [ ] Admin orders management UI
 - [ ] Admin widgets management UI
 
-**Completeness:** 50%
+**Completeness:** 60%
 
 ---
 

@@ -74,5 +74,12 @@
   "error.refresh_token_invalid": "Refresh token không hợp lệ",
   "error.refresh_token_expired": "Refresh token đã hết hạn",
   "error.token_family_revoked": "Phiên đăng nhập đã bị thu hồi. Vui lòng đăng nhập lại",
-  "validation.refresh_token.required": "Refresh token không được để trống"
+  "validation.refresh_token.required": "Refresh token không được để trống",
+
+  "error.tag_not_found": "Không tìm thấy thẻ tag",
+  "error.tag_slug_taken": "Slug thẻ tag đã tồn tại",
+  "error.tag_invalid_window": "Khoảng thời gian hiển thị không hợp lệ",
+
+  "error.too_many_tags": "Mỗi sản phẩm chỉ có tối đa 3 thẻ tag",
+  "validation.tags.max_3": "Tối đa 3 thẻ tag"
 }

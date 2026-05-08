@@ -128,6 +128,19 @@ export const editCategorySchema = z.object({
   status: z.string(),
 });
 
+export const addTagSchema = z
+  .object({
+    name: z.string().min(2, "Tên thẻ tag phải có ít nhất 2 ký tự"),
+    start_at: z.string().optional(),
+    end_at: z.string().optional(),
+  })
+  .refine(
+    (d) => !d.start_at || !d.end_at || new Date(d.start_at) <= new Date(d.end_at),
+    { message: "Thời gian kết thúc phải sau thời gian bắt đầu", path: ["end_at"] },
+  );
+
+export const editTagSchema = addTagSchema;
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type AddUserInput = z.infer<typeof addUserSchema>;

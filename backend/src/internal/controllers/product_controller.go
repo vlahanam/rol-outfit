@@ -69,7 +69,14 @@ func GetProduct(db *gorm.DB) fiber.Handler {
 			slog.Error("GetProduct failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
-		return ctx.JSON(common.ResponseData(dto.ToProductDTO(p)))
+
+		tagSvc := services.NewProductTagService(repo, repo, repo)
+		tags, err := tagSvc.GetActiveTags(ctx.Context(), id)
+		if err != nil {
+			slog.Error("GetProduct tags failed", "error", err)
+			tags = nil
+		}
+		return ctx.JSON(common.ResponseData(dto.ToProductDetailDTO(p, tags)))
 	}
 }
 
@@ -211,7 +218,14 @@ func AdminGetProduct(db *gorm.DB) fiber.Handler {
 			slog.Error("AdminGetProduct failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
-		return ctx.JSON(common.ResponseData(dto.ToProductWithVariantsDTO(pw)))
+
+		tagSvc := services.NewProductTagService(repo, repo, repo)
+		tags, err := tagSvc.GetAllTags(ctx.Context(), id)
+		if err != nil {
+			slog.Error("AdminGetProduct tags failed", "error", err)
+			tags = nil
+		}
+		return ctx.JSON(common.ResponseData(dto.ToProductWithVariantsDTOWithTags(pw, tags)))
 	}
 }
 

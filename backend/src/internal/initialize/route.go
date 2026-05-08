@@ -43,6 +43,7 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	adminProds := prods.Use(middleware.JWTAuth(jwtSecret), middleware.RequireRole(float64(models.USER_ROLE_ADMIN)))
 	adminProds.Post("/", controllers.CreateProduct(db))
 	adminProds.Put("/:id", controllers.UpdateProduct(db))
+	adminProds.Put("/:id/tags", controllers.AssignProductTags(db))
 	adminProds.Delete("/:id", controllers.DeleteProduct(db))
 
 	// Product Variants (nested under products)
@@ -100,6 +101,23 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	)
 	adminUploads.Post("/", controllers.UploadFile(uploadSvc, cfg.UploadMaxSize))
 	adminUploads.Delete("/:filename", controllers.DeleteFile(uploadSvc))
+
+	// Tags
+	tags := v1.Group("/tags")
+	tags.Get("/", controllers.ListTags(db))
+	tags.Get("/:id", controllers.GetTag(db))
+	adminTagsWrite := tags.Use(middleware.JWTAuth(jwtSecret), middleware.RequireRole(float64(models.USER_ROLE_ADMIN)))
+	adminTagsWrite.Post("/", controllers.CreateTag(db))
+	adminTagsWrite.Put("/:id", controllers.UpdateTag(db))
+	adminTagsWrite.Delete("/:id", controllers.DeleteTag(db))
+
+	// Admin tags (all tags including inactive)
+	adminTagsGroup := v1.Group("/admin/tags",
+		middleware.JWTAuth(jwtSecret),
+		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
+	)
+	adminTagsGroup.Get("/", controllers.AdminListTags(db))
+	adminTagsGroup.Get("/:id", controllers.AdminGetTag(db))
 
 	// Widgets
 	widgets := v1.Group("/widgets")

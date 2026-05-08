@@ -74,5 +74,12 @@
   "error.refresh_token_invalid": "リフレッシュトークンが無効です",
   "error.refresh_token_expired": "リフレッシュトークンの有効期限が切れました",
   "error.token_family_revoked": "セッションが失効しました。再度ログインしてください",
-  "validation.refresh_token.required": "リフレッシュトークンは必須です"
+  "validation.refresh_token.required": "リフレッシュトークンは必須です",
+
+  "error.tag_not_found": "タグが見つかりません",
+  "error.tag_slug_taken": "タグのスラッグは既に存在します",
+  "error.tag_invalid_window": "表示期間が無効です",
+
+  "error.too_many_tags": "1商品につき最大3タグまで",
+  "validation.tags.max_3": "最大3タグ"
 }

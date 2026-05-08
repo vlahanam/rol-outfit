@@ -5,6 +5,20 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Tags & Product Detail Enhancement** (2026-05-09)
+  - Backend: Tags CRUD system with time-window activation (`start_at`/`end_at` optional fields)
+  - Backend: Unique slug constraint on tags; active-window filtering on public product GET
+  - Backend: Product-tags junction table with transactional ReplaceProductTags (max 3 tags per product)
+  - Backend: Admin endpoints — `GET /api/v1/admin/tags` (list all), `POST /` (create), `GET /:id`, `PUT /:id`, `DELETE /:id`
+  - Backend: Admin assignment — `PUT /api/v1/products/:id/tags` with tag validation and count enforcement
+  - Backend: Public product endpoints return tags array (active only, filtered by time window)
+  - Backend: Migrations 000011 (tags table) and 000012 (product_tags junction)
+  - Frontend: Tag CRUD admin pages — list with search/status filter, create form, edit form with datetime-local pickers
+  - Frontend: Product tag assignment panel on admin product edit page — optimistic add/remove with revert-on-error
+  - Frontend: Tag badge component with color coding
+  - Frontend: User product detail rewrite — variant picker (color/size) with stock awareness, tag badges, multi-image gallery
+  - Frontend: Variant picker resolves product variant by attribute combo; shows variant price/stock; disables unavailable combinations
+
 - **Stateful Refresh Token System** (2026-05-09)
   - Backend: New `refresh_tokens` DB table (migration 000010) storing SHA256 hashes with family rotation for theft detection
   - Backend: `POST /api/v1/auth/refresh` single-use token rotation endpoint with automatic family invalidation on suspicious activity

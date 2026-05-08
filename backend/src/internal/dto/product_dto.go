@@ -55,6 +55,7 @@ type ProductWithVariantsDTO struct {
 	TotalSold      int                  `json:"total_sold"`
 	VariantCount   int                  `json:"variant_count"`
 	Variants       []*ProductVariantDTO `json:"variants"`
+	Tags           []*TagDTO            `json:"tags"`
 	CreatedAt      string               `json:"created_at"`
 	UpdatedAt      string               `json:"updated_at"`
 }
@@ -87,9 +88,36 @@ func ToProductWithVariantsDTO(p *models.ProductWithVariants) *ProductWithVariant
 		TotalSold:      totalSold,
 		VariantCount:   len(p.Variants),
 		Variants:       variants,
+		Tags:           []*TagDTO{},
 		CreatedAt:      p.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:      p.UpdatedAt.Format(time.RFC3339),
 	}
+}
+
+// ProductDetailDTO is the public product detail shape: product + active tags.
+type ProductDetailDTO struct {
+	*ProductDTO
+	Tags []*TagDTO `json:"tags"`
+}
+
+func ToProductDetailDTO(p *models.Product, tags []*models.Tag) *ProductDetailDTO {
+	tagDTOs := make([]*TagDTO, 0, len(tags))
+	for _, t := range tags {
+		tagDTOs = append(tagDTOs, ToTagDTO(t))
+	}
+	return &ProductDetailDTO{
+		ProductDTO: ToProductDTO(p),
+		Tags:       tagDTOs,
+	}
+}
+
+func ToProductWithVariantsDTOWithTags(p *models.ProductWithVariants, tags []*models.Tag) *ProductWithVariantsDTO {
+	d := ToProductWithVariantsDTO(p)
+	d.Tags = make([]*TagDTO, 0, len(tags))
+	for _, t := range tags {
+		d.Tags = append(d.Tags, ToTagDTO(t))
+	}
+	return d
 }
 
 func MapProduct[T any](p *models.Product, mapper func(*models.Product) T) T {
