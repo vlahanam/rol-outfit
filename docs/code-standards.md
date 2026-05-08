@@ -89,30 +89,60 @@ go mod tidy
 
 ## Layer-Specific Guidelines
 
-### Controllers
+### Controllers (Fiber v3)
 
 **Responsibility:** Parse requests, validate, call services, return responses
 
-**Structure:**
+**Structure (Fiber v3 Pattern):**
 ```go
-func GetProduct(svc services.ProductService) fiber.Handler {
+// Factory pattern: controller functions receive dependencies and return fiber.Handler
+func GetProduct(db *gorm.DB) fiber.Handler {
     return func(ctx fiber.Ctx) error {
+        // Extract request parameters
         id := ctx.Params("id")
+        
+        // Extract language from header for i18n
+        lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+        
+        // Initialize services with injected dependency (db)
+        repo := repositories.NewPostgreSQLStorage(db)
+        svc := services.NewProductService(repo)
+        
+        // Call service
         product, err := svc.GetProductByID(ctx.Context(), id)
         if err != nil {
-            // Handle error with appropriate status
+            if errors.Is(err, services.ErrNotFound) {
+                return ctx.Status(fiber.StatusNotFound).JSON(
+                    common.ErrNotFound.WithReason(i18n.T(lang, "error.product_not_found")),
+                )
+            }
+            slog.Error("GetProduct failed", "error", err)
+            return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
         }
-        return ctx.JSON(fiber.Map{"product": product})
+        
+        // Return success response
+        return ctx.JSON(common.ResponseData(dto.ToProductDTO(product)))
     }
 }
 ```
 
 **Guidelines:**
-- Use dependency injection (pass services as parameters)
-- Validate request data before calling service
-- Handle all service error types with appropriate status codes
-- Return DTO/serializable types, never raw models
-- Log errors with `slog` package before responding
+- Use factory pattern: `func ControllerName(db *gorm.DB) fiber.Handler`
+- Extract language from Accept-Language header for i18n support
+- Use `errors.Is()` for specific error handling
+- Log errors with `slog` before responding
+- Return DTO types via `common.ResponseData()` or `common.SuccessResponse()`
+- Return appropriate status codes: 400 (bad input), 401 (auth), 403 (forbidden), 404 (not found), 409 (conflict), 500 (server error)
+
+**Fiber v3 Context Methods:**
+- `ctx.Params(key)` — URL path parameters
+- `ctx.Query(key)` — Query string parameters
+- `ctx.Bind().JSON(&req)` — Parse JSON body
+- `ctx.Get(header)` — Get request header
+- `ctx.JSON(value)` — Send JSON response
+- `ctx.Status(code).JSON(value)` — Send with custom status
+- `ctx.SendStatus(code)` — Send status only (no body)
+- `ctx.Locals(key)` — Access middleware-injected values (e.g., userID, role)
 
 ### Services
 
@@ -259,6 +289,241 @@ if err != nil {
 }
 ```
 
+## Frontend Standards (Next.js & React)
+
+### Project Structure
+```
+frontend/
+├── src/
+│   ├── app/
+│   │   ├── [locale]/                    # i18n wrapper route segment
+│   │   │   ├── (public)/                # Public pages group
+│   │   │   ├── (admin)/                 # Admin dashboard group
+│   │   │   └── layout.tsx               # Root layout with i18n provider
+│   │   └── layout.tsx
+│   ├── components/
+│   │   ├── admin/                       # Admin-specific components
+│   │   │   ├── image-uploader.tsx       # Reusable file upload component
+│   │   │   └── ...
+│   │   ├── common/                      # Shared UI (Header, Footer)
+│   │   └── ...
+│   ├── lib/
+│   │   ├── api.ts                       # Centralized API client with typed endpoints
+│   │   └── utils.ts
+│   ├── types/
+│   │   └── index.ts                     # Shared type definitions
+│   └── ...
+├── public/                              # Static assets
+└── ...
+```
+
+### File Naming & Organization
+
+**Component Files:**
+- Use **kebab-case** for file names: `image-uploader.tsx`, `product-card.tsx`
+- Use **PascalCase** for exported components: `export default ImageUploader`
+- One component per file (unless composing related sub-components)
+
+**Utility & Hook Files:**
+- Use kebab-case: `use-product-query.ts`, `format-price.ts`
+- Custom hooks start with `use`: `useAuth()`, `useCart()`
+
+**Type Files:**
+- Use kebab-case: `user-types.ts`, `api-response-types.ts`
+- Or combine in `types/index.ts` for small projects
+
+### TypeScript & Code Style
+
+**Type Definitions:**
+- Always define types for API responses before using them
+- Use explicit return types on functions: `function getValue(): string { ... }`
+- Prefer `interface` for object shapes, `type` for unions/aliases
+- Example:
+  ```typescript
+  interface Product {
+    id: number;
+    name: string;
+    price: number;
+  }
+  
+  type ApiResponse<T> = {
+    data: T;
+    meta?: { page: number };
+  };
+  ```
+
+**Naming Conventions:**
+- Variables/functions: camelCase — `productId`, `handleSubmit()`
+- Constants: UPPER_SNAKE_CASE — `MAX_FILE_SIZE`, `API_BASE_URL`
+- Components/Classes: PascalCase — `ProductCard`, `AuthProvider`
+- Props interfaces: PascalCase with `Props` suffix — `ProductCardProps`
+
+### React Component Patterns
+
+**Functional Components (Default):**
+```typescript
+interface ProductCardProps {
+  id: number;
+  name: string;
+  onSelect?: (id: number) => void;
+}
+
+export default function ProductCard({ id, name, onSelect }: ProductCardProps) {
+  return <div onClick={() => onSelect?.(id)}>{name}</div>;
+}
+```
+
+**Server vs Client Components:**
+- Default to server components in App Router
+- Use `"use client"` directive only for interactivity (forms, hooks, context)
+- Move client components into `app/(public)/components/` subdirectories
+
+**Custom Hooks (Client-side only):**
+```typescript
+function useProduct(id: number) {
+  const [product, setProduct] = useState<Product | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    api.products.get(id).then(setProduct).catch(e => setError(e.message));
+  }, [id]);
+  
+  return { product, error };
+}
+```
+
+### API Integration (lib/api.ts)
+
+**Pattern:** Centralized, typed API client with namespaced endpoints
+
+```typescript
+const api = {
+  products: {
+    list: async (page?: number) => ApiResponse<Product[]>,
+    get: async (id: number) => Product,
+    create: async (payload: CreateProductPayload) => Product,
+  },
+  cart: {
+    getItems: async () => CartItem[],
+    addItem: async (productId: number, qty: number) => CartItem,
+  },
+};
+
+// Usage in components:
+const [products, setProducts] = useState<Product[]>([]);
+const products = await api.products.list(1);
+```
+
+**Error Handling:**
+- Define custom `ApiError` class in `lib/api.ts`
+- Use discriminated unions for type-safe error handling
+- Example:
+  ```typescript
+  try {
+    const product = await api.products.get(id);
+  } catch (err) {
+    if (err instanceof ApiError) {
+      if (err.status === 404) { /* handle not found */ }
+    }
+  }
+  ```
+
+### Tailwind CSS & Styling
+
+**Approach:**
+- Use Tailwind utility classes (no custom CSS unless necessary)
+- Follow responsive design: mobile-first, sm/md/lg breakpoints
+- Use CSS variables for project colors (configured in `tailwind.config.ts`)
+
+**Common Patterns:**
+```tsx
+// Responsive grid
+<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+
+// Conditional classes (use clsx or tailwind-merge)
+<button className={`px-4 py-2 ${isActive ? 'bg-blue-600' : 'bg-gray-300'}`}>
+
+// Dark mode (if enabled)
+<div className="dark:bg-gray-900 dark:text-white">
+```
+
+### Form Handling
+
+**Pattern:** Use Zod + React Hook Form for validation & submission
+
+```typescript
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
+const schema = z.object({
+  email: z.string().email("Invalid email"),
+  password: z.string().min(8),
+});
+
+type FormData = z.infer<typeof schema>;
+
+export function LoginForm() {
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  });
+
+  const onSubmit = async (data: FormData) => {
+    try {
+      await api.auth.login(data);
+    } catch (err) {
+      // Handle error
+    }
+  };
+
+  return <form onSubmit={handleSubmit(onSubmit)}>{/* ... */}</form>;
+}
+```
+
+### Authentication & State Management
+
+**Pattern:** Store JWT in localStorage, pass in Authorization header
+
+- Authentication flow: login → store token → pass to all API requests
+- Example in `lib/api.ts`:
+  ```typescript
+  const getAuthToken = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('auth_token');
+    }
+    return null;
+  };
+  
+  const authHeader = { 'Authorization': `Bearer ${getAuthToken()}` };
+  ```
+
+**Context for Global State (if needed):**
+- Use React Context for minimal state (auth user, theme)
+- Don't over-engineer; prefer props drilling for small apps
+- Example:
+  ```typescript
+  export const AuthContext = createContext<AuthContextType | null>(null);
+  
+  export function AuthProvider({ children }) {
+    const [user, setUser] = useState<User | null>(null);
+    return <AuthContext.Provider value={{ user }}>{children}</AuthContext.Provider>;
+  }
+  ```
+
+### Common Components Library
+
+**Expected Reusable Components:**
+- `Header` — Navigation bar
+- `Footer` — App footer
+- `ProductCard` — Product list item
+- `DeleteConfirmModal` — Confirmation dialog
+- `ImageUploader` — File upload component
+- Etc.
+
+Organize in `components/{category}/` with consistent props interfaces.
+
+---
+
 ## Testing
 
 ### Unit Tests
@@ -287,11 +552,24 @@ func TestCreateProduct(t *testing.T) {
 ```
 
 **Guidelines:**
-- Use standard `testing` package
-- Mock external dependencies
+- Use standard `testing` package with `testify/assert` for assertions
+- Mock external dependencies using interfaces
 - Test both success and error paths
 - Use table-driven tests for multiple scenarios
 - Aim for >80% code coverage
+- Example with testify:
+  ```go
+  func TestCreateProduct(t *testing.T) {
+      repo := &MockProductRepository{}
+      svc := NewProductService(repo)
+      
+      result, err := svc.CreateProduct(context.Background(), validRequest)
+      
+      assert.NoError(t, err)
+      assert.NotNil(t, result)
+      assert.Equal(t, result.Name, "Test Product")
+  }
+  ```
 
 ### Running Tests
 

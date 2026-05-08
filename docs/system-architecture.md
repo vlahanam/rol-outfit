@@ -106,6 +106,14 @@ Request/response types for API contracts.
 - `Name`, `Slug`, `Description`, `Price`, `Image`, `Avatar`
 - Used in Create/Update request bodies and responses
 
+**Variant DTO Fields:**
+- `ID`, `ProductID`, `Attributes` (JSON), `Price`, `Stock`, `Sold`, `Avatar`, `Status`
+- Attributes validated against product's `attribute_names`
+
+**Widget DTO Fields:**
+- `ID`, `ParentID` (nullable, for nested widgets), `Name`, `Type`, `DisplayOrder`, `Depth`, `Status`, `Settings` (JSON)
+- Types: container, chart, table, stat, text, image
+
 #### 6. Middleware (`middleware/`)
 - `jwt_auth.go` — JWT validation, role extraction
 - Request logging and error handling
@@ -138,6 +146,76 @@ Request/response types for API contracts.
 - Served via Nginx at `/uploads/{filename}` (read-only mount)
 - Allowed MIME types: image/jpeg, image/png, image/webp, image/gif
 - Max size: 10 MB (configurable via `UPLOAD_MAX_SIZE`)
+
+### Widget System
+
+**Purpose:** Configurable UI components for dashboards and page layouts.
+
+**Components:**
+- **Model** (`models/widget.go`) — Widget entity with hierarchical support (parent_id for nesting)
+- **Repository** (`repositories/widget_repo.go`) — CRUD operations
+- **Service** (`services/widget_service.go`) — Business logic
+- **Controller** (`controllers/widget_controller.go`) — HTTP handlers
+- **DTO** (`dto/widget_dto.go`) — Serialization format
+
+**Features:**
+- Configurable types: container, chart, table, stat, text, image
+- Hierarchical nesting via parent_id (depth field auto-calculated)
+- Display ordering via display_order field
+- JSON settings for type-specific configuration
+- Status flag (1=active, 2=inactive)
+
+**API Endpoints:**
+- `GET /api/v1/widgets` — List all widgets (public)
+- `GET /api/v1/widgets/:id` — Get widget details (public)
+- `POST /api/v1/widgets` — Create widget (admin)
+- `PUT /api/v1/widgets/:id` — Update widget (admin)
+- `DELETE /api/v1/widgets/:id` — Delete widget (admin)
+
+---
+
+### Frontend (Next.js 16 + React 19)
+
+**Location:** `frontend/` (separate from backend)
+
+#### 1. App Structure (Next.js App Router)
+- `app/[locale]/` — i18n route segment wrapping all pages
+- `(public)/` — Public pages (shop, product detail, cart, auth)
+- `(admin)/` — Admin dashboard (product CRUD, user CRUD, orders)
+- Locale-based routing: English and Vietnamese/Japanese support
+
+#### 2. Components Layer
+- **Admin Components** — Product/variant forms, image uploader, user management
+- **Common Components** — Header, Footer, ProductCard, DeleteConfirmModal
+- **Specialized Components** — ProductListVariantsTable, ImageUploader, AdminSidebar
+
+**Key Component: ImageUploader**
+- Reusable upload-then-reference pattern
+- File validation (size, type)
+- Best-effort old file deletion
+- Shows spinner overlay during upload
+- Returns file URL to parent form
+
+#### 3. API Client (lib/api.ts)
+- Centralized, typed endpoints
+- Namespace organization: `api.products`, `api.cart`, `api.adminUsers`, etc.
+- Bearer token authentication via localStorage
+- Custom ApiError class for error handling
+- ApiResponse<T> wrapper with pagination support
+
+#### 4. State Management
+- React Context for minimal global state (auth user, theme)
+- Props drilling for component communication
+- localStorage for JWT token persistence
+- Form state via React Hook Form + Zod validation
+
+#### 5. UI Framework
+- TailwindCSS v4 for styling
+- lucide-react for icons
+- sonner for toast notifications
+- @dnd-kit for drag-and-drop (if needed)
+
+---
 
 ### Nginx Reverse Proxy
 
@@ -273,18 +351,19 @@ See CRUD endpoints for each entity (similar structure to Products).
 
 ## Performance & Scalability
 
-### Current Limitations
-- Single filesystem backend (no S3/cloud storage)
-- No image optimization or CDN
-- No caching layer (Redis)
-- Database indexing minimal
+### Current Implementation
+- Single filesystem backend at `backend/uploads/`
+- Nginx reverse proxy with static file caching for `/uploads/` path
+- 10 MB body limit for API requests
+- Pagination support on list endpoints (default: page 1, limit 10)
+- GORM query builder (no raw SQL unless necessary)
 
-### Future Improvements
-- Image resizing and optimization (ImageMagick/ffmpeg)
-- S3 or cloud blob storage integration
-- Redis caching for products and cart
-- Database indexing on frequently queried fields
-- Async job queue for heavy operations
+### Design for Scaling
+- Stateless API design (all state in PostgreSQL)
+- JWT authentication (no session storage)
+- Repository pattern enables easy database swaps
+- Service layer abstracts business logic from data access
+- Optional S3 integration via `UploadService` interface in future
 
 ## Error Handling
 

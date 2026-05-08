@@ -5,6 +5,42 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Product Variant CRUD Endpoints** (2026-05-08)
+  - Backend: Full CRUD endpoints for variants — `GET /api/v1/products/:productID/variants/`, `GET /:id`, `POST /`, `PUT /:id`, `DELETE /:id`
+  - Variant attributes validated against product's `attribute_names`
+  - Admin-only write operations (POST, PUT, DELETE)
+  - Public read operations (GET list/detail)
+
+- **Widget System** (2026-05-08)
+  - Backend: Widget model with hierarchical support (parent_id, depth)
+  - Widget types: container, chart, table, stat, text, image
+  - Full CRUD endpoints — `GET /api/v1/widgets/`, `GET /:id` (public), `POST`, `PUT`, `DELETE` (admin)
+  - JSON settings field for type-specific configuration
+  - Display ordering and status management
+
+- **Admin User Management API** (2026-05-08)
+  - Backend: Full CRUD endpoints for users — `GET /api/v1/admin/users/`, `POST /`, `GET /:id`, `PUT /:id`, `DELETE /:id`
+  - Admin-only access with role/status control
+  - User DTO with role and status fields
+  - Conflict handling for duplicate email/phone
+
+- **Admin Product & Variant APIs** (2026-05-08)
+  - Backend: Admin-specific endpoints — `GET /api/v1/admin/products/` (list with pagination), `GET /:id` (with all variants)
+  - Returns products with full variant data (all statuses)
+  - Pagination support on admin list
+
+- **API Documentation Updates** (2026-05-08)
+  - Complete API reference with all endpoints (variants, widgets, admin users/products)
+  - Request/response examples for all operations
+  - Error codes and validation rules documented
+
+- **Code Standards & Architecture Documentation** (2026-05-08)
+  - Frontend standards — Next.js App Router patterns, TypeScript conventions, Tailwind usage, React component patterns
+  - Fiber v3 specific patterns — Factory pattern controllers, context usage, status codes
+  - Frontend API integration pattern — centralized typed client with namespaced endpoints
+  - Form handling with Zod + React Hook Form
+  - Auth & state management conventions
+
 - **Variant Edit & List Images** (2026-05-07)
   - Frontend: New edit variant page at `/admin/products/[id]/variants/[variantId]` with full form (avatar, attributes, price, stock, status)
   - Frontend: Product avatar display in admin products list page
