@@ -77,3 +77,16 @@ func (r LoginRequest) Validate() error {
 		),
 	)
 }
+
+// RefreshRequest chứa dữ liệu yêu cầu làm mới token
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+func (r RefreshRequest) Validate() error {
+	return validation.ValidateStruct(&r,
+		validation.Field(&r.RefreshToken,
+			validation.Required.Error("validation.refresh_token.required"),
+		),
+	)
+}

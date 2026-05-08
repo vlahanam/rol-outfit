@@ -4,7 +4,7 @@ import { useState, useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminHeader } from './AdminHeader';
-import { isAdmin, isLoggedIn } from '@/lib/auth';
+import { isAdmin, isLoggedIn, subscribeAuthEvents } from '@/lib/auth';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -21,6 +21,16 @@ export function AdminLayoutWrapper({ children }: AdminLayoutProps) {
     } else {
       setAuthorized(true);
     }
+  }, [router]);
+
+  // Sync logout across tabs — when another tab clears auth, redirect here too
+  useEffect(() => {
+    const unsubscribe = subscribeAuthEvents(({ type }) => {
+      if (type === 'logout') {
+        router.replace('/admin/login');
+      }
+    });
+    return unsubscribe;
   }, [router]);
 
   if (!authorized) {

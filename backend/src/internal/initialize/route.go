@@ -24,6 +24,8 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	auth := v1.Group("/auth")
 	auth.Post("/register", controllers.Register(db, jwtSecret))
 	auth.Post("/login", controllers.Login(db, jwtSecret))
+	auth.Post("/refresh", controllers.Refresh(db, jwtSecret))
+	auth.Post("/logout", controllers.Logout(db, jwtSecret))
 
 	// Categories
 	cats := v1.Group("/categories")

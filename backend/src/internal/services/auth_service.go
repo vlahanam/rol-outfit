@@ -7,36 +7,52 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/vlahanam/rol-outfit/src/internal/models"
 	"github.com/vlahanam/rol-outfit/src/internal/repositories"
 	"github.com/vlahanam/rol-outfit/src/internal/requests"
 	"golang.org/x/crypto/bcrypt"
 )
 
+// TTL constants for token expiry
+const (
+	accessTokenTTL  = 15 * time.Minute
+	refreshTokenTTL = 7 * 24 * time.Hour
+)
+
 // Các lỗi nghiệp vụ của auth
 var (
-	ErrEmailAlreadyExists = errors.New("email already exists")
-	ErrPhoneAlreadyExists = errors.New("phone already exists")
-	ErrInvalidCredentials = errors.New("invalid email or password")
-	ErrUserNotActive      = errors.New("user account is not active")
+	ErrEmailAlreadyExists  = errors.New("email already exists")
+	ErrPhoneAlreadyExists  = errors.New("phone already exists")
+	ErrInvalidCredentials  = errors.New("invalid email or password")
+	ErrUserNotActive       = errors.New("user account is not active")
+	ErrRefreshTokenInvalid = errors.New("refresh token invalid")
+	ErrTokenFamilyRevoked  = errors.New("token family revoked")
 )
 
 // AuthService định nghĩa các thao tác xác thực
 type AuthService interface {
 	Register(ctx context.Context, req *requests.RegisterRequest) (*models.AuthTokens, error)
 	Login(ctx context.Context, req *requests.LoginRequest) (*models.AuthTokens, error)
+	Refresh(ctx context.Context, refreshToken string) (*models.AuthTokens, error)
+	Logout(ctx context.Context, refreshToken string) error
 }
 
 // authService là implementation của AuthService
 type authService struct {
-	userRepo  repositories.UserRepository
-	jwtSecret string
+	userRepo         repositories.UserRepository
+	refreshTokenRepo repositories.RefreshTokenRepository
+	jwtSecret        string
 }
 
 // NewAuthService tạo instance mới của authService
 // jwtSecret phải được truyền từ config, không dùng os.Getenv trực tiếp
-func NewAuthService(userRepo repositories.UserRepository, jwtSecret string) AuthService {
-	return &authService{userRepo: userRepo, jwtSecret: jwtSecret}
+func NewAuthService(userRepo repositories.UserRepository, refreshTokenRepo repositories.RefreshTokenRepository, jwtSecret string) AuthService {
+	return &authService{
+		userRepo:         userRepo,
+		refreshTokenRepo: refreshTokenRepo,
+		jwtSecret:        jwtSecret,
+	}
 }
 
 // Register xử lý đăng ký tài khoản mới
@@ -84,7 +100,7 @@ func (s *authService) Register(ctx context.Context, req *requests.RegisterReques
 	}
 
 	// Tạo JWT tokens sau khi đăng ký thành công
-	return s.generateTokens(user)
+	return s.generateTokens(ctx, user, nil)
 }
 
 // Login xử lý đăng nhập
@@ -104,20 +120,28 @@ func (s *authService) Login(ctx context.Context, req *requests.LoginRequest) (*m
 	}
 
 	// Tạo JWT tokens
-	return s.generateTokens(user)
+	return s.generateTokens(ctx, user, nil)
 }
 
-// generateTokens tạo access token và refresh token cho user
-func (s *authService) generateTokens(user *models.User) (*models.AuthTokens, error) {
+// generateTokens tạo access token và refresh token cho user.
+// familyID nil means new login (new family); non-nil means rotation (reuse family).
+func (s *authService) generateTokens(ctx context.Context, user *models.User, familyID *string) (*models.AuthTokens, error) {
 	secret := []byte(s.jwtSecret)
-	expiresIn := int64(24 * 60 * 60) // 24 giờ tính bằng giây
+
+	jti := uuid.New().String()
+
+	// Determine token family
+	family := jti
+	if familyID != nil {
+		family = *familyID
+	}
 
 	// Tạo access token
 	accessClaims := jwt.MapClaims{
 		"sub":   user.ID,
 		"email": user.Email,
 		"role":  user.Role,
-		"exp":   time.Now().Add(24 * time.Hour).Unix(),
+		"exp":   time.Now().Add(accessTokenTTL).Unix(),
 		"iat":   time.Now().Unix(),
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
@@ -126,11 +150,13 @@ func (s *authService) generateTokens(user *models.User) (*models.AuthTokens, err
 		return nil, fmt.Errorf("failed to sign access token: %w", err)
 	}
 
-	// Tạo refresh token (thời hạn dài hơn)
+	// Tạo refresh token với jti và family_id
 	refreshClaims := jwt.MapClaims{
-		"sub": user.ID,
-		"exp": time.Now().Add(7 * 24 * time.Hour).Unix(),
-		"iat": time.Now().Unix(),
+		"sub":       user.ID,
+		"jti":       jti,
+		"family_id": family,
+		"exp":       time.Now().Add(refreshTokenTTL).Unix(),
+		"iat":       time.Now().Unix(),
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	refreshTokenStr, err := refreshToken.SignedString(secret)
@@ -138,10 +164,25 @@ func (s *authService) generateTokens(user *models.User) (*models.AuthTokens, err
 		return nil, fmt.Errorf("failed to sign refresh token: %w", err)
 	}
 
+	// Hash refresh token before persisting (hashToken defined in auth_service_refresh.go)
+	tokenHash := hashToken(refreshTokenStr)
+
+	// Persist refresh token record
+	dbToken := &models.RefreshToken{
+		ID:          uuid.New().String(),
+		UserID:      user.ID,
+		TokenHash:   tokenHash,
+		TokenFamily: family,
+		ExpiresAt:   time.Now().Add(refreshTokenTTL),
+	}
+	if err := s.refreshTokenRepo.SaveRefreshToken(ctx, dbToken); err != nil {
+		return nil, fmt.Errorf("failed to persist refresh token: %w", err)
+	}
+
 	return &models.AuthTokens{
 		AccessToken:  accessTokenStr,
 		RefreshToken: refreshTokenStr,
 		TokenType:    "Bearer",
-		ExpiresIn:    expiresIn,
+		ExpiresIn:    int64(accessTokenTTL.Seconds()),
 	}, nil
 }

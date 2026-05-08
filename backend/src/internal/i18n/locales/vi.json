@@ -69,5 +69,10 @@
   "error.variant_attributes_mismatch": "Thuộc tính biến thể không khớp với danh sách thuộc tính sản phẩm",
   "validation.attributes.required": "Thuộc tính biến thể không được để trống",
   "validation.attributes.invalid": "Thuộc tính biến thể không hợp lệ",
-  "validation.stock.min": "Số lượng tồn kho không được âm"
+  "validation.stock.min": "Số lượng tồn kho không được âm",
+
+  "error.refresh_token_invalid": "Refresh token không hợp lệ",
+  "error.refresh_token_expired": "Refresh token đã hết hạn",
+  "error.token_family_revoked": "Phiên đăng nhập đã bị thu hồi. Vui lòng đăng nhập lại",
+  "validation.refresh_token.required": "Refresh token không được để trống"
 }

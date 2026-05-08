@@ -13,6 +13,7 @@ High-level project phases and milestones. For detailed implementation plans, see
 - [x] API error handling and validation
 - [x] Database seed script for local development
 - [x] Unicode normalization in slug generation
+- [x] Stateful refresh token system (May 2026) — theft detection, family rotation, multi-tab sync
 
 **Completeness:** 100%
 

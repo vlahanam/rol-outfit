@@ -5,6 +5,17 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Stateful Refresh Token System** (2026-05-09)
+  - Backend: New `refresh_tokens` DB table (migration 000010) storing SHA256 hashes with family rotation for theft detection
+  - Backend: `POST /api/v1/auth/refresh` single-use token rotation endpoint with automatic family invalidation on suspicious activity
+  - Backend: `POST /api/v1/auth/logout` endpoint (204 idempotent) revokes all user refresh tokens
+  - Backend: Reduced access token TTL from 24h to 15min; refresh token TTL set to 7 days
+  - Backend: Cleanup goroutine runs every 6h to purge expired and old-revoked tokens
+  - Frontend: `lib/api-client.ts` implements automatic 401 retry with promise deduplication (prevents token-refresh stampede)
+  - Frontend: `lib/auth.ts` uses BroadcastChannel for multi-tab logout synchronization
+  - Frontend: `api.auth.logout()` graceful logout with best-effort backend call and local state cleanup
+  - Frontend: `api.ts` refactored into 3 focused modules for maintainability
+
 - **Product Variant CRUD Endpoints** (2026-05-08)
   - Backend: Full CRUD endpoints for variants — `GET /api/v1/products/:productID/variants/`, `GET /:id`, `POST /`, `PUT /:id`, `DELETE /:id`
   - Variant attributes validated against product's `attribute_names`

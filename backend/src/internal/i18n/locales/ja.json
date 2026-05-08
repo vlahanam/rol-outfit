@@ -69,5 +69,10 @@
   "error.variant_attributes_mismatch": "バリアント属性が商品の属性名と一致しません",
   "validation.attributes.required": "バリエーションの属性は必須です",
   "validation.attributes.invalid": "バリエーションの属性が正しくありません",
-  "validation.stock.min": "在庫数は0以上にしてください"
+  "validation.stock.min": "在庫数は0以上にしてください",
+
+  "error.refresh_token_invalid": "リフレッシュトークンが無効です",
+  "error.refresh_token_expired": "リフレッシュトークンの有効期限が切れました",
+  "error.token_family_revoked": "セッションが失効しました。再度ログインしてください",
+  "validation.refresh_token.required": "リフレッシュトークンは必須です"
 }
