@@ -19,7 +19,9 @@ var (
 
 type CategoryService interface {
 	List(ctx context.Context, offset, limit int) ([]*models.Category, int64, error)
+	ListAdmin(ctx context.Context, offset, limit int) ([]*models.Category, int64, error)
 	GetByID(ctx context.Context, id string) (*models.Category, error)
+	GetByIDAdmin(ctx context.Context, id string) (*models.Category, error)
 	Create(ctx context.Context, req *requests.CreateCategoryRequest) (*models.Category, error)
 	Update(ctx context.Context, id string, req *requests.UpdateCategoryRequest) error
 	Delete(ctx context.Context, id string) error
@@ -37,8 +39,23 @@ func (s *categoryService) List(ctx context.Context, offset, limit int) ([]*model
 	return s.repo.ListCategories(ctx, offset, limit)
 }
 
+func (s *categoryService) ListAdmin(ctx context.Context, offset, limit int) ([]*models.Category, int64, error) {
+	return s.repo.ListCategoriesAdmin(ctx, offset, limit)
+}
+
 func (s *categoryService) GetByID(ctx context.Context, id string) (*models.Category, error) {
 	c, err := s.repo.FindCategoryByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get category: %w", err)
+	}
+	if c == nil {
+		return nil, ErrCategoryNotFound
+	}
+	return c, nil
+}
+
+func (s *categoryService) GetByIDAdmin(ctx context.Context, id string) (*models.Category, error) {
+	c, err := s.repo.FindCategoryByIDAdmin(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get category: %w", err)
 	}
@@ -76,7 +93,7 @@ func (s *categoryService) Create(ctx context.Context, req *requests.CreateCatego
 }
 
 func (s *categoryService) Update(ctx context.Context, id string, req *requests.UpdateCategoryRequest) error {
-	existing, err := s.repo.FindCategoryByID(ctx, id)
+	existing, err := s.repo.FindCategoryByIDAdmin(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to find category: %w", err)
 	}
@@ -111,7 +128,7 @@ func (s *categoryService) Update(ctx context.Context, id string, req *requests.U
 }
 
 func (s *categoryService) Delete(ctx context.Context, id string) error {
-	existing, err := s.repo.FindCategoryByID(ctx, id)
+	existing, err := s.repo.FindCategoryByIDAdmin(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to find category: %w", err)
 	}

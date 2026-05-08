@@ -74,6 +74,14 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	adminOrders.Get("/", controllers.ListAllOrders(db))
 	adminOrders.Put("/:id/status", controllers.UpdateOrderStatus(db))
 
+	// Admin categories
+	adminCatsGroup := v1.Group("/admin/categories",
+		middleware.JWTAuth(jwtSecret),
+		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
+	)
+	adminCatsGroup.Get("/", controllers.AdminListCategories(db))
+	adminCatsGroup.Get("/:id", controllers.AdminGetCategory(db))
+
 	// Admin products (with variants)
 	adminProductsGroup := v1.Group("/admin/products",
 		middleware.JWTAuth(jwtSecret),

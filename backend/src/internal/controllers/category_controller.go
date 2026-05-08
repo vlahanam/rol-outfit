@@ -14,6 +14,57 @@ import (
 	"gorm.io/gorm"
 )
 
+// AdminListCategories GET /api/v1/admin/categories [admin]
+func AdminListCategories(db *gorm.DB) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		var p common.Paging
+		if err := ctx.Bind().Query(&p); err != nil {
+			p = common.Paging{}
+		}
+		p.Process()
+		offset := (p.Page - 1) * p.Limit
+
+		repo := repositories.NewPostgreSQLStorage(db)
+		svc := services.NewCategoryService(repo)
+
+		categories, total, err := svc.ListAdmin(ctx.Context(), offset, p.Limit)
+		if err != nil {
+			slog.Error("AdminListCategories failed", "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+
+		result := make([]*dto.CategoryDTO, 0, len(categories))
+		for _, c := range categories {
+			result = append(result, dto.ToCategoryDTO(c))
+		}
+		p.Total = total
+		return ctx.JSON(common.SuccessResponse(result, p, nil))
+	}
+}
+
+// AdminGetCategory GET /api/v1/admin/categories/:id [admin]
+func AdminGetCategory(db *gorm.DB) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+		id := ctx.Params("id")
+
+		repo := repositories.NewPostgreSQLStorage(db)
+		svc := services.NewCategoryService(repo)
+
+		c, err := svc.GetByIDAdmin(ctx.Context(), id)
+		if err != nil {
+			if errors.Is(err, services.ErrCategoryNotFound) {
+				return ctx.Status(fiber.StatusNotFound).JSON(
+					common.ErrNotFound.WithReason(i18n.T(lang, "error.category_not_found")),
+				)
+			}
+			slog.Error("AdminGetCategory failed", "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+		return ctx.JSON(common.ResponseData(dto.ToCategoryDTO(c)))
+	}
+}
+
 // ListCategories GET /api/v1/categories
 func ListCategories(db *gorm.DB) fiber.Handler {
 	return func(ctx fiber.Ctx) error {

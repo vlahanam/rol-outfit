@@ -41,6 +41,17 @@ export interface Category {
   updated_at: string;
 }
 
+export interface CreateCategoryPayload {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateCategoryPayload {
+  name?: string;
+  description?: string;
+  status?: number;
+}
+
 // Product
 export interface Product {
   id: string;

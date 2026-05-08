@@ -117,6 +117,17 @@ export const addProductSchema = z.object({
   description: z.string().optional(),
 });
 
+export const addCategorySchema = z.object({
+  name: z.string().min(2, "Tên danh mục phải có ít nhất 2 ký tự"),
+  description: z.string().optional(),
+});
+
+export const editCategorySchema = z.object({
+  name: z.string().min(2, "Tên danh mục phải có ít nhất 2 ký tự"),
+  description: z.string().optional(),
+  status: z.string(),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type AddUserInput = z.infer<typeof addUserSchema>;

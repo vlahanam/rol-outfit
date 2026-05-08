@@ -11,6 +11,9 @@ import type {
   UpdateProductPayload,
   CreateVariantPayload,
   UpdateVariantPayload,
+  Category,
+  CreateCategoryPayload,
+  UpdateCategoryPayload,
 } from "@/types/api";
 
 const BASE = "/api/v1";
@@ -61,6 +64,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
   return res.json() as Promise<T>;
 }
+
+export const CATEGORY_STATUS_LABEL: Record<number, string> = { 1: "Hiển thị", 2: "Ẩn" };
+export const CATEGORY_STATUS_VALUE: Record<string, number> = { "Hiển thị": 1, "Ẩn": 2 };
 
 export const ROLE_LABEL: Record<number, string> = {
   1: "Admin",
@@ -175,6 +181,36 @@ export const api = {
       return request<void>(`/products/${productId}/variants/${variantId}`, {
         method: "DELETE",
       });
+    },
+  },
+
+  adminCategories: {
+    list(params?: { page?: number; limit?: number }): Promise<ApiResponse<Category[]>> {
+      const qs = new URLSearchParams();
+      if (params?.page) qs.set("page", String(params.page));
+      if (params?.limit) qs.set("limit", String(params.limit));
+      const query = qs.toString();
+      return request<ApiResponse<Category[]>>(
+        `/admin/categories${query ? `?${query}` : ""}`,
+      );
+    },
+    get(id: string): Promise<{ data: Category }> {
+      return request<{ data: Category }>(`/admin/categories/${id}`);
+    },
+    create(body: CreateCategoryPayload): Promise<{ data: Category }> {
+      return request<{ data: Category }>(`/categories`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+    },
+    update(id: string, body: UpdateCategoryPayload): Promise<void> {
+      return request<void>(`/categories/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+      });
+    },
+    remove(id: string): Promise<void> {
+      return request<void>(`/categories/${id}`, { method: "DELETE" });
     },
   },
 

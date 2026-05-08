@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Package, ShoppingCart, ClipboardList, X } from 'lucide-react';
+import { LayoutDashboard, Users, Package, ShoppingCart, ClipboardList, Tags, X } from 'lucide-react';
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -16,6 +16,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
     { icon: Users, label: 'Người Dùng', path: '/admin/users' },
     { icon: Package, label: 'Sản Phẩm', path: '/admin/products' },
+    { icon: Tags, label: 'Danh Mục', path: '/admin/categories' },
     { icon: ShoppingCart, label: 'Giỏ Hàng', path: '/admin/carts' },
     { icon: ClipboardList, label: 'Đơn Hàng', path: '/admin/orders' },
   ];
