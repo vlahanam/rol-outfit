@@ -15,7 +15,9 @@ var ErrWidgetNotFound = errors.New("widget not found")
 
 type WidgetService interface {
 	List(ctx context.Context, parentID *string, offset, limit int) ([]*models.Widget, int64, error)
+	ListAdmin(ctx context.Context, parentID *string, offset, limit int) ([]*models.Widget, int64, error)
 	GetByID(ctx context.Context, id string) (*models.Widget, error)
+	GetByIDAdmin(ctx context.Context, id string) (*models.Widget, error)
 	Create(ctx context.Context, req *requests.CreateWidgetRequest) (*models.Widget, error)
 	Update(ctx context.Context, id string, req *requests.UpdateWidgetRequest) error
 	Delete(ctx context.Context, id string) error
@@ -33,6 +35,10 @@ func (s *widgetService) List(ctx context.Context, parentID *string, offset, limi
 	return s.repo.ListWidgets(ctx, parentID, offset, limit)
 }
 
+func (s *widgetService) ListAdmin(ctx context.Context, parentID *string, offset, limit int) ([]*models.Widget, int64, error) {
+	return s.repo.ListWidgetsAdmin(ctx, parentID, offset, limit)
+}
+
 func (s *widgetService) GetByID(ctx context.Context, id string) (*models.Widget, error) {
 	w, err := s.repo.FindWidgetByID(ctx, id)
 	if err != nil {
@@ -44,24 +50,28 @@ func (s *widgetService) GetByID(ctx context.Context, id string) (*models.Widget,
 	return w, nil
 }
 
+func (s *widgetService) GetByIDAdmin(ctx context.Context, id string) (*models.Widget, error) {
+	w, err := s.repo.FindWidgetByIDAdmin(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get widget (admin): %w", err)
+	}
+	if w == nil {
+		return nil, ErrWidgetNotFound
+	}
+	return w, nil
+}
+
 func (s *widgetService) Create(ctx context.Context, req *requests.CreateWidgetRequest) (*models.Widget, error) {
-	// Validate parent exists if provided
+	depth := 0
 	if req.ParentID != nil {
-		parent, err := s.repo.FindWidgetByID(ctx, *req.ParentID)
+		parent, err := s.repo.FindWidgetByIDAdmin(ctx, *req.ParentID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check parent widget: %w", err)
 		}
 		if parent == nil {
 			return nil, ErrWidgetNotFound
 		}
-	}
-
-	depth := 0
-	if req.ParentID != nil {
-		parent, _ := s.repo.FindWidgetByID(ctx, *req.ParentID)
-		if parent != nil {
-			depth = parent.Depth + 1
-		}
+		depth = parent.Depth + 1
 	}
 
 	w := &models.Widget{
@@ -81,7 +91,7 @@ func (s *widgetService) Create(ctx context.Context, req *requests.CreateWidgetRe
 }
 
 func (s *widgetService) Update(ctx context.Context, id string, req *requests.UpdateWidgetRequest) error {
-	existing, err := s.repo.FindWidgetByID(ctx, id)
+	existing, err := s.repo.FindWidgetByIDAdmin(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to find widget: %w", err)
 	}
@@ -113,7 +123,7 @@ func (s *widgetService) Update(ctx context.Context, id string, req *requests.Upd
 }
 
 func (s *widgetService) Delete(ctx context.Context, id string) error {
-	existing, err := s.repo.FindWidgetByID(ctx, id)
+	existing, err := s.repo.FindWidgetByIDAdmin(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to find widget: %w", err)
 	}

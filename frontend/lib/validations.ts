@@ -141,8 +141,22 @@ export const addTagSchema = z
 
 export const editTagSchema = addTagSchema;
 
+const WIDGET_TYPES = ["container", "chart", "table", "stat", "text", "image"] as const;
+
+export const addWidgetSchema = z.object({
+  name: z.string().min(2, "Tên phải có ít nhất 2 ký tự").max(255, "Tên không được quá 255 ký tự"),
+  type: z.enum(WIDGET_TYPES, { error: "Loại widget không hợp lệ" }),
+  display_order: z.coerce.number().min(0, "Thứ tự phải >= 0"),
+  status: z.coerce.number().refine((v) => v === 1 || v === 2, { message: "Trạng thái không hợp lệ" }),
+  parent_id: z.string().uuid("ID cha không hợp lệ").optional().or(z.literal("")).transform((v) => v || undefined),
+});
+
+export const editWidgetSchema = addWidgetSchema.partial();
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type AddUserInput = z.infer<typeof addUserSchema>;
 export type EditUserInput = z.infer<typeof editUserSchema>;
 export type AddProductInput = z.infer<typeof addProductSchema>;
+export type AddWidgetInput = z.infer<typeof addWidgetSchema>;
+export type EditWidgetInput = z.infer<typeof editWidgetSchema>;

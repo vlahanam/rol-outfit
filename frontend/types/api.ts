@@ -240,6 +240,39 @@ export interface UpdateTagPayload {
   end_at?: string | null;
 }
 
+// Widget
+export type WidgetType = "container" | "chart" | "table" | "stat" | "text" | "image";
+
+export interface Widget {
+  id: string;
+  parent_id: string | null;
+  name: string;
+  type: WidgetType;
+  display_order: number;
+  depth: number;
+  status: number; // 1=HIDDEN, 2=ACTIVE
+  settings: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateWidgetPayload {
+  name: string;
+  type: WidgetType;
+  display_order: number;
+  status: number;
+  parent_id?: string | null;
+  settings?: Record<string, unknown> | null;
+}
+
+export interface UpdateWidgetPayload {
+  name?: string;
+  type?: WidgetType;
+  display_order?: number;
+  status?: number;
+  settings?: Record<string, unknown> | null;
+}
+
 // Error response from backend
 export interface ApiErrorBody {
   error: string;

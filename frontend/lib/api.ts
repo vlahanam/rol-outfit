@@ -5,6 +5,7 @@ import {
   adminProducts,
   adminCategories,
   adminTags,
+  adminWidgets,
   uploads,
 } from "@/lib/api-resources";
 
@@ -12,6 +13,16 @@ export { ApiError } from "@/lib/api-client";
 
 export const CATEGORY_STATUS_LABEL: Record<number, string> = { 1: "Hiển thị", 2: "Ẩn" };
 export const CATEGORY_STATUS_VALUE: Record<string, number> = { "Hiển thị": 1, "Ẩn": 2 };
+
+export const WIDGET_STATUS_LABEL: Record<number, string> = { 1: "Ẩn", 2: "Hiển thị" };
+export const WIDGET_TYPE_LABEL: Record<string, string> = {
+  container: "Container",
+  image: "Hình ảnh",
+  chart: "Biểu đồ",
+  table: "Bảng",
+  stat: "Thống kê",
+  text: "Văn bản",
+};
 
 export const ROLE_LABEL: Record<number, string> = {
   1: "Admin",
@@ -64,5 +75,6 @@ export const api = {
   adminProducts,
   adminCategories,
   adminTags,
+  adminWidgets,
   uploads,
 };

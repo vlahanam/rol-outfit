@@ -13,7 +13,9 @@ import (
 type WidgetRepository interface {
 	CreateWidget(ctx context.Context, w *models.Widget) error
 	FindWidgetByID(ctx context.Context, id string) (*models.Widget, error)
+	FindWidgetByIDAdmin(ctx context.Context, id string) (*models.Widget, error)
 	ListWidgets(ctx context.Context, parentID *string, offset, limit int) ([]*models.Widget, int64, error)
+	ListWidgetsAdmin(ctx context.Context, parentID *string, offset, limit int) ([]*models.Widget, int64, error)
 	UpdateWidget(ctx context.Context, id string, fields map[string]interface{}) error
 	DeleteWidget(ctx context.Context, id string) error
 }
@@ -39,6 +41,18 @@ func (r *postgreStorage) FindWidgetByID(ctx context.Context, id string) (*models
 	return &w, nil
 }
 
+func (r *postgreStorage) FindWidgetByIDAdmin(ctx context.Context, id string) (*models.Widget, error) {
+	var w models.Widget
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&w).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find widget by id (admin): %w", err)
+	}
+	return &w, nil
+}
+
 func (r *postgreStorage) ListWidgets(ctx context.Context, parentID *string, offset, limit int) ([]*models.Widget, int64, error) {
 	var widgets []*models.Widget
 	var total int64
@@ -55,6 +69,26 @@ func (r *postgreStorage) ListWidgets(ctx context.Context, parentID *string, offs
 	}
 	if err := db.Offset(offset).Limit(limit).Order("display_order ASC").Find(&widgets).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to list widgets: %w", err)
+	}
+	return widgets, total, nil
+}
+
+func (r *postgreStorage) ListWidgetsAdmin(ctx context.Context, parentID *string, offset, limit int) ([]*models.Widget, int64, error) {
+	var widgets []*models.Widget
+	var total int64
+
+	db := r.db.WithContext(ctx).Model(&models.Widget{})
+	if parentID != nil {
+		db = db.Where("parent_id = ?", *parentID)
+	} else {
+		db = db.Where("parent_id IS NULL")
+	}
+
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("failed to count widgets (admin): %w", err)
+	}
+	if err := db.Offset(offset).Limit(limit).Order("display_order ASC").Find(&widgets).Error; err != nil {
+		return nil, 0, fmt.Errorf("failed to list widgets (admin): %w", err)
 	}
 	return widgets, total, nil
 }

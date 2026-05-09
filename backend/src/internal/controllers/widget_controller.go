@@ -15,6 +15,74 @@ import (
 	"gorm.io/gorm"
 )
 
+// AdminListWidgets GET /api/v1/admin/widgets [admin]
+func AdminListWidgets(db *gorm.DB) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		var p common.Paging
+		if err := ctx.Bind().Query(&p); err != nil {
+			p = common.Paging{}
+		}
+		p.Process()
+		offset := (p.Page - 1) * p.Limit
+
+		var parentID *string
+		if raw := ctx.Query("parent_id"); raw != "" {
+			if _, err := uuid.Parse(raw); err != nil {
+				lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+				return ctx.Status(fiber.StatusBadRequest).JSON(
+					common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_id")),
+				)
+			}
+			parentID = &raw
+		}
+
+		repo := repositories.NewPostgreSQLStorage(db)
+		svc := services.NewWidgetService(repo)
+
+		widgets, total, err := svc.ListAdmin(ctx.Context(), parentID, offset, p.Limit)
+		if err != nil {
+			slog.Error("AdminListWidgets failed", "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+
+		result := make([]*dto.WidgetDTO, 0, len(widgets))
+		for _, w := range widgets {
+			result = append(result, dto.ToWidgetDTO(w))
+		}
+		p.Total = total
+		return ctx.JSON(common.SuccessResponse(result, p, nil))
+	}
+}
+
+// AdminGetWidget GET /api/v1/admin/widgets/:id [admin]
+func AdminGetWidget(db *gorm.DB) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+		id := ctx.Params("id")
+
+		if _, err := uuid.Parse(id); err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(
+				common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_id")),
+			)
+		}
+
+		repo := repositories.NewPostgreSQLStorage(db)
+		svc := services.NewWidgetService(repo)
+
+		w, err := svc.GetByIDAdmin(ctx.Context(), id)
+		if err != nil {
+			if errors.Is(err, services.ErrWidgetNotFound) {
+				return ctx.Status(fiber.StatusNotFound).JSON(
+					common.ErrNotFound.WithReason(i18n.T(lang, "error.widget_not_found")),
+				)
+			}
+			slog.Error("AdminGetWidget failed", "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+		return ctx.JSON(common.ResponseData(dto.ToWidgetDTO(w)))
+	}
+}
+
 // ListWidgets GET /api/v1/widgets?parent_id=<uuid>
 func ListWidgets(db *gorm.DB) fiber.Handler {
 	return func(ctx fiber.Ctx) error {

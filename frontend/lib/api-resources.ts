@@ -17,6 +17,9 @@ import type {
   Tag,
   CreateTagPayload,
   UpdateTagPayload,
+  Widget,
+  CreateWidgetPayload,
+  UpdateWidgetPayload,
 } from "@/types/api";
 import { ApiError, BASE, getToken, request } from "@/lib/api-client";
 
@@ -166,6 +169,29 @@ export const adminTags = {
   },
   remove(id: string): Promise<void> {
     return request<void>(`/tags/${id}`, { method: "DELETE" });
+  },
+};
+
+export const adminWidgets = {
+  list(params?: { page?: number; limit?: number; parent_id?: string }): Promise<ApiResponse<Widget[]>> {
+    const qs = new URLSearchParams();
+    if (params?.page) qs.set("page", String(params.page));
+    if (params?.limit) qs.set("limit", String(params.limit));
+    if (params?.parent_id) qs.set("parent_id", params.parent_id);
+    const query = qs.toString();
+    return request<ApiResponse<Widget[]>>(`/admin/widgets${query ? `?${query}` : ""}`);
+  },
+  get(id: string): Promise<{ data: Widget }> {
+    return request<{ data: Widget }>(`/admin/widgets/${id}`);
+  },
+  create(body: CreateWidgetPayload): Promise<{ data: Widget }> {
+    return request<{ data: Widget }>(`/widgets`, { method: "POST", body: JSON.stringify(body) });
+  },
+  update(id: string, body: UpdateWidgetPayload): Promise<void> {
+    return request<void>(`/widgets/${id}`, { method: "PUT", body: JSON.stringify(body) });
+  },
+  remove(id: string): Promise<void> {
+    return request<void>(`/widgets/${id}`, { method: "DELETE" });
   },
 };
 

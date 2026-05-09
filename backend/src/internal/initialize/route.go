@@ -119,6 +119,14 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	adminTagsGroup.Get("/", controllers.AdminListTags(db))
 	adminTagsGroup.Get("/:id", controllers.AdminGetTag(db))
 
+	// Admin widgets
+	adminWidgetsGroup := v1.Group("/admin/widgets",
+		middleware.JWTAuth(jwtSecret),
+		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
+	)
+	adminWidgetsGroup.Get("/", controllers.AdminListWidgets(db))
+	adminWidgetsGroup.Get("/:id", controllers.AdminGetWidget(db))
+
 	// Widgets
 	widgets := v1.Group("/widgets")
 	widgets.Get("/", controllers.ListWidgets(db))
