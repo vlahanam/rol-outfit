@@ -89,18 +89,21 @@ func parseStringArray(s string) StringSlice {
 }
 
 type Product struct {
-	ID             string         `gorm:"type:uuid;primaryKey"`
-	CategoryID     string         `gorm:"column:category_id;type:uuid"`
-	Name           string         `gorm:"column:name"`
-	Slug           string         `gorm:"column:slug"`
-	DefaultPrice   float64        `gorm:"column:default_price;type:numeric(12,2)"`
-	Description    string         `gorm:"column:description"`
-	Status         int8           `gorm:"column:status"`
-	AttributeNames StringSlice    `gorm:"column:attribute_names;type:text[]"`
-	Avatar         string         `gorm:"column:avatar"`
-	CreatedAt      time.Time      `gorm:"column:created_at"`
-	UpdatedAt      time.Time      `gorm:"column:updated_at"`
-	DeletedAt      gorm.DeletedAt `gorm:"column:deleted_at;index"`
+	ID              string         `gorm:"type:uuid;primaryKey"`
+	CategoryID      string         `gorm:"column:category_id;type:uuid"`
+	Name            string         `gorm:"column:name"`
+	Slug            string         `gorm:"column:slug"`
+	DefaultPrice    float64        `gorm:"column:default_price;type:numeric(12,2)"`
+	Description     string         `gorm:"column:description"`
+	Status          int8           `gorm:"column:status"`
+	AttributeNames  StringSlice    `gorm:"column:attribute_names;type:text[]"`
+	Avatar          string         `gorm:"column:avatar"`
+	DiscountPercent float64        `gorm:"column:discount_percent;type:numeric(5,2)"`
+	DiscountStartAt *time.Time     `gorm:"column:discount_start_at"`
+	DiscountEndAt   *time.Time     `gorm:"column:discount_end_at"`
+	CreatedAt       time.Time      `gorm:"column:created_at"`
+	UpdatedAt       time.Time      `gorm:"column:updated_at"`
+	DeletedAt       gorm.DeletedAt `gorm:"column:deleted_at;index"`
 }
 
 func (Product) TableName() string { return "products" }

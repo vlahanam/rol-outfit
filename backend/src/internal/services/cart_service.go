@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/vlahanam/rol-outfit/src/internal/dto"
 	"github.com/vlahanam/rol-outfit/src/internal/models"
 	"github.com/vlahanam/rol-outfit/src/internal/repositories"
 	"github.com/vlahanam/rol-outfit/src/internal/requests"
@@ -27,17 +28,20 @@ type cartService struct {
 	cartRepo     repositories.CartRepository
 	cartItemRepo repositories.CartItemRepository
 	productRepo  repositories.ProductRepository
+	variantRepo  repositories.ProductVariantRepository
 }
 
 func NewCartService(
 	cartRepo repositories.CartRepository,
 	cartItemRepo repositories.CartItemRepository,
 	productRepo repositories.ProductRepository,
+	variantRepo repositories.ProductVariantRepository,
 ) CartService {
 	return &cartService{
 		cartRepo:     cartRepo,
 		cartItemRepo: cartItemRepo,
 		productRepo:  productRepo,
+		variantRepo:  variantRepo,
 	}
 }
 
@@ -81,12 +85,30 @@ func (s *cartService) AddItem(ctx context.Context, userID string, req *requests.
 		return existing, nil
 	}
 
+	priceAtAdd := product.DefaultPrice
+	if req.AttrID != "" {
+		v, err := s.variantRepo.FindVariantByID(ctx, req.AttrID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find variant: %w", err)
+		}
+		if v != nil && v.ProductID == product.ID {
+			priceAtAdd = v.Price
+			if dto.IsDiscountActive(v.DiscountPercent, v.DiscountStartAt, v.DiscountEndAt) {
+				priceAtAdd = dto.EffectivePrice(v.Price, v.DiscountPercent, v.DiscountStartAt, v.DiscountEndAt)
+			} else if dto.IsDiscountActive(product.DiscountPercent, product.DiscountStartAt, product.DiscountEndAt) {
+				priceAtAdd = dto.EffectivePrice(v.Price, product.DiscountPercent, product.DiscountStartAt, product.DiscountEndAt)
+			}
+		}
+	} else if dto.IsDiscountActive(product.DiscountPercent, product.DiscountStartAt, product.DiscountEndAt) {
+		priceAtAdd = dto.EffectivePrice(product.DefaultPrice, product.DiscountPercent, product.DiscountStartAt, product.DiscountEndAt)
+	}
+
 	item := &models.CartItem{
 		ID:         uuid.New().String(),
 		CartID:     cart.ID,
 		ProductID:  req.ProductID,
 		AttrID:     req.AttrID,
-		PriceAtAdd: product.DefaultPrice,
+		PriceAtAdd: priceAtAdd,
 		Quantity:   req.Quantity,
 	}
 	if err := s.cartItemRepo.CreateCartItem(ctx, item); err != nil {

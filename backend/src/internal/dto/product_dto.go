@@ -7,17 +7,21 @@ import (
 )
 
 type ProductDTO struct {
-	ID             string   `json:"id"`
-	CategoryID     string   `json:"category_id"`
-	Name           string   `json:"name"`
-	Slug           string   `json:"slug"`
-	DefaultPrice   float64  `json:"default_price"`
-	Description    string   `json:"description"`
-	Status         int8     `json:"status"`
-	AttributeNames []string `json:"attribute_names"`
-	Avatar         string   `json:"avatar,omitempty"`
-	CreatedAt      string   `json:"created_at"`
-	UpdatedAt      string   `json:"updated_at"`
+	ID              string   `json:"id"`
+	CategoryID      string   `json:"category_id"`
+	Name            string   `json:"name"`
+	Slug            string   `json:"slug"`
+	DefaultPrice    float64  `json:"default_price"`
+	Description     string   `json:"description"`
+	Status          int8     `json:"status"`
+	AttributeNames  []string `json:"attribute_names"`
+	Avatar          string   `json:"avatar,omitempty"`
+	DiscountPercent float64  `json:"discount_percent"`
+	DiscountStartAt string   `json:"discount_start_at,omitempty"`
+	DiscountEndAt   string   `json:"discount_end_at,omitempty"`
+	SalePrice       float64  `json:"sale_price"`
+	CreatedAt       string   `json:"created_at"`
+	UpdatedAt       string   `json:"updated_at"`
 }
 
 func ToProductDTO(p *models.Product) *ProductDTO {
@@ -26,38 +30,46 @@ func ToProductDTO(p *models.Product) *ProductDTO {
 		attrNames = []string{}
 	}
 	return &ProductDTO{
-		ID:             p.ID,
-		CategoryID:     p.CategoryID,
-		Name:           p.Name,
-		Slug:           p.Slug,
-		DefaultPrice:   p.DefaultPrice,
-		Description:    p.Description,
-		Status:         p.Status,
-		AttributeNames: attrNames,
-		Avatar:         p.Avatar,
-		CreatedAt:      p.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:      p.UpdatedAt.Format(time.RFC3339),
+		ID:              p.ID,
+		CategoryID:      p.CategoryID,
+		Name:            p.Name,
+		Slug:            p.Slug,
+		DefaultPrice:    p.DefaultPrice,
+		Description:     p.Description,
+		Status:          p.Status,
+		AttributeNames:  attrNames,
+		Avatar:          p.Avatar,
+		DiscountPercent: p.DiscountPercent,
+		DiscountStartAt: formatTimePtr(p.DiscountStartAt),
+		DiscountEndAt:   formatTimePtr(p.DiscountEndAt),
+		SalePrice:       EffectivePrice(p.DefaultPrice, p.DiscountPercent, p.DiscountStartAt, p.DiscountEndAt),
+		CreatedAt:       p.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:       p.UpdatedAt.Format(time.RFC3339),
 	}
 }
 
 // ProductWithVariantsDTO is the admin response shape: product data + aggregated stats + variants.
 type ProductWithVariantsDTO struct {
-	ID             string               `json:"id"`
-	CategoryID     string               `json:"category_id"`
-	Name           string               `json:"name"`
-	Slug           string               `json:"slug"`
-	DefaultPrice   float64              `json:"default_price"`
-	Description    string               `json:"description"`
-	Status         int8                 `json:"status"`
-	AttributeNames []string             `json:"attribute_names"`
-	Avatar         string               `json:"avatar,omitempty"`
-	TotalStock     int                  `json:"total_stock"`
-	TotalSold      int                  `json:"total_sold"`
-	VariantCount   int                  `json:"variant_count"`
-	Variants       []*ProductVariantDTO `json:"variants"`
-	Tags           []*TagDTO            `json:"tags"`
-	CreatedAt      string               `json:"created_at"`
-	UpdatedAt      string               `json:"updated_at"`
+	ID              string               `json:"id"`
+	CategoryID      string               `json:"category_id"`
+	Name            string               `json:"name"`
+	Slug            string               `json:"slug"`
+	DefaultPrice    float64              `json:"default_price"`
+	Description     string               `json:"description"`
+	Status          int8                 `json:"status"`
+	AttributeNames  []string             `json:"attribute_names"`
+	Avatar          string               `json:"avatar,omitempty"`
+	DiscountPercent float64              `json:"discount_percent"`
+	DiscountStartAt string               `json:"discount_start_at,omitempty"`
+	DiscountEndAt   string               `json:"discount_end_at,omitempty"`
+	SalePrice       float64              `json:"sale_price"`
+	TotalStock      int                  `json:"total_stock"`
+	TotalSold       int                  `json:"total_sold"`
+	VariantCount    int                  `json:"variant_count"`
+	Variants        []*ProductVariantDTO `json:"variants"`
+	Tags            []*TagDTO            `json:"tags"`
+	CreatedAt       string               `json:"created_at"`
+	UpdatedAt       string               `json:"updated_at"`
 }
 
 func ToProductWithVariantsDTO(p *models.ProductWithVariants) *ProductWithVariantsDTO {
@@ -69,28 +81,32 @@ func ToProductWithVariantsDTO(p *models.ProductWithVariants) *ProductWithVariant
 	variants := make([]*ProductVariantDTO, 0, len(p.Variants))
 	var totalStock, totalSold int
 	for _, v := range p.Variants {
-		variants = append(variants, ToVariantDTO(v))
+		variants = append(variants, ToVariantDTOWithProduct(v, p.Product))
 		totalStock += v.Stock
 		totalSold += v.Sold
 	}
 
 	return &ProductWithVariantsDTO{
-		ID:             p.ID,
-		CategoryID:     p.CategoryID,
-		Name:           p.Name,
-		Slug:           p.Slug,
-		DefaultPrice:   p.DefaultPrice,
-		Description:    p.Description,
-		Status:         p.Status,
-		AttributeNames: attrNames,
-		Avatar:         p.Avatar,
-		TotalStock:     totalStock,
-		TotalSold:      totalSold,
-		VariantCount:   len(p.Variants),
-		Variants:       variants,
-		Tags:           []*TagDTO{},
-		CreatedAt:      p.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:      p.UpdatedAt.Format(time.RFC3339),
+		ID:              p.ID,
+		CategoryID:      p.CategoryID,
+		Name:            p.Name,
+		Slug:            p.Slug,
+		DefaultPrice:    p.DefaultPrice,
+		Description:     p.Description,
+		Status:          p.Status,
+		AttributeNames:  attrNames,
+		Avatar:          p.Avatar,
+		DiscountPercent: p.DiscountPercent,
+		DiscountStartAt: formatTimePtr(p.DiscountStartAt),
+		DiscountEndAt:   formatTimePtr(p.DiscountEndAt),
+		SalePrice:       EffectivePrice(p.DefaultPrice, p.DiscountPercent, p.DiscountStartAt, p.DiscountEndAt),
+		TotalStock:      totalStock,
+		TotalSold:       totalSold,
+		VariantCount:    len(p.Variants),
+		Variants:        variants,
+		Tags:            []*TagDTO{},
+		CreatedAt:       p.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:       p.UpdatedAt.Format(time.RFC3339),
 	}
 }
 

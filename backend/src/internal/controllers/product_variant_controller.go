@@ -42,9 +42,12 @@ func ListVariants(db *gorm.DB) fiber.Handler {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
 
+		// Fetch parent product for product-level discount fallback in each variant's SalePrice
+		product, _ := repo.FindProductByID(ctx.Context(), productID)
+
 		result := make([]*dto.ProductVariantDTO, 0, len(variants))
 		for _, v := range variants {
-			result = append(result, dto.ToVariantDTO(v))
+			result = append(result, dto.ToVariantDTOWithProduct(v, product))
 		}
 		p.Total = total
 		return ctx.JSON(common.SuccessResponse(result, p, nil))
@@ -79,7 +82,9 @@ func GetVariant(db *gorm.DB) fiber.Handler {
 			slog.Error("GetVariant failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
-		return ctx.JSON(common.ResponseData(dto.ToVariantDTO(v)))
+		// Fetch parent product for product-level discount fallback
+		product, _ := repo.FindProductByID(ctx.Context(), productID)
+		return ctx.JSON(common.ResponseData(dto.ToVariantDTOWithProduct(v, product)))
 	}
 }
 

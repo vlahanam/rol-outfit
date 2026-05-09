@@ -58,6 +58,7 @@ export default function ProductDetailPage() {
   }, [id]);
 
   const images = useMemo(() => buildImages(product, variants), [product, variants]);
+  const totalStock = useMemo(() => variants.reduce((s, v) => s + (v.stock ?? 0), 0), [variants]);
 
   const hasVariants = variants.length > 0;
   const axisCount = product?.attribute_names?.length ?? 0;
@@ -65,10 +66,17 @@ export default function ProductDetailPage() {
   const variant = allPicked ? resolveVariant(variants, selected) : null;
 
   const price = variant?.price ?? product?.default_price ?? 0;
+  const salePrice = variant?.sale_price ?? product?.sale_price ?? price;
+  const isDiscounted = salePrice < price;
   const stock = variant?.stock ?? null;
   const outOfStock = variant !== null && stock !== null && stock <= 0;
   const needsPick = hasVariants && !allPicked;
   const cartDisabled = addingToCart || needsPick || outOfStock;
+
+  // stock display: variant stock when selected, total stock otherwise
+  const stockValue = variant !== null ? variant.stock : totalStock;
+  const stockEmpty = stockValue <= 0;
+  const stockText = stockEmpty ? 'Hết hàng' : `Còn ${stockValue} sản phẩm`;
 
   // jump gallery to selected variant's image
   useEffect(() => {
@@ -111,33 +119,37 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-white flex flex-col">
+      <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
         <Link href="/shop" className="flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-6 transition-colors">
           <ArrowLeft className="w-5 h-5" />
           <span>Quay lại</span>
         </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <ImageGallery images={images} activeIndex={imageIdx} onSelect={setImageIdx} alt={product.name} />
 
           <div>
             <TagBadges tags={product.tags ?? []} />
             <h1 className="text-3xl font-bold text-gray-900 mb-3">{product.name}</h1>
             <div className="mb-4">
-              <span className="text-3xl font-bold text-blue-600">{formatPrice(price)}</span>
-              {variant && stock !== null && (
-                <p className={`text-sm mt-1 ${stock > 0 ? 'text-gray-500' : 'text-red-500'}`}>
-                  {stock > 0 ? `Còn ${stock} sản phẩm` : 'Hết hàng'}
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-3xl font-bold text-blue-600">{formatPrice(salePrice)}</span>
+                {isDiscounted && (
+                  <>
+                    <span className="text-xl text-gray-400 line-through">{formatPrice(price)}</span>
+                    <span className="px-2 py-0.5 bg-red-100 text-red-600 text-sm font-semibold rounded">
+                      -{Math.round((1 - salePrice / price) * 100)}%
+                    </span>
+                  </>
+                )}
+              </div>
+              {hasVariants && (
+                <p className={`text-sm mt-1 ${!stockEmpty ? 'text-gray-500' : 'text-red-500'}`}>
+                  {stockText}
                 </p>
               )}
             </div>
-
-            {product.description && (
-              <div className="border-t border-gray-200 pt-4 mb-4">
-                <p className="text-gray-600 leading-relaxed">{product.description}</p>
-              </div>
-            )}
 
             {hasVariants && (
               <div className="mb-6">
@@ -161,6 +173,9 @@ export default function ProductDetailPage() {
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
+              <p className="text-sm font-semibold text-blue-700 mt-2">
+                Thành tiền: {formatPrice(salePrice * quantity)}
+              </p>
             </div>
 
             {cartMsg && (
@@ -188,6 +203,16 @@ export default function ProductDetailPage() {
             </div>
           </div>
         </div>
+
+        {product.description && (
+          <div className="border-t border-gray-200 pt-8 mb-12">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Mô tả sản phẩm</h2>
+            <div
+              className="prose prose-sm max-w-none text-gray-600"
+              dangerouslySetInnerHTML={{ __html: product.description }}
+            />
+          </div>
+        )}
       </div>
       <Footer />
     </div>

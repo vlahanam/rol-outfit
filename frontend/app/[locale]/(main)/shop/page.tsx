@@ -13,6 +13,10 @@ function formatPrice(value: number): string {
   return value.toLocaleString("vi-VN") + "₫";
 }
 
+function effectivePrice(p: Product): number {
+  return p.sale_price ?? p.default_price;
+}
+
 export default function ShopPage() {
   const t = useTranslations("ShopPage");
   const tCommon = useTranslations("Common");
@@ -44,8 +48,8 @@ export default function ShopPage() {
   const filtered = products
     .filter((p) => !selectedCategory || p.category_id === selectedCategory)
     .sort((a, b) => {
-      if (sortBy === "price-low") return a.default_price - b.default_price;
-      if (sortBy === "price-high") return b.default_price - a.default_price;
+      if (sortBy === "price-low") return effectivePrice(a) - effectivePrice(b);
+      if (sortBy === "price-high") return effectivePrice(b) - effectivePrice(a);
       return (
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
@@ -127,7 +131,17 @@ export default function ShopPage() {
               >
                 <ProductItem
                   name={product.name}
-                  price={formatPrice(product.default_price)}
+                  price={formatPrice(effectivePrice(product))}
+                  originalPrice={
+                    product.sale_price < product.default_price
+                      ? formatPrice(product.default_price)
+                      : undefined
+                  }
+                  discountPercent={
+                    product.discount_percent > 0 && product.sale_price < product.default_price
+                      ? Math.round((1 - product.sale_price / product.default_price) * 100)
+                      : undefined
+                  }
                   image={
                     product.avatar ||
                     "https://images.unsplash.com/photo-1599012307530-d163bd04ecab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"

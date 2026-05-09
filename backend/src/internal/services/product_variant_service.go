@@ -90,13 +90,16 @@ func (s *productVariantService) Create(ctx context.Context, productID string, re
 	}
 
 	v := &models.ProductVariant{
-		ID:         uuid.New().String(),
-		ProductID:  productID,
-		Attributes: req.Attributes,
-		Price:      req.Price,
-		Stock:      req.Stock,
-		Avatar:     req.Avatar,
-		Status:     models.VARIANT_STATUS_ACTIVE,
+		ID:              uuid.New().String(),
+		ProductID:       productID,
+		Attributes:      req.Attributes,
+		Price:           req.Price,
+		Stock:           req.Stock,
+		Avatar:          req.Avatar,
+		Status:          models.VARIANT_STATUS_ACTIVE,
+		DiscountPercent: req.DiscountPercent,
+		DiscountStartAt: req.DiscountStartAt,
+		DiscountEndAt:   req.DiscountEndAt,
 	}
 	if err := s.repo.CreateVariant(ctx, v); err != nil {
 		return nil, fmt.Errorf("failed to create variant: %w", err)
@@ -141,6 +144,11 @@ func (s *productVariantService) Update(ctx context.Context, productID, id string
 	}
 	if req.Status != nil {
 		fields["status"] = *req.Status
+	}
+	if req.DiscountPercent != nil {
+		fields["discount_percent"] = *req.DiscountPercent
+		fields["discount_start_at"] = req.DiscountStartAt
+		fields["discount_end_at"] = req.DiscountEndAt
 	}
 
 	if len(fields) == 0 {

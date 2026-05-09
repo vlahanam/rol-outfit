@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { addProductSchema, createVariantSchema } from "@/lib/validations";
 import { ImageUploader } from "@/components/admin/image-uploader";
+import { TiptapEditor } from "@/components/admin/tiptap-editor";
 import type { ApiResponse, Category } from "@/types/api";
 
 type Variant = Record<string, string> & { price: string; stock: string };
@@ -32,6 +33,11 @@ export default function AddProductPage() {
   const [variantErrors, setVariantErrors] = useState<
     Record<number, Record<string, string>>
   >({});
+
+  // Discount
+  const [discountPercent, setDiscountPercent] = useState("0");
+  const [discountStartAt, setDiscountStartAt] = useState("");
+  const [discountEndAt, setDiscountEndAt] = useState("");
 
   // Submit state
   const [submitting, setSubmitting] = useState(false);
@@ -153,6 +159,9 @@ export default function AddProductPage() {
         description,
         attribute_names: attributeNames,
         avatar: productAvatar,
+        discount_percent: Number(discountPercent) || 0,
+        discount_start_at: discountStartAt ? new Date(discountStartAt).toISOString() : null,
+        discount_end_at: discountEndAt ? new Date(discountEndAt).toISOString() : null,
       });
 
       if (variants.length > 0) {
@@ -294,13 +303,40 @@ export default function AddProductPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Mô tả
             </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder="Mô tả chi tiết sản phẩm..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            />
+            <TiptapEditor value={description} onChange={setDescription} />
+          </div>
+          <div className="border-t border-gray-200 pt-4 mt-2">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Giảm giá</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phần trăm giảm (%)</label>
+                <input
+                  type="number" min="0" max="100" step="0.01"
+                  value={discountPercent}
+                  onChange={(e) => setDiscountPercent(e.target.value)}
+                  placeholder="0"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bắt đầu</label>
+                <input
+                  type="datetime-local"
+                  value={discountStartAt}
+                  onChange={(e) => setDiscountStartAt(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kết thúc</label>
+                <input
+                  type="datetime-local"
+                  value={discountEndAt}
+                  onChange={(e) => setDiscountEndAt(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
           </div>
         </div>
 

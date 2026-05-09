@@ -65,6 +65,10 @@ export interface Product {
   data?: unknown;
   avatar?: string;
   tags?: Tag[];
+  discount_percent: number;
+  discount_start_at: string | null;
+  discount_end_at: string | null;
+  sale_price: number;
   created_at: string;
   updated_at: string;
 }
@@ -79,6 +83,10 @@ export interface ProductVariant {
   sold: number;
   avatar?: string;
   status: number;
+  discount_percent: number;
+  discount_start_at: string | null;
+  discount_end_at: string | null;
+  sale_price: number;
   created_at: string;
   updated_at: string;
 }
@@ -170,6 +178,9 @@ export interface CreateProductPayload {
   description?: string;
   avatar: string;
   attribute_names: string[];
+  discount_percent?: number;
+  discount_start_at?: string | null;
+  discount_end_at?: string | null;
 }
 
 export interface UpdateProductPayload {
@@ -180,6 +191,9 @@ export interface UpdateProductPayload {
   avatar?: string;
   status?: number;
   attribute_names?: string[];
+  discount_percent?: number;
+  discount_start_at?: string | null;
+  discount_end_at?: string | null;
 }
 
 export interface CreateVariantPayload {
@@ -187,6 +201,9 @@ export interface CreateVariantPayload {
   price: number;
   stock: number;
   avatar?: string;
+  discount_percent?: number;
+  discount_start_at?: string | null;
+  discount_end_at?: string | null;
 }
 
 export interface UpdateVariantPayload {
@@ -195,6 +212,9 @@ export interface UpdateVariantPayload {
   stock?: number;
   avatar?: string;
   status?: number;
+  discount_percent?: number;
+  discount_start_at?: string | null;
+  discount_end_at?: string | null;
 }
 
 // Tag

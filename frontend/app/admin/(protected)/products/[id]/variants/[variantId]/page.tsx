@@ -19,6 +19,9 @@ export default function EditVariantPage() {
   const [stock, setStock] = useState("");
   const [avatar, setAvatar] = useState("");
   const [status, setStatus] = useState("1");
+  const [discountPercent, setDiscountPercent] = useState("0");
+  const [discountStartAt, setDiscountStartAt] = useState("");
+  const [discountEndAt, setDiscountEndAt] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -39,6 +42,9 @@ export default function EditVariantPage() {
         setStock(String(v.stock));
         setAvatar(v.avatar ?? "");
         setStatus(String(v.status));
+        setDiscountPercent(String(v.discount_percent ?? 0));
+        setDiscountStartAt(v.discount_start_at ? v.discount_start_at.slice(0, 16) : "");
+        setDiscountEndAt(v.discount_end_at ? v.discount_end_at.slice(0, 16) : "");
       })
       .catch((err) => setLoadError(err instanceof Error ? err.message : "Lỗi tải dữ liệu"))
       .finally(() => setLoading(false));
@@ -68,6 +74,9 @@ export default function EditVariantPage() {
         stock: stockNum,
         avatar: avatar || undefined,
         status: Number(status),
+        discount_percent: Number(discountPercent) || 0,
+        discount_start_at: discountStartAt ? new Date(discountStartAt).toISOString() : null,
+        discount_end_at: discountEndAt ? new Date(discountEndAt).toISOString() : null,
       });
       router.push(`/admin/products/${id}`);
     } catch (err) {
@@ -167,6 +176,40 @@ export default function EditVariantPage() {
               <option value="1">Hiển thị</option>
               <option value="2">Ẩn</option>
             </select>
+          </div>
+        </div>
+
+        <div className="border-t border-gray-200 pt-4 mt-2">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Giảm giá</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phần trăm giảm (%)</label>
+              <input
+                type="number" min="0" max="100" step="0.01"
+                value={discountPercent}
+                onChange={(e) => setDiscountPercent(e.target.value)}
+                placeholder="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Bắt đầu</label>
+              <input
+                type="datetime-local"
+                value={discountStartAt}
+                onChange={(e) => setDiscountStartAt(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Kết thúc</label>
+              <input
+                type="datetime-local"
+                value={discountEndAt}
+                onChange={(e) => setDiscountEndAt(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
         </div>
       </div>

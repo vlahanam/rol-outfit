@@ -5,9 +5,20 @@ import { Pencil, Save, X } from "lucide-react";
 import Image from "next/image";
 import { api } from "@/lib/api";
 import { ImageUploader } from "@/components/admin/image-uploader";
+import { TiptapEditor } from "@/components/admin/tiptap-editor";
 import type { AdminProduct, Category } from "@/types/api";
 
 const STATUS_LABEL: Record<number, string> = { 1: "Hiển thị", 2: "Ẩn" };
+
+function toDatetimeLocal(iso: string | null): string {
+  if (!iso) return "";
+  return iso.slice(0, 16);
+}
+
+function fromDatetimeLocal(val: string): string | null {
+  if (!val) return null;
+  return new Date(val).toISOString();
+}
 
 type Props = {
   product: AdminProduct;
@@ -24,6 +35,9 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
     description: product.description ?? "",
     status: String(product.status),
     avatar: product.avatar ?? "",
+    discount_percent: String(product.discount_percent ?? 0),
+    discount_start_at: toDatetimeLocal(product.discount_start_at ?? null),
+    discount_end_at: toDatetimeLocal(product.discount_end_at ?? null),
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +56,9 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
         description: form.description,
         status: Number(form.status),
         avatar: form.avatar || undefined,
+        discount_percent: Number(form.discount_percent) || 0,
+        discount_start_at: fromDatetimeLocal(form.discount_start_at),
+        discount_end_at: fromDatetimeLocal(form.discount_end_at),
       });
       onSaved({
         name: form.name,
@@ -50,6 +67,9 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
         description: form.description,
         status: Number(form.status),
         avatar: form.avatar || undefined,
+        discount_percent: Number(form.discount_percent) || 0,
+        discount_start_at: fromDatetimeLocal(form.discount_start_at),
+        discount_end_at: fromDatetimeLocal(form.discount_end_at),
       });
       setEditMode(false);
     } catch (err) {
@@ -72,6 +92,9 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
       description: product.description ?? "",
       status: String(product.status),
       avatar: product.avatar ?? "",
+      discount_percent: String(product.discount_percent ?? 0),
+      discount_start_at: toDatetimeLocal(product.discount_start_at ?? null),
+      discount_end_at: toDatetimeLocal(product.discount_end_at ?? null),
     });
     setEditMode(false);
     setError(null);
@@ -184,60 +207,116 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Mô tả
             </label>
-            <textarea
+            <TiptapEditor
               value={form.description}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, description: e.target.value }))
-              }
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              onChange={(html) => setForm((p) => ({ ...p, description: html }))}
             />
+          </div>
+          <div className="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Giảm giá</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phần trăm (%)</label>
+                <input
+                  type="number" min="0" max="100" step="0.01"
+                  value={form.discount_percent}
+                  onChange={(e) => setForm((p) => ({ ...p, discount_percent: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bắt đầu</label>
+                <input
+                  type="datetime-local"
+                  value={form.discount_start_at}
+                  onChange={(e) => setForm((p) => ({ ...p, discount_start_at: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kết thúc</label>
+                <input
+                  type="datetime-local"
+                  value={form.discount_end_at}
+                  onChange={(e) => setForm((p) => ({ ...p, discount_end_at: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-          <div>
-            <span className="text-gray-500">Tên sản phẩm:</span>
-            <span className="font-medium ml-2">{product.name}</span>
-          </div>
-          <div>
-            <span className="text-gray-500">Danh mục:</span>
-            <span className="font-medium ml-2">
-              {categoryName(product.category_id)}
-            </span>
-          </div>
-          <div>
-            <span className="text-gray-500">Giá mặc định:</span>
-            <span className="font-medium ml-2">
-              {product.default_price.toLocaleString("vi-VN")}₫
-            </span>
-          </div>
-          <div>
-            <span className="text-gray-500">Trạng thái:</span>
-            <span
-              className={`ml-2 px-2 py-0.5 text-xs font-medium rounded-full ${
-                product.status === 1
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              {STATUS_LABEL[product.status] ?? product.status}
-            </span>
-          </div>
-          {product.description && (
-            <div className="md:col-span-2">
-              <span className="text-gray-500">Mô tả:</span>
-              <span className="ml-2">{product.description}</span>
-            </div>
-          )}
+        <div className="flex gap-6">
           {product.avatar && (
-            <div className="md:col-span-2 mt-2">
-              <span className="text-sm text-gray-500 block mb-2">Ảnh sản phẩm:</span>
-              <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200">
-                <Image src={product.avatar} alt={product.name} fill unoptimized className="object-cover" />
+            <div className="flex-shrink-0">
+              <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-gray-200">
+                <Image
+                  src={product.avatar}
+                  alt={product.name}
+                  fill
+                  unoptimized
+                  className="object-cover"
+                />
               </div>
             </div>
           )}
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div>
+              <span className="text-gray-500">Tên sản phẩm:</span>
+              <span className="font-medium ml-2">{product.name}</span>
+            </div>
+            <div>
+              <span className="text-gray-500">Danh mục:</span>
+              <span className="font-medium ml-2">
+                {categoryName(product.category_id)}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-500">Giá mặc định:</span>
+              <span className="font-medium ml-2">
+                {product.default_price.toLocaleString("vi-VN")}₫
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-500">Trạng thái:</span>
+              <span
+                className={`ml-2 px-2 py-0.5 text-xs font-medium rounded-full ${
+                  product.status === 1
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                {STATUS_LABEL[product.status] ?? product.status}
+              </span>
+            </div>
+            {product.discount_percent > 0 && (
+              <div className="md:col-span-2">
+                <span className="text-gray-500">Giảm giá:</span>
+                <span className="ml-2 font-medium text-red-600">{product.discount_percent}%</span>
+                {product.sale_price < product.default_price && (
+                  <span className="ml-2 text-gray-500 text-xs">
+                    → {product.sale_price.toLocaleString("vi-VN")}₫
+                  </span>
+                )}
+                {(product.discount_start_at || product.discount_end_at) && (
+                  <span className="ml-2 text-xs text-gray-400">
+                    {product.discount_start_at ? new Date(product.discount_start_at).toLocaleString("vi-VN") : ""}
+                    {" – "}
+                    {product.discount_end_at ? new Date(product.discount_end_at).toLocaleString("vi-VN") : "∞"}
+                  </span>
+                )}
+              </div>
+            )}
+            {product.description && (
+              <div className="md:col-span-2">
+                <span className="text-sm text-gray-500 block mb-1">Mô tả:</span>
+                <div
+                  className="prose prose-sm max-w-none text-gray-700"
+                  dangerouslySetInnerHTML={{ __html: product.description }}
+                />
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -39,10 +39,16 @@ High-level project phases and milestones. For detailed implementation plans, see
 - [x] Product image gallery (multiple images per product)
   - [x] Backend: Product GET endpoints now include tags
   - [x] Frontend: Multi-image gallery component with variant images
+- [x] Product discount system (time-windowed activation, variant override)
+  - [x] Backend: Discount fields on products and variants with time-window support
+  - [x] Backend: Effective price computation with fallback hierarchy (variant → product → base)
+  - [x] Frontend: Sale badge and strikethrough price display in product item
+  - [x] Frontend: Admin discount forms for products and variants
+  - [x] Frontend: Shop page sorting by effective price
 - [ ] Image optimization and resizing
 - [ ] CDN integration planning
 
-**Completeness:** 85%
+**Completeness:** 95%
 
 ---
 

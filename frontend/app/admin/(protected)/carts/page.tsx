@@ -46,7 +46,7 @@ const mockCarts = [
 
 export default function ListCartPage() {
   const [search, setSearch] = useState("");
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const filtered = mockCarts.filter(
     (c) =>

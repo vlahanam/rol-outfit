@@ -5,6 +5,20 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Product Discount System** (2026-05-09)
+  - Backend: Discount fields on products and variants — `discount_percent` (0–100, NUMERIC 5,2), `discount_start_at`, `discount_end_at` (optional, time-windowed activation)
+  - Backend: Migrations 000013 (products discount) and 000014 (variants discount)
+  - Backend: `dto/discount_helper.go` — `IsDiscountActive()` and `EffectivePrice()` helpers with time-window and fallback logic
+  - Backend: All product/variant DTOs expose `sale_price` (server-computed effective price)
+  - Backend: Variant discount overrides product-level discount; both optional (fallback chain: variant → product → base price)
+  - Backend: Validation — discount 0–100 range, start_at < end_at date ordering
+  - Backend: Cart uses effective price at add time (no real-time recalc on discount changes)
+  - Frontend: `ProductItem` component — sale badge, strikethrough original price, displays effective price
+  - Frontend: Admin product add/edit forms — discount section with percent input and datetime-local pickers
+  - Frontend: Admin variant edit form — discount section matching product fields
+  - Frontend: Shop page sorting uses effective price; product detail shows sale badge with strikethrough
+  - User experience: Seamless pricing — no price change on variant selection if discount applies equally
+
 - **Tags & Product Detail Enhancement** (2026-05-09)
   - Backend: Tags CRUD system with time-window activation (`start_at`/`end_at` optional fields)
   - Backend: Unique slug constraint on tags; active-window filtering on public product GET
