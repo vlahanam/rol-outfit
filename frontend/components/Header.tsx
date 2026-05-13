@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link, useRouter, usePathname } from "@/i18n/navigation";
 import { useLocale } from "next-intl";
 import { routing } from "@/i18n/routing";
+import { useCart } from "@/context/cart-context";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -15,6 +16,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale();
+  const { cartCount } = useCart();
 
   function switchLocale() {
     const locales = routing.locales as readonly string[];
@@ -71,11 +73,13 @@ export function Header({ onMenuClick }: HeaderProps) {
             <button className="md:hidden">
               <Search className="w-6 h-6 text-gray-700" />
             </button>
-            <Link href="/cart" className="relative">
+            <Link href="/cart" className="relative" id="cart-icon">
               <ShoppingCart className="w-6 h-6 text-gray-700 hover:text-blue-600 transition-colors" />
-              <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                2
-              </span>
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                  {cartCount > 9 ? "9+" : cartCount}
+                </span>
+              )}
             </Link>
             <Link href="/login">
               <User className="w-6 h-6 text-gray-700 hover:text-blue-600 transition-colors" />

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/vlahanam/rol-outfit/src/internal/models"
 	"gorm.io/gorm"
 )
@@ -30,6 +31,7 @@ func (r *postgreStorage) FindOrCreateCart(ctx context.Context, userID string) (*
 	var cart models.Cart
 	err := r.db.WithContext(ctx).
 		Where(models.Cart{UserID: userID}).
+		Attrs(models.Cart{ID: uuid.New().String()}).
 		FirstOrCreate(&cart).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to find or create cart: %w", err)
@@ -64,7 +66,7 @@ func (r *postgreStorage) FindCartItem(ctx context.Context, cartID, productID, at
 	if attrID != "" {
 		q = q.Where("attr_id = ?", attrID)
 	} else {
-		q = q.Where("attr_id IS NULL OR attr_id = ''")
+		q = q.Where("attr_id IS NULL")
 	}
 	err := q.First(&item).Error
 	if err != nil {

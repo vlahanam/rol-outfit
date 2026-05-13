@@ -34,7 +34,7 @@ type OrderItem struct {
 	ID        string    `gorm:"type:uuid;primaryKey"`
 	OrderID   string    `gorm:"column:order_id;type:uuid"`
 	ProductID string    `gorm:"column:product_id;type:uuid"`
-	AttrID    string    `gorm:"column:attr_id;type:uuid"`
+	AttrID    *string   `gorm:"column:attr_id;type:uuid"`
 	Price     float64   `gorm:"column:price;type:numeric(12,2)"`
 	Quantity  int       `gorm:"column:quantity"`
 	CreatedAt time.Time `gorm:"column:created_at"`

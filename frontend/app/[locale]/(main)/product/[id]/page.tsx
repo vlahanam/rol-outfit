@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
 import { ShoppingCart, Minus, Plus, ArrowLeft } from 'lucide-react';
 import { Footer } from '@/components/Footer';
 import { ImageGallery } from '@/components/product/image-gallery';
@@ -10,6 +11,8 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { isLoggedIn } from '@/lib/auth';
+import { useCart } from '@/context/cart-context';
+import { useFlyToCart } from '@/hooks/use-fly-to-cart';
 import type { ApiResponse, Product, ProductVariant } from '@/types/api';
 
 function formatPrice(v: number) {
@@ -39,7 +42,8 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
-  const [cartMsg, setCartMsg] = useState<string | null>(null);
+  const { incrementCart } = useCart();
+  const { trigger: flyToCart } = useFlyToCart();
 
   useEffect(() => {
     if (!id) return;
@@ -89,18 +93,19 @@ export default function ProductDetailPage() {
   const handleAddToCart = async () => {
     if (!isLoggedIn()) { router.push('/login'); return; }
     if (!product) return;
-    if (needsPick) { setCartMsg('Vui lòng chọn phân loại sản phẩm'); return; }
+    if (needsPick) { toast.warning('Vui lòng chọn phân loại sản phẩm'); return; }
     setAddingToCart(true);
-    setCartMsg(null);
     try {
       await api.post('/cart/items', {
         product_id: product.id,
         ...(variant ? { attr_id: variant.id } : {}),
         quantity,
       });
-      setCartMsg('Đã thêm vào giỏ hàng!');
+      incrementCart(quantity);
+      flyToCart(images[imageIdx] ?? product.avatar ?? '');
+      toast.success('Đã thêm vào giỏ hàng!');
     } catch {
-      setCartMsg('Không thể thêm vào giỏ hàng');
+      toast.error('Không thể thêm vào giỏ hàng');
     } finally {
       setAddingToCart(false);
     }
@@ -177,10 +182,6 @@ export default function ProductDetailPage() {
                 Thành tiền: {formatPrice(salePrice * quantity)}
               </p>
             </div>
-
-            {cartMsg && (
-              <p className={`text-sm mb-3 ${cartMsg.includes('Đã') ? 'text-green-600' : 'text-red-600'}`}>{cartMsg}</p>
-            )}
 
             <button
               onClick={handleAddToCart}

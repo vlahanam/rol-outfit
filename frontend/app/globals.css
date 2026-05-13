@@ -1,7 +1,18 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-body,
-html {
-  overflow-x: hidden;
+/* overflow-x on body/html can break position:fixed — apply to layout wrapper instead */
+body {
+  overflow-x: clip;
+}
+
+@keyframes cart-bounce {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.35); }
+  65%  { transform: scale(0.88); }
+  100% { transform: scale(1); }
+}
+
+.cart-bounce {
+  animation: cart-bounce 0.45s ease;
 }

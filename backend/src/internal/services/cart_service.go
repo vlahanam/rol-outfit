@@ -103,11 +103,15 @@ func (s *cartService) AddItem(ctx context.Context, userID string, req *requests.
 		priceAtAdd = dto.EffectivePrice(product.DefaultPrice, product.DiscountPercent, product.DiscountStartAt, product.DiscountEndAt)
 	}
 
+	var attrID *string
+	if req.AttrID != "" {
+		attrID = &req.AttrID
+	}
 	item := &models.CartItem{
 		ID:         uuid.New().String(),
 		CartID:     cart.ID,
 		ProductID:  req.ProductID,
-		AttrID:     req.AttrID,
+		AttrID:     attrID,
 		PriceAtAdd: priceAtAdd,
 		Quantity:   req.Quantity,
 	}

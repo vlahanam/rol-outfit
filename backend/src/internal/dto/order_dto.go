@@ -28,10 +28,14 @@ type OrderDTO struct {
 }
 
 func ToOrderItemDTO(item *models.OrderItem) *OrderItemDTO {
+	attrID := ""
+	if item.AttrID != nil {
+		attrID = *item.AttrID
+	}
 	return &OrderItemDTO{
 		ID:        item.ID,
 		ProductID: item.ProductID,
-		AttrID:    item.AttrID,
+		AttrID:    attrID,
 		Price:     item.Price,
 		Quantity:  item.Quantity,
 	}

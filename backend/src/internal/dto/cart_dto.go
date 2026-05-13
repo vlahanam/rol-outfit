@@ -22,10 +22,14 @@ type CartDTO struct {
 }
 
 func ToCartItemDTO(item *models.CartItem) *CartItemDTO {
+	attrID := ""
+	if item.AttrID != nil {
+		attrID = *item.AttrID
+	}
 	return &CartItemDTO{
 		ID:         item.ID,
 		ProductID:  item.ProductID,
-		AttrID:     item.AttrID,
+		AttrID:     attrID,
 		PriceAtAdd: item.PriceAtAdd,
 		Quantity:   item.Quantity,
 	}

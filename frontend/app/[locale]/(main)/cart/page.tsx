@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { isLoggedIn } from "@/lib/auth";
+import { useCart } from "@/context/cart-context";
 import type { ApiResponse, Cart, CartItem, Product } from "@/types/api";
 
 interface RichCartItem extends CartItem {
@@ -23,6 +24,7 @@ export default function CartPage() {
   const router = useRouter();
   const [cartItems, setCartItems] = useState<RichCartItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const { incrementCart, decrementCart } = useCart();
 
   useEffect(() => {
     if (!isLoggedIn()) {
@@ -66,12 +68,15 @@ export default function CartPage() {
 
   const updateQuantity = async (id: string, newQuantity: number) => {
     if (newQuantity < 1) return;
+    const item = cartItems.find((i) => i.id === id);
+    if (!item) return;
     try {
       await api.put(`/cart/items/${id}`, { quantity: newQuantity });
+      const diff = newQuantity - item.quantity;
+      if (diff > 0) incrementCart(diff);
+      else if (diff < 0) decrementCart(-diff);
       setCartItems((items) =>
-        items.map((item) =>
-          item.id === id ? { ...item, quantity: newQuantity } : item,
-        ),
+        items.map((i) => (i.id === id ? { ...i, quantity: newQuantity } : i)),
       );
     } catch {
       // ignore
@@ -79,9 +84,11 @@ export default function CartPage() {
   };
 
   const removeItem = async (id: string) => {
+    const item = cartItems.find((i) => i.id === id);
     try {
       await api.delete(`/cart/items/${id}`);
-      setCartItems((items) => items.filter((item) => item.id !== id));
+      if (item) decrementCart(item.quantity);
+      setCartItems((items) => items.filter((i) => i.id !== id));
     } catch {
       // ignore
     }

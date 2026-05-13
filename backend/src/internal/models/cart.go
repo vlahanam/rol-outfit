@@ -14,7 +14,7 @@ type CartItem struct {
 	ID         string    `gorm:"type:uuid;primaryKey"`
 	CartID     string    `gorm:"column:cart_id;type:uuid"`
 	ProductID  string    `gorm:"column:product_id;type:uuid"`
-	AttrID     string    `gorm:"column:attr_id;type:uuid"`
+	AttrID     *string   `gorm:"column:attr_id;type:uuid"`
 	PriceAtAdd float64   `gorm:"column:price_at_add;type:numeric(12,2)"`
 	Quantity   int       `gorm:"column:quantity"`
 	CreatedAt  time.Time `gorm:"column:created_at"`

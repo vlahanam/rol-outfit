@@ -13,7 +13,7 @@ export function ImageGallery({ images, activeIndex, onSelect, alt = "Product" }:
   return (
     <div>
       <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
-        <img src={src} alt={alt} className="w-full h-full object-cover" />
+        <img id="product-main-img" src={src} alt={alt} className="w-full h-full object-cover" />
       </div>
       {images.length > 1 && (
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">

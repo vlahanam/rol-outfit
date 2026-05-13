@@ -85,6 +85,7 @@ func (s *authService) Register(ctx context.Context, req *requests.RegisterReques
 
 	// Tạo user mới
 	user := &models.User{
+		ID:       uuid.New().String(),
 		Email:    req.Email,
 		Password: string(hashedPassword),
 		Role:     models.USER_ROLE_CUSTOMER,
