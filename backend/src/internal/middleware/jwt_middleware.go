@@ -3,8 +3,8 @@ package middleware
 import (
 	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/gofiber/fiber/v3"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/vlahanam/rol-outfit/src/internal/common"
 	"github.com/vlahanam/rol-outfit/src/internal/i18n"
 )

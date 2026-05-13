@@ -196,12 +196,16 @@ Request/response types for API contracts.
 - Shows spinner overlay during upload
 - Returns file URL to parent form
 
-#### 3. API Client (lib/api.ts)
-- Centralized, typed endpoints
-- Namespace organization: `api.products`, `api.cart`, `api.adminUsers`, etc.
-- Bearer token authentication via localStorage
-- Custom ApiError class for error handling
-- ApiResponse<T> wrapper with pagination support
+#### 3. API Client (lib/api-client.ts & lib/api.ts)
+- **lib/api-client.ts** (146 LOC) — Base fetch client with:
+  - 401 auto-retry with promise deduplication (prevents token-refresh stampede)
+  - Bearer token authentication via localStorage
+  - Custom ApiError class for error handling
+  - ApiResponse<T> wrapper with pagination support
+- **lib/api.ts** (68 LOC) — HTTP methods (GET, POST, PUT, DELETE) and namespaced endpoints
+- **lib/api-resources.ts** (204 LOC) — Namespaced API methods: `adminUsers`, `adminProducts`, `adminCategories`, `adminTags`, `uploads`
+- **lib/auth.ts** (71 LOC) — Token storage with localStorage, cross-tab logout via BroadcastChannel
+- Namespace organization: `api.products`, `api.cart`, `api.adminUsers`, `api.tags`, `api.auth`, etc.
 
 #### 4. State Management
 - React Context for minimal global state (auth user, theme)
@@ -232,22 +236,166 @@ Request/response types for API contracts.
 - Nginx reads uploads from shared volume (read-only)
 - Backend writes to uploads (read-write)
 
+### Discount System
+
+**Purpose:** Time-windowed product and variant discounts with effective price computation.
+
+**Database Fields:**
+- Product: `discount_percent` (NUMERIC 5,2), `discount_start_at`, `discount_end_at` (TIMESTAMP, nullable)
+- Variant: `discount_percent` (NUMERIC 5,2), `discount_start_at`, `discount_end_at` (TIMESTAMP, nullable)
+
+**Helper Functions** (`dto/discount_helper.go`):
+- `IsDiscountActive(percent float64, startAt, endAt *time.Time) bool` — Checks if discount is within active window
+- `EffectivePrice(basePrice, discountPercent float64, startAt, endAt *time.Time) float64` — Computes sale price
+
+**Price Fallback Chain:**
+1. Check variant discount (if product has variants selected)
+2. Fall back to product discount
+3. Use base price if no discount active
+
+**Migrations:**
+- `000013_add_discount_to_products.sql` — Adds discount columns to products
+- `000014_add_discount_to_variants.sql` — Adds discount columns to variants
+
+**API Integration:**
+- All product/variant DTOs expose `sale_price` (server-computed effective price via discount_helper)
+- Cart items lock price at add time (no real-time recalc on discount changes)
+
+---
+
+### Tag System
+
+**Purpose:** Time-windowed product tags with public/admin filtering.
+
+**Database Tables:**
+- `tags` — Name, Slug (UNIQUE), StartAt/EndAt (*TIMESTAMP, nullable for time-window activation)
+- `product_tags` — Junction table (product_id, tag_id) with max 3 tags per product
+
+**Database Indexes:**
+- `idx_tags_window` on (start_at, end_at) for efficient active-window queries
+- `idx_product_tags_product` on product_id for variant lookups
+
+**Key Features:**
+- Time-window activation: tags only appear during [start_at, end_at] period
+- Public endpoints filter by active window; admin endpoints show all tags
+- Transactional `ReplaceProductTags()` updates all tags for a product atomically
+- Validation: max 3 tags per product, tag must exist before assignment
+
+**API Endpoints:**
+- `GET /api/v1/tags` — List active tags (filtered by time window)
+- `GET /api/v1/admin/tags` — List all tags (admin, no filtering)
+- `POST /api/v1/admin/tags` — Create tag
+- `GET /api/v1/admin/tags/:id` — Get tag details
+- `PUT /api/v1/admin/tags/:id` — Update tag
+- `DELETE /api/v1/admin/tags/:id` — Delete tag
+- `PUT /api/v1/products/:id/tags` — Assign tags to product
+
+**Migrations:**
+- `000011_create_tags_table.sql` — Tags table with time-window fields
+- `000012_create_product_tags_junction.sql` — Junction table
+
+---
+
+### Refresh Token Architecture
+
+**Purpose:** Stateful refresh token rotation with theft detection and multi-tab synchronization.
+
+**Database Table** (`refresh_tokens`):
+- `TokenHash` (VARCHAR 64, SHA256) — Never store plaintext tokens
+- `TokenFamily` (UUID) — Groups rotated tokens from same login
+- `UserID` (FK to users)
+- `ExpiresAt` (TIMESTAMP)
+- `RevokedAt` (TIMESTAMP, nullable) — Marks compromised tokens
+
+**Theft Detection:**
+- If a revoked token from a family is reused → entire family invalidated (family_id)
+- Cleanup goroutine runs every 6 hours, purges expired and old-revoked tokens
+
+**Token Lifecycle:**
+1. User logs in → backend issues refresh token with new family UUID
+2. Token stored in DB as SHA256 hash (never plaintext)
+3. Client stores in secure httpOnly cookie (production) or localStorage
+4. On access token expiry → client calls `POST /api/v1/auth/refresh` with refresh token
+5. Backend validates hash, rotates token, returns new access + refresh token
+6. **Rotation:** Old token marked, new token issued with same family UUID
+7. **Multi-tab sync:** Frontend uses BroadcastChannel to sync logout across browser tabs
+
+**API Endpoints:**
+- `POST /api/v1/auth/refresh` — Single-use token rotation with family validation
+- `POST /api/v1/auth/logout` — Revoke all user refresh tokens (204 No Content, idempotent)
+
+**Migration:**
+- `000010_create_refresh_tokens_table.sql`
+
+---
+
+### Updated DTO Schema
+
+**Product DTO** (includes discount-adjusted pricing):
+- Base fields: `ID`, `Name`, `Slug`, `Description`, `Price`
+- Image fields: `Image`, `Avatar`
+- Discount fields: `DiscountPercent`, `DiscountStartAt`, `DiscountEndAt`
+- Computed: `SalePrice` (effective price via discount_helper)
+- Relations: `Variants` (nested), `Tags` (active only)
+
+**Variant DTO** (includes discount-adjusted pricing):
+- Base fields: `ID`, `ProductID`, `Price`, `Stock`, `Sold`
+- Attributes: `Attributes` (JSON) — validated against product's `attribute_names`
+- Image: `Avatar`
+- Discount fields: `DiscountPercent`, `DiscountStartAt`, `DiscountEndAt`
+- Computed: `SalePrice` (effective price, variant discount overrides product)
+- Status: `Status` (1=active, 2=inactive)
+
+**Tag DTO:**
+- Base fields: `ID`, `Name`, `Slug`
+- Time-window: `StartAt`, `EndAt` (optional)
+
+---
+
 ## API Endpoints
 
 ### Authentication
-| Method | Endpoint | Auth | Role |
-|--------|----------|------|------|
-| POST | `/api/v1/auth/register` | None | - |
-| POST | `/api/v1/auth/login` | None | - |
-
-### Products
 | Method | Endpoint | Auth | Role | Notes |
 |--------|----------|------|------|-------|
-| GET | `/api/v1/products` | None | - | List all products |
-| GET | `/api/v1/products/:id` | None | - | Get product details |
+| POST | `/api/v1/auth/register` | None | - | User registration |
+| POST | `/api/v1/auth/login` | None | - | User login, returns access + refresh tokens |
+| POST | `/api/v1/auth/refresh` | None | - | Token rotation, requires refresh token |
+| POST | `/api/v1/auth/logout` | JWT | User | Revoke all refresh tokens |
+
+### Products (Public)
+| Method | Endpoint | Auth | Role | Notes |
+|--------|----------|------|------|-------|
+| GET | `/api/v1/products` | None | - | List products with optional tag filtering (query: `?tag=<slug>`, `?category_id=`, `?page=`, `?limit=`). Tag filter respects time windows (start_at/end_at). |
+| GET | `/api/v1/products/:id` | None | - | Get product details with variants & tags |
+
+### Products (Admin)
+| Method | Endpoint | Auth | Role | Notes |
+|--------|----------|------|------|-------|
 | POST | `/api/v1/products` | JWT | Admin | Create product |
-| PUT | `/api/v1/products/:id` | JWT | Admin | Update product (including avatar) |
+| PUT | `/api/v1/products/:id` | JWT | Admin | Update product |
 | DELETE | `/api/v1/products/:id` | JWT | Admin | Delete product |
+| GET | `/api/v1/admin/products` | JWT | Admin | List products with all variant statuses |
+| GET | `/api/v1/admin/products/:id` | JWT | Admin | Get product with all variants |
+| PUT | `/api/v1/products/:id/tags` | JWT | Admin | Assign tags to product |
+
+### Product Variants
+| Method | Endpoint | Auth | Role | Notes |
+|--------|----------|------|------|-------|
+| GET | `/api/v1/products/:productID/variants` | None | - | List product variants |
+| GET | `/api/v1/products/:productID/variants/:id` | None | - | Get variant details |
+| POST | `/api/v1/products/:productID/variants` | JWT | Admin | Create variant |
+| PUT | `/api/v1/products/:productID/variants/:id` | JWT | Admin | Update variant |
+| DELETE | `/api/v1/products/:productID/variants/:id` | JWT | Admin | Delete variant |
+
+### Tags
+| Method | Endpoint | Auth | Role | Notes |
+|--------|----------|------|------|-------|
+| GET | `/api/v1/tags` | None | - | List active tags (filtered by time window) |
+| GET | `/api/v1/admin/tags` | JWT | Admin | List all tags |
+| POST | `/api/v1/admin/tags` | JWT | Admin | Create tag |
+| GET | `/api/v1/admin/tags/:id` | JWT | Admin | Get tag details |
+| PUT | `/api/v1/admin/tags/:id` | JWT | Admin | Update tag |
+| DELETE | `/api/v1/admin/tags/:id` | JWT | Admin | Delete tag |
 
 ### File Upload
 | Method | Endpoint | Auth | Role | Notes |
@@ -255,8 +403,8 @@ Request/response types for API contracts.
 | POST | `/api/v1/uploads` | JWT | User | Upload file, returns URL |
 | DELETE | `/api/v1/uploads/:filename` | JWT | Admin | Delete uploaded file |
 
-### Categories, Cart, Orders
-See CRUD endpoints for each entity (similar structure to Products).
+### Categories, Cart, Orders, Users, Widgets
+See CRUD endpoints for each entity (similar structure to Products). Full list includes admin namespaces for protected operations.
 
 ## Data Flow: Product with Avatar
 
@@ -331,6 +479,27 @@ See CRUD endpoints for each entity (similar structure to Products).
 | backend | `uploads` | `/app/uploads` | rw | Write uploaded files |
 | nginx | `uploads` | `/usr/share/nginx/html/uploads` | ro | Serve static files |
 | postgres | `pgdata` | `/var/lib/postgresql/data` | rw | Database persistence |
+
+## Database Migrations Summary
+
+| Migration | File | Purpose |
+|-----------|------|---------|
+| 000001 | `create_users_table.sql` | User authentication and profiles |
+| 000002 | `create_categories_table.sql` | Product categories with slugs |
+| 000003 | `create_products_table.sql` | Product catalog |
+| 000004 | `create_product_variants_table.sql` | Product variants with attributes |
+| 000005 | `create_carts_table.sql` | User shopping carts |
+| 000006 | `create_cart_items_table.sql` | Cart line items |
+| 000007 | `create_orders_table.sql` | Order history |
+| 000008 | `add_avatar_to_products.sql` | Avatar field for products |
+| 000009 | `create_order_items_table.sql` | Order line items |
+| 000010 | `create_refresh_tokens_table.sql` | Stateful refresh token rotation |
+| 000011 | `create_tags_table.sql` | Tags with time-window activation |
+| 000012 | `create_product_tags_junction.sql` | Product-to-tags many-to-many |
+| 000013 | `add_discount_to_products.sql` | Discount fields on products |
+| 000014 | `add_discount_to_variants.sql` | Discount fields on variants |
+
+---
 
 ## Development Environment
 

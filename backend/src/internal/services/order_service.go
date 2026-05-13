@@ -13,10 +13,10 @@ import (
 )
 
 var (
-	ErrOrderNotFound  = errors.New("order not found")
-	ErrOrderNotOwned  = errors.New("order does not belong to user")
-	ErrCartEmpty      = errors.New("cart is empty")
-	ErrCannotCancel   = errors.New("order cannot be cancelled in current status")
+	ErrOrderNotFound = errors.New("order not found")
+	ErrOrderNotOwned = errors.New("order does not belong to user")
+	ErrCartEmpty     = errors.New("cart is empty")
+	ErrCannotCancel  = errors.New("order cannot be cancelled in current status")
 )
 
 type OrderService interface {
@@ -29,11 +29,11 @@ type OrderService interface {
 }
 
 type orderService struct {
-	db           *gorm.DB
-	orderRepo    repositories.OrderRepository
+	db            *gorm.DB
+	orderRepo     repositories.OrderRepository
 	orderItemRepo repositories.OrderItemRepository
-	cartRepo     repositories.CartRepository
-	cartItemRepo repositories.CartItemRepository
+	cartRepo      repositories.CartRepository
+	cartItemRepo  repositories.CartItemRepository
 }
 
 func NewOrderService(

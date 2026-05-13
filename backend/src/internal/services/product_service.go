@@ -18,7 +18,7 @@ var (
 )
 
 type ProductService interface {
-	List(ctx context.Context, categoryID string, offset, limit int) ([]*models.Product, int64, error)
+	List(ctx context.Context, categoryID, tagSlug string, offset, limit int) ([]*models.Product, int64, error)
 	AdminList(ctx context.Context, categoryID, search string, offset, limit int) ([]*models.ProductWithVariants, int64, error)
 	GetByID(ctx context.Context, id string) (*models.Product, error)
 	AdminGetByID(ctx context.Context, id string) (*models.ProductWithVariants, error)
@@ -35,8 +35,8 @@ func NewProductService(repo repositories.ProductRepository) ProductService {
 	return &productService{repo: repo}
 }
 
-func (s *productService) List(ctx context.Context, categoryID string, offset, limit int) ([]*models.Product, int64, error) {
-	return s.repo.ListProducts(ctx, categoryID, offset, limit)
+func (s *productService) List(ctx context.Context, categoryID, tagSlug string, offset, limit int) ([]*models.Product, int64, error) {
+	return s.repo.ListProducts(ctx, categoryID, tagSlug, offset, limit)
 }
 
 func (s *productService) AdminList(ctx context.Context, categoryID, search string, offset, limit int) ([]*models.ProductWithVariants, int64, error) {

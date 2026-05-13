@@ -9,13 +9,13 @@ import (
 
 // CreateAdminUserRequest dùng cho admin tạo user mới với role/status tùy chọn.
 type CreateAdminUserRequest struct {
-	FullName string  `json:"full_name"`
-	Email    string  `json:"email"`
-	Password string  `json:"password"`
-	Address  string  `json:"address"`
-	Phone    string  `json:"phone"`
-	Role     *int8   `json:"role"`   // default: USER_ROLE_CUSTOMER (2)
-	Status   *int8   `json:"status"` // default: USER_STATUS_ACTIVE (1)
+	FullName string `json:"full_name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Address  string `json:"address"`
+	Phone    string `json:"phone"`
+	Role     *int8  `json:"role"`   // default: USER_ROLE_CUSTOMER (2)
+	Status   *int8  `json:"status"` // default: USER_STATUS_ACTIVE (1)
 }
 
 func (r CreateAdminUserRequest) Validate() error {

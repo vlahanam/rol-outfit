@@ -19,8 +19,8 @@ High-level project phases and milestones. For detailed implementation plans, see
 
 ---
 
-## Phase 2: File Management & Media (IN PROGRESS)
-**Status:** ⏳ In Progress | **Target:** May 2026
+## Phase 2: File Management & Media (COMPLETE)
+**Status:** ✓ Complete | **Target:** May 2026
 
 - [x] Product avatar storage and retrieval
 - [x] File upload service with MIME validation
@@ -45,40 +45,51 @@ High-level project phases and milestones. For detailed implementation plans, see
   - [x] Frontend: Sale badge and strikethrough price display in product item
   - [x] Frontend: Admin discount forms for products and variants
   - [x] Frontend: Shop page sorting by effective price
-- [ ] Image optimization and resizing
-- [ ] CDN integration planning
+- [x] Stateful refresh token system with theft detection & multi-tab sync
+- [ ] Image optimization and resizing (Post-launch optimization)
+- [ ] CDN integration planning (Post-launch optimization)
 
-**Completeness:** 95%
+**Completeness:** 100%
 
 ---
 
 ## Phase 3: Frontend Development & Admin Dashboard (IN PROGRESS)
-**Status:** ⏳ In Progress | **Target:** May 2026
+**Status:** ⏳ In Progress | **Target:** May–June 2026
 
-- [x] Next.js frontend setup with TailwindCSS
+- [x] Next.js frontend setup with TailwindCSS and next-intl
 - [x] Admin dashboard — User CRUD (list, create, edit, delete)
 - [x] Admin dashboard — Product CRUD with variants (add, edit, delete products + variant management)
 - [x] Admin dashboard — Product & variant image upload UI with reusable ImageUploader component
-- [x] Product variant list view with images
-- [x] Variant edit form with all fields (avatar, attributes, price, stock, status)
+- [x] Admin dashboard — Category CRUD with slug generation
+- [x] Product variant list view with images and edit capability
+- [x] Variant edit form with all fields (avatar, attributes, price, stock, status, discount)
 - [x] Admin dashboard — Tag CRUD (list, create, edit, delete) with time-window activation
   - [x] Backend: Tags table with start_at/end_at time windows
   - [x] Backend: Product-tag assignment with max-3 tags per product
-  - [x] Frontend: Tags management pages (list, create, edit)
+  - [x] Frontend: Tags management pages (list, create, edit) with datetime pickers
   - [x] Frontend: Product tag assignment panel on product edit page
 - [x] User product detail page enhancement
   - [x] Variant picker (color/size) with availability awareness
-  - [x] Active tag badges display
+  - [x] Active tag badges display with filtering
   - [x] Multi-image gallery (product + variant images)
   - [x] Dynamic price updates on variant selection
+  - [x] Sale badge and strikethrough price display
+- [x] Admin cart viewing UI
+- [x] Tiptap rich text editor for product descriptions
+- [x] Admin widgets management UI
+  - [x] Backend: Admin-only widget endpoints (list, get) with no status filter
+  - [x] Frontend: Widgets list page with hierarchical container→children display
+  - [x] Frontend: Widget add form with parent selector and image settings
+  - [x] Frontend: Widget edit form with all configuration options
+  - [x] Frontend: Drag-and-drop widget reorder (root + children within parent)
+- [x] New arrivals page with tag-based filtering — products tagged "NEW" fetched via real API with sort controls
 - [ ] Authentication UI (login, registration) — public pages
 - [ ] Product catalog and search — public pages
 - [ ] Shopping cart UI — public pages
 - [ ] Order history and tracking — public pages
 - [ ] Admin orders management UI
-- [ ] Admin widgets management UI
 
-**Completeness:** 60%
+**Completeness:** 76%
 
 ---
 
@@ -103,8 +114,9 @@ High-level project phases and milestones. For detailed implementation plans, see
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| API Endpoints | 20+ | 50+ |
+| API Endpoints | 45+ | 60+ |
 | Test Coverage | TBD | 80%+ |
-| Documentation | In Progress | 100% |
+| Documentation | ~95% | 100% |
 | Production Ready | No | Q2 2026 |
+| Database Migrations | 14 | 14+ |
 

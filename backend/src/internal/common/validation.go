@@ -1,8 +1,8 @@
 package common
 
 import (
-	i18npkg "github.com/vlahanam/rol-outfit/src/internal/i18n"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	i18npkg "github.com/vlahanam/rol-outfit/src/internal/i18n"
 )
 
 // ParseValidationErrors converts ozzo-validation.Errors to a translated details map.

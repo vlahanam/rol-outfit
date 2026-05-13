@@ -7,6 +7,7 @@
     "switchLang": "JP",
     "backToHome": "Về trang chủ",
     "loading": "Đang tải...",
+    "errorLoading": "Có lỗi xảy ra, vui lòng thử lại.",
     "copyright": "© 2026 RolOutfit. All rights reserved."
   },
   "Header": {
@@ -82,6 +83,7 @@
     "sortNewest": "Mới nhất",
     "sortPriceLow": "Giá thấp đến cao",
     "sortPriceHigh": "Giá cao đến thấp",
+    "noProducts": "Không có sản phẩm mới nào",
     "cottonLogo": "Áo Thun Cotton Logo",
     "officeSuit": "Vest Công Sở May Đo",
     "casualShirt": "Áo Sơ Mi Casual",

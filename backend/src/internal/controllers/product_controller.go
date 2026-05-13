@@ -24,12 +24,13 @@ func ListProducts(db *gorm.DB) fiber.Handler {
 		}
 		p.Process()
 		categoryID := ctx.Query("category_id")
+		tagSlug := ctx.Query("tag")
 		offset := (p.Page - 1) * p.Limit
 
 		repo := repositories.NewPostgreSQLStorage(db)
 		svc := services.NewProductService(repo)
 
-		products, total, err := svc.List(ctx.Context(), categoryID, offset, p.Limit)
+		products, total, err := svc.List(ctx.Context(), categoryID, tagSlug, offset, p.Limit)
 		if err != nil {
 			slog.Error("ListProducts failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)

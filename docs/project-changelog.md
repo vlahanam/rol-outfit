@@ -5,6 +5,37 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Tag-Based Product Filtering & Real API Integration for New Arrivals** (2026-05-10)
+  - Backend: `GET /api/v1/products` now accepts optional `?tag=<slug>` query parameter
+  - Backend: Tag filtering with time-window validation (start_at/end_at) in `ListProducts()` repository method
+  - Backend: SQL JOIN on product_tags and tags tables with window boundary checks
+  - Frontend: `/new-arrivals` page refactored to fetch real products tagged "NEW" via API instead of hardcoded data
+  - Frontend: Loading state, empty state, and sort controls (by price/newest) integrated with API response
+  - Frontend: Product navigation links updated to use product IDs from API response
+  - Translations: Vietnamese (vn.json) and Japanese (jp.json) message keys added for new-arrivals page
+
+- **Admin Widget Drag-and-Drop Reorder** (2026-05-10)
+  - Frontend: `WidgetSortableRow` component using `@dnd-kit/sortable` for drag handles
+  - Frontend: DnD context on widgets list page with `DndContext`, `SortableContext`, and sensors
+  - Frontend: `handleDragEnd` with optimistic updates and rollback on API failure
+  - Frontend: Root containers and children within parent draggable and reorderable
+  - Functionality: Drag updates `display_order` via `PUT /api/v1/widgets/:id` on drag end
+  - UX: Visual feedback (0.5 opacity while dragging) and PointerSensor with 8px activation distance
+
+- **Admin Widget Management UI** (2026-05-10)
+  - Backend: `ListWidgetsAdmin`, `FindWidgetByIDAdmin` repository methods returning all widget statuses (no filtering)
+  - Backend: `ListAdmin`, `GetByIDAdmin` service methods for admin access
+  - Backend: Fixed `Update`/`Delete` controller methods to use `FindWidgetByIDAdmin` (hidden widgets now manageable by admins)
+  - Backend: `AdminListWidgets`, `AdminGetWidget` controller handlers with JWT + admin role middleware
+  - Backend: Registered `/api/v1/admin/widgets` (GET list) and `/api/v1/admin/widgets/:id` (GET detail) routes
+  - Frontend: `Widget`, `CreateWidgetPayload`, `UpdateWidgetPayload`, `WidgetType` type definitions in `types/api.ts`
+  - Frontend: `adminWidgets` resource and `WIDGET_STATUS_LABEL`, `WIDGET_TYPE_LABEL` constants in `lib/api.ts`
+  - Frontend: `addWidgetSchema`, `editWidgetSchema` Zod validation schemas in `lib/validations.ts`
+  - Frontend: Widgets menu item added to `AdminSidebar.tsx`
+  - Frontend: `/admin/widgets` list page with expandable container→children hierarchy visualization
+  - Frontend: `/admin/widgets/add` form page with parent widget selector and image settings
+  - Frontend: `/admin/widgets/[id]/edit` form page for widget configuration updates
+
 - **Product Discount System** (2026-05-09)
   - Backend: Discount fields on products and variants — `discount_percent` (0–100, NUMERIC 5,2), `discount_start_at`, `discount_end_at` (optional, time-windowed activation)
   - Backend: Migrations 000013 (products discount) and 000014 (variants discount)
