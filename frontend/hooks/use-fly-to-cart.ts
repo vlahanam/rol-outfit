@@ -1,14 +1,14 @@
-import { useCallback } from 'react';
+import { useCallback } from "react";
 
 const FLY_DURATION = 650;
 const BOUNCE_DELAY = 580;
 
 export function useFlyToCart() {
   const trigger = useCallback((imgSrc: string) => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
-    const srcEl = document.getElementById('product-main-img');
-    const cartEl = document.getElementById('cart-icon');
+    const srcEl = document.getElementById("product-main-img");
+    const cartEl = document.getElementById("cart-icon");
     if (!srcEl || !cartEl) return;
 
     const srcRect = srcEl.getBoundingClientRect();
@@ -28,7 +28,7 @@ export function useFlyToCart() {
     const dy = endY - startY;
 
     // Use a div with background-image — more reliable than <img> for animations
-    const el = document.createElement('div');
+    const el = document.createElement("div");
     el.style.cssText = `
       position: fixed;
       left: ${startX}px;
@@ -37,7 +37,7 @@ export function useFlyToCart() {
       height: 60px;
       border-radius: 50%;
       background-color: #e5e7eb;
-      ${imgSrc ? `background-image: url('${CSS.escape ? imgSrc : imgSrc}');` : ''}
+      ${imgSrc ? `background-image: url('${CSS.escape ? imgSrc : imgSrc}');` : ""}
       background-size: cover;
       background-position: center;
       z-index: 2147483647;
@@ -52,15 +52,22 @@ export function useFlyToCart() {
     requestAnimationFrame(() => {
       const anim = el.animate(
         [
-          { transform: 'translate(0, 0) scale(1)', opacity: '1' },
+          { transform: "translate(0, 0) scale(1)", opacity: "1" },
           {
             transform: `translate(${dx * 0.45}px, ${dy * 0.5 - arcLift}px) scale(0.65)`,
-            opacity: '0.85',
+            opacity: "0.85",
             offset: 0.45,
           },
-          { transform: `translate(${dx}px, ${dy}px) scale(0.22)`, opacity: '0' },
+          {
+            transform: `translate(${dx}px, ${dy}px) scale(0.22)`,
+            opacity: "0",
+          },
         ],
-        { duration: FLY_DURATION, easing: 'cubic-bezier(0.2, 0, 0.8, 1)', fill: 'forwards' },
+        {
+          duration: FLY_DURATION,
+          easing: "cubic-bezier(0.2, 0, 0.8, 1)",
+          fill: "forwards",
+        },
       );
 
       anim.onfinish = () => el.remove();
@@ -68,8 +75,8 @@ export function useFlyToCart() {
 
     // Bounce cart icon when thumbnail arrives
     setTimeout(() => {
-      cartEl.classList.add('cart-bounce');
-      setTimeout(() => cartEl.classList.remove('cart-bounce'), 450);
+      cartEl.classList.add("cart-bounce");
+      setTimeout(() => cartEl.classList.remove("cart-bounce"), 450);
     }, BOUNCE_DELAY);
 
     // Safety cleanup in case onfinish doesn't fire
