@@ -5,6 +5,18 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Checkout Flow & User Orders** (2026-05-14)
+  - Frontend: Checkout page with shipping form, address validation, and order creation via API
+  - Frontend: Checkout success page with order confirmation and details
+  - Frontend: User orders history page listing all user orders with status badges
+  - Frontend: Order detail page with full order and item information
+  - Frontend: Order cancellation UI with status-aware validation
+  - Frontend: Admin order detail page with real API data integration (replaced mock data)
+  - Frontend: User dropdown in header showing logged-in user with logout option
+  - Frontend: `OrderStatusBadge` component with status-specific styling
+  - Frontend: `UserDropdown` component for authenticated user actions
+  - New pages: `/checkout`, `/checkout/success`, `/orders`, `/orders/[id]`
+
 - **Tag-Based Product Filtering & Real API Integration for New Arrivals** (2026-05-10)
   - Backend: `GET /api/v1/products` now accepts optional `?tag=<slug>` query parameter
   - Backend: Tag filtering with time-window validation (start_at/end_at) in `ListProducts()` repository method

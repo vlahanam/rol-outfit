@@ -14,7 +14,9 @@
     "shop": "Cửa Hàng",
     "newArrivals": "Hàng Mới",
     "searchPlaceholder": "Tìm kiếm sản phẩm...",
-    "switchLang": "JP"
+    "switchLang": "JP",
+    "myOrders": "Đơn hàng của tôi",
+    "logout": "Đăng xuất"
   },
   "Footer": {
     "description": "Điểm đến hoàn hảo cho thời trang và phong cách sống của bạn.",
@@ -152,6 +154,68 @@
     "phoneInvalid": "Số điện thoại phải có 9-11 chữ số",
     "addressRequired": "Vui lòng nhập địa chỉ",
     "confirmPasswordRequired": "Vui lòng xác nhận mật khẩu",
-    "passwordsMismatch": "Mật khẩu không khớp"
+    "passwordsMismatch": "Mật khẩu không khớp",
+    "addressTooShort": "Địa chỉ phải có ít nhất 10 ký tự",
+    "addressTooLong": "Địa chỉ không được quá 500 ký tự",
+    "invalidPhone": "Số điện thoại không hợp lệ"
+  },
+  "CheckoutPage": {
+    "title": "Thanh toán",
+    "shippingInfo": "Thông tin giao hàng",
+    "shippingAddress": "Địa chỉ giao hàng",
+    "addressPlaceholder": "Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố",
+    "phone": "Số điện thoại",
+    "phonePlaceholder": "0912345678",
+    "note": "Ghi chú",
+    "notePlaceholder": "Ghi chú cho đơn hàng (tùy chọn)",
+    "orderItems": "Sản phẩm",
+    "orderSummary": "Tóm tắt đơn hàng",
+    "subtotal": "Tạm tính",
+    "shipping": "Phí vận chuyển",
+    "free": "Miễn phí",
+    "total": "Tổng cộng",
+    "placeOrder": "Đặt hàng",
+    "submitting": "Đang xử lý..."
+  },
+  "CheckoutSuccessPage": {
+    "title": "Đặt hàng thành công!",
+    "thankYou": "Cảm ơn bạn đã đặt hàng",
+    "orderNumber": "Mã đơn hàng",
+    "viewOrders": "Xem đơn hàng",
+    "continueShopping": "Tiếp tục mua sắm"
+  },
+  "OrdersPage": {
+    "title": "Đơn hàng của tôi",
+    "empty": "Bạn chưa có đơn hàng nào",
+    "emptyDesc": "Hãy khám phá các sản phẩm của chúng tôi",
+    "startShopping": "Bắt đầu mua sắm",
+    "orderNumber": "Mã đơn",
+    "viewDetail": "Xem chi tiết"
+  },
+  "OrderDetailPage": {
+    "title": "Chi tiết đơn hàng",
+    "orderInfo": "Thông tin đơn hàng",
+    "items": "Sản phẩm",
+    "shippingInfo": "Thông tin giao hàng",
+    "address": "Địa chỉ",
+    "phone": "Số điện thoại",
+    "note": "Ghi chú",
+    "orderSummary": "Tóm tắt",
+    "subtotal": "Tạm tính",
+    "shipping": "Phí vận chuyển",
+    "free": "Miễn phí",
+    "total": "Tổng cộng",
+    "cancelOrder": "Hủy đơn hàng",
+    "cancelConfirm": "Bạn có chắc muốn hủy đơn hàng này?",
+    "cancelled": "Đã hủy đơn hàng",
+    "cancelFailed": "Không thể hủy đơn hàng"
+  },
+  "OrderStatus": {
+    "pending": "Chờ xử lý",
+    "confirmed": "Đã xác nhận",
+    "shipped": "Đang giao",
+    "delivered": "Đã giao",
+    "paid": "Đã thanh toán",
+    "cancelled": "Đã hủy"
   }
 }

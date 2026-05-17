@@ -27,6 +27,19 @@ export function createRegisterSchema(t: (key: string) => string) {
     });
 }
 
+export function createCheckoutSchema(t: (key: string) => string) {
+  return z.object({
+    shipping_address: z
+      .string()
+      .min(10, t("addressTooShort"))
+      .max(500, t("addressTooLong")),
+    phone: z
+      .string()
+      .regex(/^[0-9]{9,15}$/, t("invalidPhone")),
+    note: z.string().max(500).optional(),
+  });
+}
+
 // Static schemas (admin pages – Vietnamese only)
 export const loginSchema = createLoginSchema(
   (k) =>

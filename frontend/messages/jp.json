@@ -14,7 +14,9 @@
     "shop": "ショップ",
     "newArrivals": "新着",
     "searchPlaceholder": "商品を検索...",
-    "switchLang": "VN"
+    "switchLang": "VN",
+    "myOrders": "注文履歴",
+    "logout": "ログアウト"
   },
   "Footer": {
     "description": "あなたのファッションとライフスタイルの完璧な目的地。",
@@ -152,6 +154,68 @@
     "phoneInvalid": "電話番号は9〜11桁で入力してください",
     "addressRequired": "住所を入力してください",
     "confirmPasswordRequired": "パスワードを確認してください",
-    "passwordsMismatch": "パスワードが一致しません"
+    "passwordsMismatch": "パスワードが一致しません",
+    "addressTooShort": "住所は10文字以上で入力してください",
+    "addressTooLong": "住所は500文字以内で入力してください",
+    "invalidPhone": "電話番号が無効です"
+  },
+  "CheckoutPage": {
+    "title": "購入手続き",
+    "shippingInfo": "配送先情報",
+    "shippingAddress": "配送先住所",
+    "addressPlaceholder": "住所を入力してください",
+    "phone": "電話番号",
+    "phonePlaceholder": "09012345678",
+    "note": "備考",
+    "notePlaceholder": "注文に関する備考（任意）",
+    "orderItems": "商品",
+    "orderSummary": "注文概要",
+    "subtotal": "小計",
+    "shipping": "送料",
+    "free": "無料",
+    "total": "合計",
+    "placeOrder": "注文を確定する",
+    "submitting": "処理中..."
+  },
+  "CheckoutSuccessPage": {
+    "title": "ご注文ありがとうございます！",
+    "thankYou": "ご注文を承りました",
+    "orderNumber": "注文番号",
+    "viewOrders": "注文を確認",
+    "continueShopping": "ショッピングを続ける"
+  },
+  "OrdersPage": {
+    "title": "注文履歴",
+    "empty": "注文履歴がありません",
+    "emptyDesc": "商品をご覧ください",
+    "startShopping": "ショッピングを始める",
+    "orderNumber": "注文番号",
+    "viewDetail": "詳細を見る"
+  },
+  "OrderDetailPage": {
+    "title": "注文詳細",
+    "orderInfo": "注文情報",
+    "items": "商品",
+    "shippingInfo": "配送先情報",
+    "address": "住所",
+    "phone": "電話番号",
+    "note": "備考",
+    "orderSummary": "注文概要",
+    "subtotal": "小計",
+    "shipping": "送料",
+    "free": "無料",
+    "total": "合計",
+    "cancelOrder": "注文をキャンセル",
+    "cancelConfirm": "この注文をキャンセルしますか？",
+    "cancelled": "注文がキャンセルされました",
+    "cancelFailed": "注文をキャンセルできませんでした"
+  },
+  "OrderStatus": {
+    "pending": "処理待ち",
+    "confirmed": "確認済み",
+    "shipped": "発送済み",
+    "delivered": "配達済み",
+    "paid": "支払い済み",
+    "cancelled": "キャンセル"
   }
 }

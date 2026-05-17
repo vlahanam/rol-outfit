@@ -83,13 +83,15 @@ High-level project phases and milestones. For detailed implementation plans, see
   - [x] Frontend: Widget edit form with all configuration options
   - [x] Frontend: Drag-and-drop widget reorder (root + children within parent)
 - [x] New arrivals page with tag-based filtering — products tagged "NEW" fetched via real API with sort controls
+- [x] Checkout flow (shipping form, order creation, success page)
+- [x] User order pages (history list, detail view, cancel capability)
+- [x] Admin order detail page with real API integration
+- [x] Header auth state (user dropdown when logged in)
 - [ ] Authentication UI (login, registration) — public pages
 - [ ] Product catalog and search — public pages
 - [ ] Shopping cart UI — public pages
-- [ ] Order history and tracking — public pages
-- [ ] Admin orders management UI
 
-**Completeness:** 76%
+**Completeness:** 81%
 
 ---
 

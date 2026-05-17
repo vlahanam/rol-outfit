@@ -17,6 +17,7 @@ interface CartContextValue {
   incrementCart: (qty?: number) => void;
   decrementCart: (qty?: number) => void;
   refreshCart: () => Promise<void>;
+  clearCart: () => void;
 }
 
 const CartContext = createContext<CartContextValue>({
@@ -24,6 +25,7 @@ const CartContext = createContext<CartContextValue>({
   incrementCart: () => {},
   decrementCart: () => {},
   refreshCart: async () => {},
+  clearCart: () => {},
 });
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -55,8 +57,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCartCount((prev) => Math.max(0, prev - qty));
   }, []);
 
+  const clearCart = useCallback(() => {
+    setCartCount(0);
+  }, []);
+
   return (
-    <CartContext.Provider value={{ cartCount, incrementCart, decrementCart, refreshCart }}>
+    <CartContext.Provider value={{ cartCount, incrementCart, decrementCart, refreshCart, clearCart }}>
       {children}
     </CartContext.Provider>
   );

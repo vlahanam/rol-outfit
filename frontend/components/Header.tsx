@@ -1,11 +1,16 @@
 "use client";
 
-import { Search, ShoppingCart, User, Menu } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, ShoppingCart, Menu } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter, usePathname } from "@/i18n/navigation";
 import { useLocale } from "next-intl";
 import { routing } from "@/i18n/routing";
 import { useCart } from "@/context/cart-context";
+import { isLoggedIn, subscribeAuthEvents } from "@/lib/auth";
+import { api } from "@/lib/api";
+import { UserDropdown } from "./user-dropdown";
+import type { ApiResponse, User } from "@/types/api";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -16,7 +21,36 @@ export function Header({ onMenuClick }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale();
-  const { cartCount } = useCart();
+  const { cartCount, clearCart } = useCart();
+  const [user, setUser] = useState<{ full_name: string; email: string } | null>(null);
+
+  useEffect(() => {
+    if (isLoggedIn()) {
+      api
+        .get<ApiResponse<User>>("/users/me")
+        .then((res) => setUser({ full_name: res.data.full_name, email: res.data.email }))
+        .catch(() => setUser(null));
+    }
+
+    const unsub = subscribeAuthEvents((event) => {
+      if (event.type === "logout") {
+        setUser(null);
+      } else if (event.type === "tokens-updated" && isLoggedIn()) {
+        api
+          .get<ApiResponse<User>>("/users/me")
+          .then((res) => setUser({ full_name: res.data.full_name, email: res.data.email }))
+          .catch(() => setUser(null));
+      }
+    });
+    return unsub;
+  }, []);
+
+  const handleLogout = async () => {
+    await api.auth.logout();
+    setUser(null);
+    clearCart();
+    router.push("/");
+  };
 
   function switchLocale() {
     const locales = routing.locales as readonly string[];
@@ -81,9 +115,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                 </span>
               )}
             </Link>
-            <Link href="/login">
-              <User className="w-6 h-6 text-gray-700 hover:text-blue-600 transition-colors" />
-            </Link>
+            <UserDropdown user={user} onLogout={handleLogout} />
           </div>
         </div>
       </div>
