@@ -1,42 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { addWidgetSchema } from "@/lib/validations";
-import type { Widget, WidgetType } from "@/types/api";
+import type { WidgetType } from "@/types/api";
 
 const WIDGET_TYPES: { value: WidgetType; label: string }[] = [
-  { value: "container", label: "Container" },
-  { value: "image", label: "Hình ảnh" },
-  { value: "chart", label: "Biểu đồ" },
-  { value: "table", label: "Bảng" },
-  { value: "stat", label: "Thống kê" },
-  { value: "text", label: "Văn bản" },
+  { value: "banner-slider", label: "Banner slider" },
+  { value: "image-scroll-list", label: "Danh sách ảnh" },
+  { value: "two-large-images", label: "Hai ảnh lớn" },
+  { value: "one-large-two-small", label: "Một ảnh lớn, hai ảnh nhỏ" },
+  { value: "slider-and-large-image", label: "Slider và ảnh lớn" },
 ];
 
 export default function AddWidgetPage() {
   const router = useRouter();
-  const [containers, setContainers] = useState<Widget[]>([]);
   const [form, setForm] = useState({
     name: "",
-    type: "container" as WidgetType,
-    display_order: 1,
+    type: "banner-slider" as WidgetType,
     status: 2,
-    parent_id: "",
-    url_image: "",
-    link: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    api.adminWidgets
-      .list({ limit: 100 })
-      .then((res) => setContainers((res.data ?? []).filter((w) => w.type === "container")));
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,9 +34,7 @@ export default function AddWidgetPage() {
     const result = addWidgetSchema.safeParse({
       name: form.name,
       type: form.type,
-      display_order: form.display_order,
       status: form.status,
-      parent_id: form.parent_id || undefined,
     });
 
     if (!result.success) {
@@ -60,18 +46,12 @@ export default function AddWidgetPage() {
       return;
     }
 
-    const settings =
-      form.type === "image" ? { url_image: form.url_image, link: form.link } : null;
-
     setSubmitting(true);
     try {
       await api.adminWidgets.create({
         name: result.data.name,
         type: result.data.type,
-        display_order: result.data.display_order,
         status: result.data.status,
-        parent_id: result.data.parent_id || null,
-        settings,
       });
       router.push("/admin/widgets");
     } catch (err) {
@@ -131,24 +111,6 @@ export default function AddWidgetPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Thứ Tự *</label>
-            <input
-              type="number"
-              min={0}
-              value={form.display_order}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, display_order: parseInt(e.target.value) || 0 }))
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {fieldErrors.display_order && (
-              <p className="text-red-600 text-xs mt-1">{fieldErrors.display_order}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Trạng Thái *</label>
             <select
               value={form.status}
@@ -159,52 +121,7 @@ export default function AddWidgetPage() {
               <option value={1}>Ẩn</option>
             </select>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Widget Cha</label>
-            <select
-              value={form.parent_id}
-              onChange={(e) => setForm((p) => ({ ...p, parent_id: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">— Không có —</option>
-              {containers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            {fieldErrors.parent_id && (
-              <p className="text-red-600 text-xs mt-1">{fieldErrors.parent_id}</p>
-            )}
-          </div>
         </div>
-
-        {form.type === "image" && (
-          <div className="space-y-4 border-t border-gray-100 pt-4">
-            <p className="text-sm font-medium text-gray-700">Cài Đặt Hình Ảnh</p>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">URL Hình Ảnh</label>
-              <input
-                type="text"
-                value={form.url_image}
-                onChange={(e) => setForm((p) => ({ ...p, url_image: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="https://..."
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Liên Kết</label>
-              <input
-                type="text"
-                value={form.link}
-                onChange={(e) => setForm((p) => ({ ...p, link: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="https://..."
-              />
-            </div>
-          </div>
-        )}
 
         <div className="flex justify-end gap-3 pt-2">
           <button

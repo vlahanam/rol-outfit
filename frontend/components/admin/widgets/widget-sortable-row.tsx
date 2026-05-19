@@ -36,7 +36,7 @@ export function WidgetSortableRow({
 
   const statusLabel = WIDGET_STATUS_LABEL[widget.status] ?? "—";
   const isActive = widget.status === 2;
-  const hasChildren = widget.type === "container";
+  const hasChildren = widget.depth === 0;
 
   return (
     <tr
@@ -59,11 +59,7 @@ export function WidgetSortableRow({
               onClick={() => onToggleExpand(widget.id)}
               className="p-0.5 text-gray-500 hover:text-gray-800"
             >
-              {expanded ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
+              { expanded ?? <ChevronDown className="w-4 h-4" />}
             </button>
           ) : (
             <span className="w-5 h-5 shrink-0" />

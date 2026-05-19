@@ -74,12 +74,17 @@ func (s *widgetService) Create(ctx context.Context, req *requests.CreateWidgetRe
 		depth = parent.Depth + 1
 	}
 
+	maxOrder, err := s.repo.MaxWidgetDisplayOrder(ctx, req.ParentID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get max display order: %w", err)
+	}
+
 	w := &models.Widget{
 		ID:           uuid.New().String(),
 		ParentID:     req.ParentID,
 		Name:         req.Name,
 		Type:         req.Type,
-		DisplayOrder: req.DisplayOrder,
+		DisplayOrder: maxOrder + 1,
 		Depth:        depth,
 		Status:       req.Status,
 		Settings:     req.Settings,

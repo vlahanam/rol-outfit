@@ -154,14 +154,12 @@ export const addTagSchema = z
 
 export const editTagSchema = addTagSchema;
 
-const WIDGET_TYPES = ["container", "chart", "table", "stat", "text", "image"] as const;
+const WIDGET_TYPES = ["banner-slider", "image-scroll-list", "two-large-images", "one-large-two-small", "slider-and-large-image"] as const;
 
 export const addWidgetSchema = z.object({
   name: z.string().min(2, "Tên phải có ít nhất 2 ký tự").max(255, "Tên không được quá 255 ký tự"),
   type: z.enum(WIDGET_TYPES, { error: "Loại widget không hợp lệ" }),
-  display_order: z.coerce.number().min(0, "Thứ tự phải >= 0"),
   status: z.coerce.number().refine((v) => v === 1 || v === 2, { message: "Trạng thái không hợp lệ" }),
-  parent_id: z.string().uuid("ID cha không hợp lệ").optional().or(z.literal("")).transform((v) => v || undefined),
 });
 
 export const editWidgetSchema = addWidgetSchema.partial();

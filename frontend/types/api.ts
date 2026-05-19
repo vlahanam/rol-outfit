@@ -241,7 +241,7 @@ export interface UpdateTagPayload {
 }
 
 // Widget
-export type WidgetType = "container" | "chart" | "table" | "stat" | "text" | "image";
+export type WidgetType = "banner-slider" | "image-scroll-list" | "two-large-images" | "one-large-two-small" | "slider-and-large-image";
 
 export interface Widget {
   id: string;
@@ -259,9 +259,7 @@ export interface Widget {
 export interface CreateWidgetPayload {
   name: string;
   type: WidgetType;
-  display_order: number;
   status: number;
-  parent_id?: string | null;
   settings?: Record<string, unknown> | null;
 }
 

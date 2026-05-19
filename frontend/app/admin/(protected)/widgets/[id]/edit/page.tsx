@@ -8,12 +8,11 @@ import { editWidgetSchema } from "@/lib/validations";
 import type { WidgetType } from "@/types/api";
 
 const WIDGET_TYPES: { value: WidgetType; label: string }[] = [
-  { value: "container", label: "Container" },
-  { value: "image", label: "Hình ảnh" },
-  { value: "chart", label: "Biểu đồ" },
-  { value: "table", label: "Bảng" },
-  { value: "stat", label: "Thống kê" },
-  { value: "text", label: "Văn bản" },
+  { value: "banner-slider", label: "Banner slider" },
+  { value: "image-scroll-list", label: "Danh sách ảnh" },
+  { value: "two-large-images", label: "Hai ảnh lớn" },
+  { value: "one-large-two-small", label: "Một ảnh lớn, hai ảnh nhỏ" },
+  { value: "slider-and-large-image", label: "Slider và ảnh lớn" },
 ];
 
 export default function EditWidgetPage() {
@@ -21,11 +20,8 @@ export default function EditWidgetPage() {
   const { id } = useParams<{ id: string }>();
   const [form, setForm] = useState({
     name: "",
-    type: "container" as WidgetType,
-    display_order: 1,
+    type: "banner-slider" as WidgetType,
     status: 2,
-    url_image: "",
-    link: "",
   });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -37,14 +33,10 @@ export default function EditWidgetPage() {
       .get(id)
       .then((res) => {
         const w = res.data;
-        const settings = (w.settings ?? {}) as Record<string, string>;
-        setForm({
+          setForm({
           name: w.name,
           type: w.type,
-          display_order: w.display_order,
           status: w.status,
-          url_image: settings.url_image ?? "",
-          link: settings.link ?? "",
         });
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra"))
@@ -59,7 +51,6 @@ export default function EditWidgetPage() {
     const result = editWidgetSchema.safeParse({
       name: form.name,
       type: form.type,
-      display_order: form.display_order,
       status: form.status,
     });
 
@@ -72,17 +63,12 @@ export default function EditWidgetPage() {
       return;
     }
 
-    const settings =
-      form.type === "image" ? { url_image: form.url_image, link: form.link } : null;
-
     setSubmitting(true);
     try {
       await api.adminWidgets.update(id, {
         name: result.data.name,
         type: result.data.type,
-        display_order: result.data.display_order,
         status: result.data.status,
-        settings,
       });
       router.push("/admin/widgets");
     } catch (err) {
@@ -145,59 +131,17 @@ export default function EditWidgetPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Thứ Tự *</label>
-            <input
-              type="number"
-              min={0}
-              value={form.display_order}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, display_order: parseInt(e.target.value) || 0 }))
-              }
+            <label className="block text-sm font-medium text-gray-700 mb-1">Trạng Thái *</label>
+            <select
+              value={form.status}
+              onChange={(e) => setForm((p) => ({ ...p, status: parseInt(e.target.value) }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {fieldErrors.display_order && (
-              <p className="text-red-600 text-xs mt-1">{fieldErrors.display_order}</p>
-            )}
+            >
+              <option value={2}>Hiển thị</option>
+              <option value={1}>Ẩn</option>
+            </select>
           </div>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Trạng Thái *</label>
-          <select
-            value={form.status}
-            onChange={(e) => setForm((p) => ({ ...p, status: parseInt(e.target.value) }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value={2}>Hiển thị</option>
-            <option value={1}>Ẩn</option>
-          </select>
-        </div>
-
-        {form.type === "image" && (
-          <div className="space-y-4 border-t border-gray-100 pt-4">
-            <p className="text-sm font-medium text-gray-700">Cài Đặt Hình Ảnh</p>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">URL Hình Ảnh</label>
-              <input
-                type="text"
-                value={form.url_image}
-                onChange={(e) => setForm((p) => ({ ...p, url_image: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="https://..."
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Liên Kết</label>
-              <input
-                type="text"
-                value={form.link}
-                onChange={(e) => setForm((p) => ({ ...p, link: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="https://..."
-              />
-            </div>
-          </div>
-        )}
 
         <div className="flex justify-end gap-3 pt-2">
           <button

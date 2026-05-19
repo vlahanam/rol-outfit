@@ -14,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vn">
-      <body className="min-h-screen bg-white antialiased">
+      <body className="min-h-screen bg-white antialiased" suppressHydrationWarning>
         {children}
         <Toaster position="top-right" richColors />
       </body>
