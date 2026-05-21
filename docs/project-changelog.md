@@ -5,6 +5,38 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Banner Slider Editor UI** (2026-05-20)
+  - Frontend: `BannerSlide` and `BannerSliderMetadata` types in `types/api.ts`
+  - Frontend: `BannerSliderEditor` component with multi-slide management, image upload per slide, and slide-specific form fields (label, title, description, CTA text/link)
+  - Frontend: `BannerSliderPreview` component with live preview, gradient overlay, and slide navigation buttons
+  - Frontend: Widget edit page detects banner-slider type and displays specialized editor + preview instead of generic metadata form
+  - UX: Admins can add/remove slides, upload images via existing ImageUploader, and see live changes in preview panel
+  - Schema: BannerSliderMetadata persists to widget.metadata JSONB as `{ slides: BannerSlide[] }`
+
+### Changed
+- **Widget Management Simplification** (2026-05-20)
+  - Backend: Database migration 000016 seeds 4 fixed widgets (Banner Slider, Bộ Sưu Tập Đặc Biệt, Hàng Mới Về, Xu Hướng Hot)
+  - Frontend: Widgets list page now displays fixed set of 4 widgets without add/delete/reorder actions
+  - Frontend: Removed drag-and-drop reorder functionality (DnD context and SortableContext)
+  - Frontend: Removed "Add Widget" button and associated creation form page
+  - Frontend: Removed delete actions from widget rows
+  - Frontend: Removed dedicated metadata form and type preview panel components
+  - UX: Simplified workflow — admins can only edit widget metadata, cannot add/delete/reorder
+  - Database: Fixed widget set with root-level widgets seeded via migration 000016
+
+### Added
+- **Widget Type Preview Panel with Live Metadata Editing** (2026-05-20)
+  - Backend: New `metadata` JSONB column on widgets table (migration 000015)
+  - Backend: Widget model, DTO, update/create requests updated with `Metadata` field
+  - Backend: Widget service handles metadata persistence and retrieval
+  - Frontend: `WidgetMetadataForm` component for type-specific content editing
+  - Frontend: `WidgetTypePreview` component with live preview panels for all widget types
+  - Frontend: Type-specific content forms for 5 widget types: container, chart, table, stat, text, image
+  - Frontend: Form validation and state management per widget type
+  - Frontend: Image upload integration in metadata forms (reuses existing ImageUploader component)
+  - UX: Real-time preview updates as metadata is edited
+  - Schema: Type-safe metadata handling via TypeScript discriminated unions
+
 - **Checkout Flow & User Orders** (2026-05-14)
   - Frontend: Checkout page with shipping form, address validation, and order creation via API
   - Frontend: Checkout success page with order confirmation and details

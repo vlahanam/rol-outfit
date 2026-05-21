@@ -10,15 +10,25 @@ const (
 	WIDGET_STATUS_ACTIVE = int8(2)
 )
 
+type WidgetType = string
+
+const (
+	WidgetTypeBannerSlider WidgetType = "banner-slider"
+	WidgetTypeListImage    WidgetType = "list-image"
+	WidgetTypeNewProduct   WidgetType = "new-product"
+	WidgetTypeTrendHot     WidgetType = "trend-hot"
+)
+
 type Widget struct {
 	ID           string          `gorm:"type:uuid;primaryKey"`
 	ParentID     *string         `gorm:"column:parent_id;type:uuid"`
 	Name         string          `gorm:"column:name"`
-	Type         string          `gorm:"column:type"`
+	Type         WidgetType      `gorm:"column:type;type:widget_type"`
 	DisplayOrder int             `gorm:"column:display_order"`
 	Depth        int             `gorm:"column:depth;default:0"`
 	Status       int8            `gorm:"column:status"`
 	Settings     json.RawMessage `gorm:"column:settings;type:jsonb"`
+	Metadata     json.RawMessage `gorm:"column:metadata;type:jsonb"`
 	CreatedAt    time.Time       `gorm:"column:created_at"`
 	UpdatedAt    time.Time       `gorm:"column:updated_at"`
 }

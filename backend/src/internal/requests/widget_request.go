@@ -6,7 +6,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
-var validWidgetTypes = []interface{}{"banner-slider", "image-scroll-list", "two-large-images", "one-large-two-small", "slider-and-large-image"}
+var validWidgetTypes = []interface{}{"banner-slider", "list-image", "new-product", "trend-hot"}
 
 type CreateWidgetRequest struct {
 	ParentID     *string         `json:"parent_id"`
@@ -15,6 +15,7 @@ type CreateWidgetRequest struct {
 	DisplayOrder int             `json:"display_order"`
 	Status       int8            `json:"status"`
 	Settings     json.RawMessage `json:"settings"`
+	Metadata     json.RawMessage `json:"metadata"`
 }
 
 func (r CreateWidgetRequest) Validate() error {
@@ -42,6 +43,7 @@ type UpdateWidgetRequest struct {
 	DisplayOrder *int            `json:"display_order"`
 	Status       *int8           `json:"status"`
 	Settings     json.RawMessage `json:"settings"`
+	Metadata     json.RawMessage `json:"metadata"`
 }
 
 func (r UpdateWidgetRequest) Validate() error {

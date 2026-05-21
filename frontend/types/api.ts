@@ -241,7 +241,21 @@ export interface UpdateTagPayload {
 }
 
 // Widget
-export type WidgetType = "banner-slider" | "image-scroll-list" | "two-large-images" | "one-large-two-small" | "slider-and-large-image";
+export type WidgetType = "banner-slider" | "list-image" | "new-product" | "trend-hot";
+
+export interface BannerSlide {
+  id: string;
+  image: string;
+  label: string;
+  title: string;
+  description: string;
+  cta_text: string;
+  cta_link: string;
+}
+
+export interface BannerSliderMetadata {
+  slides: BannerSlide[];
+}
 
 export interface Widget {
   id: string;
@@ -252,6 +266,7 @@ export interface Widget {
   depth: number;
   status: number; // 1=HIDDEN, 2=ACTIVE
   settings: Record<string, unknown> | null;
+  metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 }
@@ -260,15 +275,13 @@ export interface CreateWidgetPayload {
   name: string;
   type: WidgetType;
   status: number;
-  settings?: Record<string, unknown> | null;
 }
 
 export interface UpdateWidgetPayload {
   name?: string;
-  type?: WidgetType;
   display_order?: number;
   status?: number;
-  settings?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown>;
 }
 
 // Error response from backend

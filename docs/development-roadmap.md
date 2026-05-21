@@ -78,10 +78,24 @@ High-level project phases and milestones. For detailed implementation plans, see
 - [x] Tiptap rich text editor for product descriptions
 - [x] Admin widgets management UI
   - [x] Backend: Admin-only widget endpoints (list, get) with no status filter
-  - [x] Frontend: Widgets list page with hierarchical container→children display
-  - [x] Frontend: Widget add form with parent selector and image settings
+  - [x] Frontend: Widgets list page with read-only view of 4 fixed widgets
   - [x] Frontend: Widget edit form with all configuration options
-  - [x] Frontend: Drag-and-drop widget reorder (root + children within parent)
+  - [x] Widget type preview panel with live preview and metadata
+    - [x] Backend: `metadata` JSONB column on widgets table (migration 000015)
+    - [x] Backend: Widget model, DTO, requests, service updated with Metadata field
+    - [x] Frontend: WidgetMetadataForm component for type-specific content editing
+    - [x] Frontend: WidgetTypePreview component with live preview panels
+    - [x] Frontend: 5 widget types now have type-specific content forms (container, chart, table, stat, text, image)
+    - [x] Frontend: Image upload reuses existing ImageUploader component
+  - [x] Widget management simplification (May 20, 2026)
+    - [x] Backend: Migration 000016 seeds 4 fixed widgets (Banner Slider, Bộ Sưu Tập Đặc Biệt, Hàng Mới Về, Xu Hướng Hot)
+    - [x] Frontend: Removed add/delete/reorder functionality from widgets list page
+    - [x] Frontend: Widgets management now edit-only (no creation or deletion)
+  - [x] Banner slider editor (May 20, 2026)
+    - [x] Frontend: BannerSlide type with image, label, title, description, CTA fields
+    - [x] Frontend: BannerSliderEditor component with multi-slide management and image upload
+    - [x] Frontend: BannerSliderPreview component with live preview and slide navigation
+    - [x] Frontend: Widget edit page wired with banner-slider-specific UI
 - [x] New arrivals page with tag-based filtering — products tagged "NEW" fetched via real API with sort controls
 - [x] Checkout flow (shipping form, order creation, success page)
 - [x] User order pages (history list, detail view, cancel capability)

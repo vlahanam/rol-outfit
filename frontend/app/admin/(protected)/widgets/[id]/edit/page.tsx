@@ -3,41 +3,38 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
-import { api, ApiError } from "@/lib/api";
-import { editWidgetSchema } from "@/lib/validations";
-import type { WidgetType } from "@/types/api";
-
-const WIDGET_TYPES: { value: WidgetType; label: string }[] = [
-  { value: "banner-slider", label: "Banner slider" },
-  { value: "image-scroll-list", label: "Danh sách ảnh" },
-  { value: "two-large-images", label: "Hai ảnh lớn" },
-  { value: "one-large-two-small", label: "Một ảnh lớn, hai ảnh nhỏ" },
-  { value: "slider-and-large-image", label: "Slider và ảnh lớn" },
-];
+import { api, ApiError, WIDGET_TYPE_LABEL } from "@/lib/api";
+import { BannerSliderEditor, defaultSlide } from "@/components/admin/widgets/banner-slider-editor";
+import { BannerSliderPreview } from "@/components/admin/widgets/banner-slider-preview";
+import type { WidgetType, BannerSlide, UpdateWidgetPayload } from "@/types/api";
 
 export default function EditWidgetPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const [form, setForm] = useState({
-    name: "",
-    type: "banner-slider" as WidgetType,
-    status: 2,
-  });
+  const [form, setForm] = useState({ name: "", type: "" as WidgetType, status: 2 });
+  const [slides, setSlides] = useState<BannerSlide[]>([defaultSlide()]);
+  const [activeSlide, setActiveSlide] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [nameError, setNameError] = useState<string | null>(null);
 
   useEffect(() => {
     api.adminWidgets
       .get(id)
       .then((res) => {
         const w = res.data;
-          setForm({
-          name: w.name,
-          type: w.type,
-          status: w.status,
-        });
+        setForm({ name: w.name, type: w.type as WidgetType, status: w.status });
+        if (w.type === "banner-slider") {
+          const meta = w.metadata as { slides?: unknown[] } | null;
+          const existing = meta?.slides;
+          // Spread defaultSlide() to backfill any fields missing in older stored data
+          setSlides(
+            Array.isArray(existing) && existing.length > 0
+              ? existing.map((s) => ({ ...defaultSlide(), ...(s as Partial<BannerSlide>) }))
+              : [defaultSlide()]
+          );
+        }
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra"))
       .finally(() => setLoading(false));
@@ -45,31 +42,30 @@ export default function EditWidgetPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFieldErrors({});
+    setNameError(null);
     setError(null);
 
-    const result = editWidgetSchema.safeParse({
-      name: form.name,
-      type: form.type,
-      status: form.status,
-    });
-
-    if (!result.success) {
-      const errs: Record<string, string> = {};
-      result.error.issues.forEach((issue) => {
-        if (issue.path[0]) errs[issue.path[0] as string] = issue.message;
-      });
-      setFieldErrors(errs);
+    if (form.name.trim().length < 2) {
+      setNameError("Tên phải có ít nhất 2 ký tự");
       return;
+    }
+
+    if (form.type === "banner-slider") {
+      const missingIdx = slides.findIndex((s) => !s.image);
+      if (missingIdx !== -1) {
+        setActiveSlide(missingIdx);
+        setError(`Slide ${missingIdx + 1} chưa có ảnh`);
+        return;
+      }
     }
 
     setSubmitting(true);
     try {
-      await api.adminWidgets.update(id, {
-        name: result.data.name,
-        type: result.data.type,
-        status: result.data.status,
-      });
+      const payload: UpdateWidgetPayload = { name: form.name, status: form.status };
+      if (form.type === "banner-slider") {
+        payload.metadata = { slides };
+      }
+      await api.adminWidgets.update(id, payload);
       router.push("/admin/widgets");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Cập nhật thất bại");
@@ -83,7 +79,7 @@ export default function EditWidgetPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6">
       <div className="flex items-center gap-4">
         <button
           onClick={() => router.push("/admin/widgets")}
@@ -101,7 +97,7 @@ export default function EditWidgetPage() {
         <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm p-6 space-y-5 max-w-2xl">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Tên Widget *</label>
           <input
@@ -110,24 +106,15 @@ export default function EditWidgetPage() {
             onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          {fieldErrors.name && <p className="text-red-600 text-xs mt-1">{fieldErrors.name}</p>}
+          {nameError && <p className="text-red-600 text-xs mt-1">{nameError}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Loại *</label>
-            <select
-              value={form.type}
-              onChange={(e) => setForm((p) => ({ ...p, type: e.target.value as WidgetType }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {WIDGET_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-            {fieldErrors.type && <p className="text-red-600 text-xs mt-1">{fieldErrors.type}</p>}
+            <label className="block text-sm font-medium text-gray-700 mb-1">Loại</label>
+            <p className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 bg-gray-50">
+              {WIDGET_TYPE_LABEL[form.type] ?? form.type}
+            </p>
           </div>
 
           <div>
@@ -160,6 +147,26 @@ export default function EditWidgetPage() {
           </button>
         </div>
       </form>
+
+      {form.type === "banner-slider" && (
+        <div className="space-y-6">
+          <BannerSliderPreview
+            slides={slides}
+            activeIndex={activeSlide}
+            onActiveChange={setActiveSlide}
+          />
+
+          <div className="bg-white rounded-lg shadow-sm p-6 space-y-4 max-w-2xl">
+            <h2 className="text-sm font-semibold text-gray-700">Nội Dung Slides</h2>
+            <BannerSliderEditor
+              slides={slides}
+              onChange={setSlides}
+              activeIndex={activeSlide}
+              onActiveChange={setActiveSlide}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

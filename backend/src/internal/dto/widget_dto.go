@@ -16,6 +16,7 @@ type WidgetDTO struct {
 	Depth        int             `json:"depth"`
 	Status       int8            `json:"status"`
 	Settings     json.RawMessage `json:"settings"`
+	Metadata     json.RawMessage `json:"metadata"`
 	CreatedAt    string          `json:"created_at"`
 	UpdatedAt    string          `json:"updated_at"`
 }
@@ -30,6 +31,7 @@ func ToWidgetDTO(w *models.Widget) *WidgetDTO {
 		Depth:        w.Depth,
 		Status:       w.Status,
 		Settings:     w.Settings,
+		Metadata:     w.Metadata,
 		CreatedAt:    w.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:    w.UpdatedAt.Format(time.RFC3339),
 	}

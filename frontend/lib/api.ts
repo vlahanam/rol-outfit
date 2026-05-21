@@ -16,12 +16,10 @@ export const CATEGORY_STATUS_VALUE: Record<string, number> = { "Hiển thị": 1
 
 export const WIDGET_STATUS_LABEL: Record<number, string> = { 1: "Ẩn", 2: "Hiển thị" };
 export const WIDGET_TYPE_LABEL: Record<string, string> = {
-  container: "Container",
-  image: "Hình ảnh",
-  chart: "Biểu đồ",
-  table: "Bảng",
-  stat: "Thống kê",
-  text: "Văn bản",
+  "banner-slider": "Banner Slider",
+  "list-image":    "Bộ sưu tập ảnh",
+  "new-product":   "Hàng mới về",
+  "trend-hot":     "Xu hướng hot",
 };
 
 export const ROLE_LABEL: Record<number, string> = {

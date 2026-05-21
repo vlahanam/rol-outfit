@@ -88,6 +88,7 @@ func (s *widgetService) Create(ctx context.Context, req *requests.CreateWidgetRe
 		Depth:        depth,
 		Status:       req.Status,
 		Settings:     req.Settings,
+		Metadata:     req.Metadata,
 	}
 	if err := s.repo.CreateWidget(ctx, w); err != nil {
 		return nil, fmt.Errorf("failed to create widget: %w", err)
@@ -119,6 +120,9 @@ func (s *widgetService) Update(ctx context.Context, id string, req *requests.Upd
 	}
 	if req.Settings != nil {
 		fields["settings"] = req.Settings
+	}
+	if req.Metadata != nil {
+		fields["metadata"] = req.Metadata
 	}
 
 	if len(fields) == 0 {
