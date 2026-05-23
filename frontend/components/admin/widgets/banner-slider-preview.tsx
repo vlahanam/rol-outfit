@@ -38,8 +38,16 @@ export function BannerSliderPreview({ slides, activeIndex, onActiveChange }: Pro
         {/* Left-to-right gradient so text is always readable */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent" />
 
-        {/* Overlay text — bottom-left */}
-        <div className="absolute bottom-0 left-0 p-8 space-y-2 max-w-lg">
+        {/* Overlay text — dynamic position */}
+        <div
+          className="absolute p-8 space-y-2 max-w-lg transition-all duration-200"
+          style={{
+            left: `${slide?.text_x ?? 0}%`,
+            bottom: `${100 - (slide?.text_y ?? 100)}%`,
+            transform: `scale(${slide?.font_scale ?? 1})`,
+            transformOrigin: "bottom left",
+          }}
+        >
           {slide?.label && (
             <p className="text-yellow-400 text-xs font-semibold uppercase tracking-wide">
               {slide.label}

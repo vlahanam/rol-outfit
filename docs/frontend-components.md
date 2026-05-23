@@ -400,3 +400,131 @@ components/
 - Callbacks for parent communication
 - Server/Client boundaries clear (use 'use client' judiciously)
 
+---
+
+## Banner Slider Component
+
+**Component:** `components/storefront/banner-slider.tsx`
+
+**Purpose:** Interactive carousel for homepage banner display with autoplay, touch controls, and responsive text positioning.
+
+**Features:**
+- Autoplay with pause-on-hover
+- Touch gesture support (swipe left/right)
+- Keyboard navigation (arrow buttons)
+- Dot indicators for slide jumping
+- Responsive text positioning via `text_x`, `text_y`, `font_scale` properties
+- Gradient overlay for text readability
+- Fallback gradient when image missing
+
+**Data Flow:**
+1. Server fetches banner-slider widget from API
+2. Extracts slides array from widget.metadata
+3. Passes slides to BannerSlider component
+4. Component manages slide state with autoplay interval
+5. User interaction (click, touch, hover) updates active slide
+
+**Props:**
+
+```typescript
+interface BannerSliderProps {
+  slides: BannerSlide[];
+  autoPlayInterval?: number; // milliseconds, default 5000
+}
+
+interface BannerSlide {
+  id: string;
+  image: string;
+  label: string;
+  title: string;
+  description: string;
+  cta_text: string;
+  cta_link: string;
+  text_x?: number;         // % from left, default 5
+  text_y?: number;         // % from top, default 80
+  font_scale?: number;     // scale multiplier, default 1
+}
+```
+
+**Usage:**
+
+```typescript
+import { BannerSlider } from "@/components/storefront/banner-slider";
+import { fetchWidgets } from "@/lib/api-server";
+import type { BannerSliderMetadata } from "@/types/api";
+
+export default async function HomePage() {
+  const widgets = await fetchWidgets("banner-slider");
+  const slides = widgets[0]?.metadata as BannerSliderMetadata | undefined;
+
+  return (
+    <BannerSlider slides={slides?.slides ?? []} />
+  );
+}
+```
+
+**Behavior:**
+- Single slide: No autoplay or controls (no indicators/arrows shown)
+- Multiple slides: Full controls enabled
+- Touch threshold: 50px minimum drag distance
+- Autoplay pauses on mouse hover
+- Arrow buttons always visible when multiple slides exist
+
+---
+
+## Server-Side Fetch Utility
+
+**Module:** `lib/api-server.ts`
+
+**Purpose:** Server-side API fetch wrapper with ISR caching and Next.js revalidation tags.
+
+**Features:**
+- Generic type-safe fetch with error handling
+- ISR revalidation with configurable cache duration
+- Automatic response data extraction (unwraps `.data` field)
+- Graceful error handling (returns null on failure)
+- Tag-based cache invalidation for on-demand revalidation
+
+**Functions:**
+
+```typescript
+async function fetchFromAPI<T>(
+  path: string,
+  options?: FetchOptions
+): Promise<T | null>
+
+interface FetchOptions {
+  revalidate?: number;    // seconds, default 60
+  tags?: string[];        // for ISR tag-based revalidation
+}
+
+async function fetchWidgets(type?: string): Promise<Widget[]>
+```
+
+**Cache Strategy:**
+- Default revalidation: 60 seconds
+- Tags support: `["widgets"]` for `POST /api/revalidate?tag=widgets`
+- Failed requests: Returns empty array for widgets, null for generic fetch
+- Response format: Expects API response with `{ data: T }` structure
+
+**Usage:**
+
+```typescript
+import { fetchWidgets, fetchFromAPI } from "@/lib/api-server";
+
+// Fetch widgets by type
+const bannerWidgets = await fetchWidgets("banner-slider");
+
+// Generic fetch with custom revalidation
+const data = await fetchFromAPI<Product[]>("/products", {
+  revalidate: 3600,
+  tags: ["products"],
+});
+```
+
+**Error Handling:**
+- Network errors: Returns null (graceful degradation)
+- Non-200 responses: Returns null
+- Invalid JSON: Returns null
+- Empty response: Returns null
+

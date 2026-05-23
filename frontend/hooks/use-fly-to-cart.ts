@@ -37,7 +37,7 @@ export function useFlyToCart() {
       height: 60px;
       border-radius: 50%;
       background-color: #e5e7eb;
-      ${imgSrc ? `background-image: url('${CSS.escape ? imgSrc : imgSrc}');` : ""}
+      ${imgSrc ? `background-image: url('${CSS.escape?.(imgSrc) ?? imgSrc}');` : ""}
       background-size: cover;
       background-position: center;
       z-index: 2147483647;

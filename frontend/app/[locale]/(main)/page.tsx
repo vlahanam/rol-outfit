@@ -2,15 +2,33 @@ import { CollectionCard } from "@/components/CollectionCard";
 import { ProductItem } from "@/components/ProductItem";
 import { TrendingCard } from "@/components/TrendingCard";
 import { Footer } from "@/components/Footer";
+import { BannerSlider } from "@/components/storefront/banner-slider";
+import { fetchWidgets } from "@/lib/api-server";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import type { BannerSliderMetadata, BannerSliderSettings } from "@/types/api";
 
 export default async function HomePage() {
   const t = await getTranslations("HomePage");
+
+  const widgets = await fetchWidgets("banner-slider");
+  const bannerWidget = widgets[0];
+  const slides = bannerWidget
+    ? ((bannerWidget.metadata as unknown as BannerSliderMetadata)?.slides ?? [])
+    : [];
+  const bannerSettings = bannerWidget?.settings as BannerSliderSettings | null;
+  const autoPlayInterval = bannerSettings?.autoPlayInterval ?? 5000;
+
   return (
     <>
       <main className="max-w-7xl mx-auto px-4 py-8">
+        {slides.length > 0 && (
+          <section className="mb-12">
+            <BannerSlider slides={slides} autoPlayInterval={autoPlayInterval} />
+          </section>
+        )}
+
         <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-3xl font-bold text-gray-900">

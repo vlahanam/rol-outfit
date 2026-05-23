@@ -251,10 +251,17 @@ export interface BannerSlide {
   description: string;
   cta_text: string;
   cta_link: string;
+  text_x?: number;
+  text_y?: number;
+  font_scale?: number;
 }
 
 export interface BannerSliderMetadata {
   slides: BannerSlide[];
+}
+
+export interface BannerSliderSettings {
+  autoPlayInterval?: number; // milliseconds, default 5000
 }
 
 export interface Widget {
@@ -281,6 +288,7 @@ export interface UpdateWidgetPayload {
   name?: string;
   display_order?: number;
   status?: number;
+  settings?: Record<string, unknown>;
   metadata?: Record<string, unknown>;
 }
 

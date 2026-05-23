@@ -5,6 +5,13 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Banner Slider Homepage Integration** (2026-05-24)
+  - Frontend: `api-server.ts` — Server-side fetch utility with ISR caching and tags for backend integration
+  - Frontend: Banner slider widget now displayed on storefront homepage at `/[locale]/(main)`
+  - Server component fetches banner-slider widget via `fetchWidgets()` helper
+  - Fallback: If no banner widget exists or metadata missing, homepage renders without slider
+  - ISR revalidation set to 60 seconds for widget freshness
+
 - **Banner Slider Editor UI** (2026-05-20)
   - Frontend: `BannerSlide` and `BannerSliderMetadata` types in `types/api.ts`
   - Frontend: `BannerSliderEditor` component with multi-slide management, image upload per slide, and slide-specific form fields (label, title, description, CTA text/link)

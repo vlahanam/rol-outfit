@@ -1,6 +1,7 @@
 "use client";
 
 import { ImageUploader } from "@/components/admin/image-uploader";
+import { Slider } from "@/components/ui/slider";
 import type { BannerSlide } from "@/types/api";
 
 interface Props {
@@ -19,6 +20,9 @@ export function defaultSlide(): BannerSlide {
     description: "",
     cta_text: "",
     cta_link: "",
+    text_x: 0,
+    text_y: 100,
+    font_scale: 1,
   };
 }
 
@@ -112,6 +116,40 @@ export function BannerSliderEditor({ slides, onChange, activeIndex, onActiveChan
             />
           </div>
 
+          {/* Position & Size controls */}
+          <div className="border-t border-gray-200 pt-4 mt-4">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
+              Vị trí & Kích thước
+            </p>
+            <div className="grid gap-4">
+              <SliderField
+                label="Vị trí ngang (X)"
+                value={slide.text_x ?? 0}
+                onChange={(v) => update({ text_x: v })}
+                min={0}
+                max={80}
+                unit="%"
+              />
+              <SliderField
+                label="Vị trí dọc (Y)"
+                value={slide.text_y ?? 100}
+                onChange={(v) => update({ text_y: v })}
+                min={20}
+                max={100}
+                unit="%"
+              />
+              <SliderField
+                label="Tỉ lệ chữ"
+                value={slide.font_scale ?? 1}
+                onChange={(v) => update({ font_scale: v })}
+                min={0.5}
+                max={2}
+                step={0.1}
+                unit="x"
+              />
+            </div>
+          </div>
+
           {slides.length > 1 && (
             <div className="flex justify-end">
               <button
@@ -149,6 +187,40 @@ function SlideField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+  );
+}
+
+function SliderField({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  step = 1,
+  unit = "",
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+  step?: number;
+  unit?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-gray-600 mb-2">
+        {label}: {value}{unit}
+      </label>
+      <Slider
+        value={[value]}
+        onValueChange={(vals) => vals[0] !== undefined && onChange(vals[0])}
+        min={min}
+        max={max}
+        step={step}
+        className="w-full"
       />
     </div>
   );

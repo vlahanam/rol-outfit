@@ -44,7 +44,16 @@ backend-shell:
 frontend-shell:
 	$(COMPOSE) exec frontend sh
 
+frontend-reinstall:
+	$(COMPOSE) exec frontend rm -rf node_modules/.cache .next
+	$(COMPOSE) exec frontend npm install
+	$(COMPOSE) restart frontend
+
+frontend-clear-cache:
+	$(COMPOSE) exec frontend rm -rf .next node_modules/.cache
+	$(COMPOSE) restart frontend
+
 seed:
 	$(COMPOSE) exec backend go run ./src/cmd/seed/main.go
 
-.PHONY: up down logs build rebuild ps db-shell db-logs db-dump db-restore db-migrate db-reset backend-shell frontend-shell seed
+.PHONY: up down logs build rebuild ps db-shell db-logs db-dump db-restore db-migrate db-reset backend-shell frontend-shell frontend-reinstall frontend-clear-cache seed

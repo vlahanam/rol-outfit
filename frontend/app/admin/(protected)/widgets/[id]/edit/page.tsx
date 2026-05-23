@@ -6,7 +6,8 @@ import { useRouter, useParams } from "next/navigation";
 import { api, ApiError, WIDGET_TYPE_LABEL } from "@/lib/api";
 import { BannerSliderEditor, defaultSlide } from "@/components/admin/widgets/banner-slider-editor";
 import { BannerSliderPreview } from "@/components/admin/widgets/banner-slider-preview";
-import type { WidgetType, BannerSlide, UpdateWidgetPayload } from "@/types/api";
+import type { WidgetType, BannerSlide, BannerSliderSettings, UpdateWidgetPayload } from "@/types/api";
+import { Slider } from "@/components/ui/slider";
 
 export default function EditWidgetPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function EditWidgetPage() {
   const [form, setForm] = useState({ name: "", type: "" as WidgetType, status: 2 });
   const [slides, setSlides] = useState<BannerSlide[]>([defaultSlide()]);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [autoPlayInterval, setAutoPlayInterval] = useState(5); // seconds
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +36,11 @@ export default function EditWidgetPage() {
               ? existing.map((s) => ({ ...defaultSlide(), ...(s as Partial<BannerSlide>) }))
               : [defaultSlide()]
           );
+          // Load autoPlayInterval from settings (stored in ms, display in seconds)
+          const settings = w.settings as BannerSliderSettings | null;
+          if (settings?.autoPlayInterval) {
+            setAutoPlayInterval(Math.round(settings.autoPlayInterval / 1000));
+          }
         }
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra"))
@@ -64,6 +71,7 @@ export default function EditWidgetPage() {
       const payload: UpdateWidgetPayload = { name: form.name, status: form.status };
       if (form.type === "banner-slider") {
         payload.metadata = { slides };
+        payload.settings = { autoPlayInterval: autoPlayInterval * 1000 }; // store in ms
       }
       await api.adminWidgets.update(id, payload);
       router.push("/admin/widgets");
@@ -150,6 +158,27 @@ export default function EditWidgetPage() {
 
       {form.type === "banner-slider" && (
         <div className="space-y-6">
+          {/* Auto-play settings */}
+          <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl">
+            <h2 className="text-sm font-semibold text-gray-700 mb-4">Cài Đặt Tự Động</h2>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-2">
+                Thời gian chuyển slide: {autoPlayInterval} giây
+              </label>
+              <Slider
+                value={[autoPlayInterval]}
+                onValueChange={(vals) => vals[0] !== undefined && setAutoPlayInterval(vals[0])}
+                min={2}
+                max={15}
+                step={1}
+                className="w-full max-w-xs"
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                Thời gian tự động chuyển sang slide tiếp theo (2-15 giây)
+              </p>
+            </div>
+          </div>
+
           <BannerSliderPreview
             slides={slides}
             activeIndex={activeSlide}
