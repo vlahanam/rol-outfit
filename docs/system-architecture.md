@@ -185,16 +185,27 @@ Request/response types for API contracts.
 - Locale-based routing: English and Vietnamese/Japanese support
 
 #### 2. Components Layer
-- **Admin Components** — Product/variant forms, image uploader, user management
-- **Common Components** — Header, Footer, ProductCard, DeleteConfirmModal
-- **Specialized Components** — ProductListVariantsTable, ImageUploader, AdminSidebar
+- **Admin Components** (`admin/`) — Product/variant forms, image uploader, widget editors, user management
+- **Shared Components** (`shared/`) — SlideOverlay (text overlay for slides), reusable across admin and storefront
+- **Storefront Components** (`storefront/`) — BannerSlider, product displays, customer-facing UI
+- **Product Components** (`product/`) — VariantPicker, ImageGallery, TagBadges
+- **Common Components** (`common/`) — Header, Footer, ProductCard, DeleteConfirmModal, AdminSidebar
 
-**Key Component: ImageUploader**
+**Key Components:**
+
+**ImageUploader** (`admin/image-uploader.tsx`)
 - Reusable upload-then-reference pattern
 - File validation (size, type)
 - Best-effort old file deletion
 - Shows spinner overlay during upload
 - Returns file URL to parent form
+
+**SlideOverlay** (`shared/slide-overlay.tsx`)
+- Reusable text overlay component for banner slides
+- Dynamic positioning with percentage-based coordinates (text_x, text_y)
+- Font scaling via CSS transforms for responsive text sizing
+- Conditional CTA link rendering (production vs preview modes)
+- Shared between admin preview and storefront display for WYSIWYG consistency
 
 #### 3. API Client (lib/api-client.ts & lib/api.ts)
 - **lib/api-client.ts** (146 LOC) — Base fetch client with:

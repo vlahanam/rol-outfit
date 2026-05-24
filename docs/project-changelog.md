@@ -5,6 +5,14 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Shared SlideOverlay Component** (2026-05-24)
+  - Frontend: New `components/shared/slide-overlay.tsx` — Reusable text overlay for banner slides with position control and scaling
+  - Extracted from inline code in banner-slider editor and preview components
+  - Fixes WYSIWYG consistency: admin preview now renders identically to storefront display
+  - Props: `slide` (BannerSlide), `isActive` (visibility toggle), `linkEnabled` (CTA link rendering)
+  - Supports dynamic text positioning via text_x/text_y percentages and font_scale multiplier
+  - Used by both `BannerSliderPreview` (admin, no links) and `BannerSlider` (storefront, with links)
+
 - **Banner Slider Homepage Integration** (2026-05-24)
   - Frontend: `api-server.ts` — Server-side fetch utility with ISR caching and tags for backend integration
   - Frontend: Banner slider widget now displayed on storefront homepage at `/[locale]/(main)`

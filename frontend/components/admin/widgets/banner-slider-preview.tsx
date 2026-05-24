@@ -1,7 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
+import { Monitor, Smartphone } from "lucide-react";
 import type { BannerSlide } from "@/types/api";
+import { SlideOverlay } from "@/components/shared/slide-overlay";
+
+type DeviceMode = "desktop" | "mobile";
 
 interface Props {
   slides: BannerSlide[];
@@ -10,15 +15,43 @@ interface Props {
 }
 
 export function BannerSliderPreview({ slides, activeIndex, onActiveChange }: Props) {
+  const [deviceMode, setDeviceMode] = useState<DeviceMode>("desktop");
   const slide = slides[activeIndex];
+  const isMobile = deviceMode === "mobile";
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Preview</p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Preview</p>
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+          <button
+            type="button"
+            onClick={() => setDeviceMode("desktop")}
+            className={`p-1.5 rounded transition-colors ${
+              !isMobile ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+            }`}
+            title="Desktop preview"
+          >
+            <Monitor className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setDeviceMode("mobile")}
+            className={`p-1.5 rounded transition-colors ${
+              isMobile ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+            }`}
+            title="Mobile preview"
+          >
+            <Smartphone className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
 
       <div
-        className="relative w-full overflow-hidden rounded-xl bg-gray-200"
-        style={{ aspectRatio: "16 / 6" }}
+        className={`relative overflow-hidden rounded-xl bg-gray-200 mx-auto transition-all duration-300 ${
+          isMobile ? "max-w-[320px]" : "w-full"
+        }`}
+        style={{ aspectRatio: isMobile ? "9 / 16" : "16 / 6" }}
       >
         {/* Background image */}
         {slide?.image ? (
@@ -38,49 +71,29 @@ export function BannerSliderPreview({ slides, activeIndex, onActiveChange }: Pro
         {/* Left-to-right gradient so text is always readable */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent" />
 
-        {/* Overlay text — dynamic position */}
-        <div
-          className="absolute p-8 space-y-2 max-w-lg transition-all duration-200"
-          style={{
-            left: `${slide?.text_x ?? 0}%`,
-            bottom: `${100 - (slide?.text_y ?? 100)}%`,
-            transform: `scale(${slide?.font_scale ?? 1})`,
-            transformOrigin: "bottom left",
-          }}
-        >
-          {slide?.label && (
-            <p className="text-yellow-400 text-xs font-semibold uppercase tracking-wide">
-              {slide.label}
-            </p>
-          )}
-          {slide?.title && (
-            <h2 className="text-white text-3xl font-bold leading-tight">
-              {slide.title}
-            </h2>
-          )}
-          {slide?.description && (
-            <p className="text-gray-200 text-sm">{slide.description}</p>
-          )}
-          {slide?.cta_text && (
-            <div className="pt-2">
-              <span className="inline-block px-5 py-2.5 bg-white text-gray-900 text-sm font-medium rounded-lg">
-                {slide.cta_text}
-              </span>
-            </div>
-          )}
-        </div>
+        {/* Text overlay */}
+        {slide && (
+          <SlideOverlay
+            slide={slide}
+            isActive={true}
+            linkEnabled={false}
+            isMobilePreview={isMobile}
+          />
+        )}
 
         {/* Dot indicators */}
         {slides.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+          <div className={`absolute left-1/2 -translate-x-1/2 flex ${
+            isMobile ? "bottom-3 gap-1.5" : "bottom-4 gap-2"
+          }`}>
             {slides.map((s, i) => (
               <button
                 key={s.id}
                 type="button"
                 onClick={() => onActiveChange(i)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  i === activeIndex ? "bg-white scale-125" : "bg-white/50"
-                }`}
+                className={`rounded-full transition-all ${
+                  isMobile ? "w-1.5 h-1.5" : "w-2 h-2"
+                } ${i === activeIndex ? "bg-white scale-125" : "bg-white/50"}`}
               />
             ))}
           </div>

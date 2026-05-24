@@ -402,6 +402,87 @@ components/
 
 ---
 
+## Shared Slide Overlay Component
+
+**Component:** `components/shared/slide-overlay.tsx` (65 LOC)
+
+**Purpose:** Reusable text overlay for banner slides with position control, scaling, and optional link rendering.
+
+**Features:**
+- Absolute positioning with dynamic x/y coordinates (percentage-based)
+- Font scaling via CSS transform-origin for responsive text sizing
+- Gradient overlay-ready (parent handles gradient, component handles text)
+- Optional CTA button with link support (linkEnabled prop)
+- Smooth opacity transitions for slide changes
+- Responsive padding (p-6 mobile, p-8 desktop)
+- Yellow label, white title, gray description text colors
+
+**Props:**
+
+```typescript
+interface SlideOverlayProps {
+  slide: BannerSlide;
+  isActive?: boolean;           // Controls visibility via opacity + pointer-events
+  linkEnabled?: boolean;        // If true, CTA renders as <Link>, else as <span>
+  className?: string;           // Additional Tailwind classes
+}
+```
+
+**Data Structure (BannerSlide):**
+
+```typescript
+interface BannerSlide {
+  id: string;
+  image: string;
+  label: string;               // Yellow upper-text
+  title: string;               // Main white heading
+  description: string;         // Gray sub-text
+  cta_text: string;           // Button label
+  cta_link: string;           // Button href
+  text_x?: number;            // % from left (default 5)
+  text_y?: number;            // % from top (default 80)
+  font_scale?: number;        // Scale multiplier (default 1)
+}
+```
+
+**Usage Examples:**
+
+Admin Preview (read-only, no links):
+```typescript
+<SlideOverlay
+  slide={slide}
+  isActive={true}
+  linkEnabled={false}
+/>
+```
+
+Storefront Display (interactive, with links):
+```typescript
+<SlideOverlay
+  slide={slide}
+  isActive={i === activeIndex}
+  linkEnabled={true}
+/>
+```
+
+**Rendering Logic:**
+- Optional fields: label, title, description, cta (all conditionally rendered)
+- Position calculated from `text_x`, `text_y`, `font_scale` via inline style
+- CTA wraps in `<Link>` (production) or `<span>` (preview) based on `linkEnabled` prop
+- Opacity transitions handled by `isActive` boolean (0ms → 300ms on change)
+
+**Design Pattern:**
+- **Extraction:** Previously inline in `BannerSliderPreview` and `BannerSlider`; extracted for WYSIWYG consistency
+- **Reusability:** Shared between admin preview and storefront display with same rendering, different link behavior
+- **Bug Fix:** Centralizes text overlay logic, ensuring admin preview matches storefront exactly
+
+**Key Differences from Parent Components:**
+- `BannerSlider` (storefront): Full interactivity (autoplay, touch, nav buttons), `linkEnabled=true`
+- `BannerSliderPreview` (admin): Static preview with dot indicators, `linkEnabled=false`
+- Both use identical `SlideOverlay` for positioning and text rendering
+
+---
+
 ## Banner Slider Component
 
 **Component:** `components/storefront/banner-slider.tsx`

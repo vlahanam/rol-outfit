@@ -1,6 +1,6 @@
 ---
 title: Banner Slider Shared Overlay
-status: pending
+status: completed
 priority: high
 created: 2026-05-24
 planDir: plans/260524-0042-banner-slider-shared-overlay
@@ -16,7 +16,7 @@ Fix animation bug (text block di chuyển khi chuyển slide) và WYSIWYG mismat
 
 | # | Phase | Status | Est. |
 |---|-------|--------|------|
-| 1 | [Shared Overlay Component](phase-01-shared-overlay.md) | pending | 30 min |
+| 1 | [Shared Overlay Component](phase-01-shared-overlay.md) | completed | 30 min |
 
 **Total:** ~30 min
 
