@@ -19,7 +19,7 @@ type seedWidget struct {
 // 4 widget cố định hiển thị trên trang chủ.
 var widgets = []seedWidget{
 	{Name: "Banner Slider",        Type: models.WidgetTypeBannerSlider, DisplayOrder: 1, Status: 2},
-	{Name: "Bộ Sưu Tập Đặc Biệt", Type: models.WidgetTypeListImage,    DisplayOrder: 2, Status: 2},
+	{Name: "Bộ Sưu Tập Đặc Biệt", Type: models.WidgetTypeCollectionGrid, DisplayOrder: 2, Status: 2},
 	{Name: "Hàng Mới Về",          Type: models.WidgetTypeNewProduct,   DisplayOrder: 3, Status: 2},
 	{Name: "Xu Hướng Hot",         Type: models.WidgetTypeTrendHot,     DisplayOrder: 4, Status: 2},
 }

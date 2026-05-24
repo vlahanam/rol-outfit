@@ -241,7 +241,7 @@ export interface UpdateTagPayload {
 }
 
 // Widget
-export type WidgetType = "banner-slider" | "list-image" | "new-product" | "trend-hot";
+export type WidgetType = "banner-slider" | "collection-grid" | "new-product" | "trend-hot";
 
 export interface BannerSlide {
   id: string;
@@ -262,6 +262,22 @@ export interface BannerSliderMetadata {
 
 export interface BannerSliderSettings {
   autoPlayInterval?: number; // milliseconds, default 5000
+}
+
+export interface CollectionItem {
+  id: string;
+  title: string;
+  image: string;
+  link: string;
+  cta_text: string;
+}
+
+export interface CollectionGridMetadata {
+  items: CollectionItem[];
+}
+
+export interface CollectionGridSettings {
+  cardHeight?: number; // pixels, default 400
 }
 
 export interface Widget {

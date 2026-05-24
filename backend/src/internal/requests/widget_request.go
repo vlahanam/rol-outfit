@@ -6,7 +6,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
-var validWidgetTypes = []interface{}{"banner-slider", "list-image", "new-product", "trend-hot"}
+var validWidgetTypes = []interface{}{"banner-slider", "collection-grid", "new-product", "trend-hot"}
 
 type CreateWidgetRequest struct {
 	ParentID     *string         `json:"parent_id"`

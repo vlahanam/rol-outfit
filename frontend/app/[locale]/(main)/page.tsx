@@ -1,13 +1,13 @@
-import { CollectionCard } from "@/components/CollectionCard";
 import { ProductItem } from "@/components/ProductItem";
 import { TrendingCard } from "@/components/TrendingCard";
 import { Footer } from "@/components/Footer";
 import { BannerSlider } from "@/components/storefront/banner-slider";
+import { CollectionSlider } from "@/components/storefront/collection-slider";
 import { fetchWidgets } from "@/lib/api-server";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import type { BannerSliderMetadata, BannerSliderSettings } from "@/types/api";
+import type { BannerSliderMetadata, BannerSliderSettings, CollectionGridMetadata, CollectionGridSettings, CollectionItem } from "@/types/api";
 
 export default async function HomePage() {
   const t = await getTranslations("HomePage");
@@ -20,6 +20,14 @@ export default async function HomePage() {
   const bannerSettings = bannerWidget?.settings as BannerSliderSettings | null;
   const autoPlayInterval = bannerSettings?.autoPlayInterval ?? 5000;
 
+  const collectionWidgets = await fetchWidgets("collection-grid");
+  const collectionWidget = collectionWidgets[0];
+  const collectionItems: CollectionItem[] = collectionWidget
+    ? ((collectionWidget.metadata as unknown as CollectionGridMetadata)?.items ?? [])
+    : [];
+  const collectionSettings = collectionWidget?.settings as CollectionGridSettings | null;
+  const cardHeight = collectionSettings?.cardHeight ?? 400;
+
   return (
     <>
       <main className="max-w-7xl mx-auto px-4 py-8">
@@ -29,40 +37,13 @@ export default async function HomePage() {
           </section>
         )}
 
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-3xl font-bold text-gray-900">
-              {t("specialCollections")}
-            </h2>
-            <div className="flex gap-2">
-              <button className="p-2 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors">
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button className="p-2 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors">
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 h-[500px]">
-            <CollectionCard
-              title={t("officeWear")}
-              image="https://images.unsplash.com/photo-1599012307530-d163bd04ecab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
-            />
-            <CollectionCard
-              title={t("accessories")}
-              image="https://images.unsplash.com/photo-1705675451868-014a161e591b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
-            />
-            <CollectionCard
-              title={t("womensFashion")}
-              image="https://images.unsplash.com/photo-1627342229908-71efbac25f08?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
-            />
-            <CollectionCard
-              title={t("sportShoes")}
-              image="https://images.unsplash.com/photo-1721884258144-5d788061e4c4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
-            />
-          </div>
-        </section>
+        {collectionItems.length > 0 && (
+          <CollectionSlider
+            items={collectionItems}
+            title={collectionWidget?.name ?? t("specialCollections")}
+            cardHeight={cardHeight}
+          />
+        )}
 
         <section className="mb-12">
           <div className="flex items-center justify-between mb-6">

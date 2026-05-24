@@ -1,13 +1,16 @@
 import { ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 
 interface CollectionCardProps {
   title: string;
   image: string;
+  link?: string;
+  ctaText?: string;
   span?: string;
 }
 
-export function CollectionCard({ title, image, span }: CollectionCardProps) {
-  return (
+export function CollectionCard({ title, image, link, ctaText = "Mua Ngay", span }: CollectionCardProps) {
+  const content = (
     <div className={`relative overflow-hidden rounded-lg group cursor-pointer h-full ${span || ''}`}>
       <div className="h-full overflow-hidden">
         <img
@@ -19,11 +22,13 @@ export function CollectionCard({ title, image, span }: CollectionCardProps) {
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-6">
         <div className="text-white">
           <h3 className="text-xl font-semibold mb-2">{title}</h3>
-          <button className="flex items-center gap-1 text-sm hover:gap-2 transition-all">
-            Mua Ngay <ArrowRight className="w-4 h-4" />
-          </button>
+          <span className="flex items-center gap-1 text-sm hover:gap-2 transition-all">
+            {ctaText} <ArrowRight className="w-4 h-4" />
+          </span>
         </div>
       </div>
     </div>
   );
+
+  return link ? <Link href={link}>{content}</Link> : content;
 }

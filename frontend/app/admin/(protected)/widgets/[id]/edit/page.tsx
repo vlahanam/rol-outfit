@@ -6,7 +6,9 @@ import { useRouter, useParams } from "next/navigation";
 import { api, ApiError, WIDGET_TYPE_LABEL } from "@/lib/api";
 import { BannerSliderEditor, defaultSlide } from "@/components/admin/widgets/banner-slider-editor";
 import { BannerSliderPreview } from "@/components/admin/widgets/banner-slider-preview";
-import type { WidgetType, BannerSlide, BannerSliderSettings, UpdateWidgetPayload } from "@/types/api";
+import { CollectionGridEditor, defaultCollectionItem } from "@/components/admin/widgets/collection-grid-editor";
+import { CollectionGridPreview } from "@/components/admin/widgets/collection-grid-preview";
+import type { WidgetType, BannerSlide, BannerSliderSettings, UpdateWidgetPayload, CollectionItem, CollectionGridMetadata, CollectionGridSettings } from "@/types/api";
 import { Slider } from "@/components/ui/slider";
 
 export default function EditWidgetPage() {
@@ -16,6 +18,9 @@ export default function EditWidgetPage() {
   const [slides, setSlides] = useState<BannerSlide[]>([defaultSlide()]);
   const [activeSlide, setActiveSlide] = useState(0);
   const [autoPlayInterval, setAutoPlayInterval] = useState(5); // seconds
+  const [collectionItems, setCollectionItems] = useState<CollectionItem[]>([defaultCollectionItem()]);
+  const [activeCollectionItem, setActiveCollectionItem] = useState(0);
+  const [cardHeight, setCardHeight] = useState(400);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +47,19 @@ export default function EditWidgetPage() {
             setAutoPlayInterval(Math.round(settings.autoPlayInterval / 1000));
           }
         }
+        if (w.type === "collection-grid") {
+          const meta = w.metadata as CollectionGridMetadata | null;
+          const existing = meta?.items;
+          setCollectionItems(
+            Array.isArray(existing) && existing.length > 0
+              ? existing.map((it) => ({ ...defaultCollectionItem(), ...it }))
+              : [defaultCollectionItem()]
+          );
+          const settings = w.settings as CollectionGridSettings | null;
+          if (settings?.cardHeight) {
+            setCardHeight(settings.cardHeight);
+          }
+        }
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra"))
       .finally(() => setLoading(false));
@@ -66,12 +84,25 @@ export default function EditWidgetPage() {
       }
     }
 
+    if (form.type === "collection-grid") {
+      const missingIdx = collectionItems.findIndex((it) => !it.image);
+      if (missingIdx !== -1) {
+        setActiveCollectionItem(missingIdx);
+        setError(`Item ${missingIdx + 1} chưa có ảnh`);
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       const payload: UpdateWidgetPayload = { name: form.name, status: form.status };
       if (form.type === "banner-slider") {
         payload.metadata = { slides };
         payload.settings = { autoPlayInterval: autoPlayInterval * 1000 }; // store in ms
+      }
+      if (form.type === "collection-grid") {
+        payload.metadata = { items: collectionItems };
+        payload.settings = { cardHeight };
       }
       await api.adminWidgets.update(id, payload);
       router.push("/admin/widgets");
@@ -192,6 +223,47 @@ export default function EditWidgetPage() {
               onChange={setSlides}
               activeIndex={activeSlide}
               onActiveChange={setActiveSlide}
+            />
+          </div>
+        </div>
+      )}
+
+      {form.type === "collection-grid" && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl">
+            <h2 className="text-sm font-semibold text-gray-700 mb-4">Cài Đặt Hiển Thị</h2>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-2">
+                Chiều cao card: {cardHeight}px
+              </label>
+              <Slider
+                value={[cardHeight]}
+                onValueChange={(vals) => vals[0] !== undefined && setCardHeight(vals[0])}
+                min={200}
+                max={600}
+                step={20}
+                className="w-full max-w-xs"
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                Chiều cao của mỗi card trên trang chủ (200-600px)
+              </p>
+            </div>
+          </div>
+
+          <CollectionGridPreview
+            items={collectionItems}
+            activeIndex={activeCollectionItem}
+            onActiveChange={setActiveCollectionItem}
+            cardHeight={cardHeight}
+          />
+
+          <div className="bg-white rounded-lg shadow-sm p-6 space-y-4 max-w-2xl">
+            <h2 className="text-sm font-semibold text-gray-700">Nội Dung Items</h2>
+            <CollectionGridEditor
+              items={collectionItems}
+              onChange={setCollectionItems}
+              activeIndex={activeCollectionItem}
+              onActiveChange={setActiveCollectionItem}
             />
           </div>
         </div>

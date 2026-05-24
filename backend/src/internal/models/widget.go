@@ -13,10 +13,10 @@ const (
 type WidgetType = string
 
 const (
-	WidgetTypeBannerSlider WidgetType = "banner-slider"
-	WidgetTypeListImage    WidgetType = "list-image"
-	WidgetTypeNewProduct   WidgetType = "new-product"
-	WidgetTypeTrendHot     WidgetType = "trend-hot"
+	WidgetTypeBannerSlider   WidgetType = "banner-slider"
+	WidgetTypeCollectionGrid WidgetType = "collection-grid"
+	WidgetTypeNewProduct     WidgetType = "new-product"
+	WidgetTypeTrendHot       WidgetType = "trend-hot"
 )
 
 type Widget struct {
