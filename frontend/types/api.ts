@@ -280,6 +280,14 @@ export interface CollectionGridSettings {
   cardHeight?: number; // pixels, default 400
 }
 
+// Trend Hot Widget (reuses CollectionItem for items)
+export type TrendHotMetadata = CollectionGridMetadata; // { items: CollectionItem[] }
+
+export interface TrendHotSettings {
+  cardHeight?: number; // pixels, default 400
+  showBadge?: boolean; // show "HOT" badge on cards
+}
+
 export interface Widget {
   id: string;
   parent_id: string | null;

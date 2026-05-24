@@ -8,7 +8,10 @@ import { BannerSliderEditor, defaultSlide } from "@/components/admin/widgets/ban
 import { BannerSliderPreview } from "@/components/admin/widgets/banner-slider-preview";
 import { CollectionGridEditor, defaultCollectionItem } from "@/components/admin/widgets/collection-grid-editor";
 import { CollectionGridPreview } from "@/components/admin/widgets/collection-grid-preview";
-import type { WidgetType, BannerSlide, BannerSliderSettings, UpdateWidgetPayload, CollectionItem, CollectionGridMetadata, CollectionGridSettings } from "@/types/api";
+import { TrendHotEditor, defaultTrendHotItem } from "@/components/admin/widgets/trend-hot-editor";
+import { TrendHotPreview } from "@/components/admin/widgets/trend-hot-preview";
+import { FullPagePreviewModal } from "@/components/admin/widgets/full-page-preview-modal";
+import type { WidgetType, BannerSlide, BannerSliderSettings, UpdateWidgetPayload, CollectionItem, CollectionGridMetadata, CollectionGridSettings, TrendHotSettings } from "@/types/api";
 import { Slider } from "@/components/ui/slider";
 
 export default function EditWidgetPage() {
@@ -21,6 +24,11 @@ export default function EditWidgetPage() {
   const [collectionItems, setCollectionItems] = useState<CollectionItem[]>([defaultCollectionItem()]);
   const [activeCollectionItem, setActiveCollectionItem] = useState(0);
   const [cardHeight, setCardHeight] = useState(400);
+  const [trendHotItems, setTrendHotItems] = useState<CollectionItem[]>([defaultTrendHotItem()]);
+  const [activeTrendHotItem, setActiveTrendHotItem] = useState(0);
+  const [trendHotCardHeight, setTrendHotCardHeight] = useState(400);
+  const [showTrendHotBadge, setShowTrendHotBadge] = useState(false);
+  const [showFullPreview, setShowFullPreview] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +68,18 @@ export default function EditWidgetPage() {
             setCardHeight(settings.cardHeight);
           }
         }
+        if (w.type === "trend-hot") {
+          const meta = w.metadata as { items?: CollectionItem[] } | null;
+          const existing = meta?.items;
+          setTrendHotItems(
+            Array.isArray(existing) && existing.length > 0
+              ? existing.map((it) => ({ ...defaultTrendHotItem(), ...it }))
+              : [defaultTrendHotItem()]
+          );
+          const settings = w.settings as TrendHotSettings | null;
+          if (settings?.cardHeight) setTrendHotCardHeight(settings.cardHeight);
+          if (settings?.showBadge !== undefined) setShowTrendHotBadge(settings.showBadge);
+        }
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra"))
       .finally(() => setLoading(false));
@@ -93,6 +113,15 @@ export default function EditWidgetPage() {
       }
     }
 
+    if (form.type === "trend-hot") {
+      const missingIdx = trendHotItems.findIndex((it) => !it.image);
+      if (missingIdx !== -1) {
+        setActiveTrendHotItem(missingIdx);
+        setError(`Item ${missingIdx + 1} chưa có ảnh`);
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       const payload: UpdateWidgetPayload = { name: form.name, status: form.status };
@@ -103,6 +132,10 @@ export default function EditWidgetPage() {
       if (form.type === "collection-grid") {
         payload.metadata = { items: collectionItems };
         payload.settings = { cardHeight };
+      }
+      if (form.type === "trend-hot") {
+        payload.metadata = { items: trendHotItems };
+        payload.settings = { cardHeight: trendHotCardHeight, showBadge: showTrendHotBadge };
       }
       await api.adminWidgets.update(id, payload);
       router.push("/admin/widgets");
@@ -266,6 +299,64 @@ export default function EditWidgetPage() {
               onActiveChange={setActiveCollectionItem}
             />
           </div>
+        </div>
+      )}
+
+      {form.type === "trend-hot" && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl">
+            <h2 className="text-sm font-semibold text-gray-700 mb-4">Cài Đặt Hiển Thị</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-2">
+                  Chiều cao card: {trendHotCardHeight}px
+                </label>
+                <Slider
+                  value={[trendHotCardHeight]}
+                  onValueChange={(vals) => vals[0] !== undefined && setTrendHotCardHeight(vals[0])}
+                  min={200}
+                  max={600}
+                  step={20}
+                  className="w-full max-w-xs"
+                />
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showTrendHotBadge}
+                  onChange={(e) => setShowTrendHotBadge(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm text-gray-700">Hiển thị badge &quot;HOT&quot;</span>
+              </label>
+            </div>
+          </div>
+
+          <TrendHotPreview
+            items={trendHotItems}
+            activeIndex={activeTrendHotItem}
+            onActiveChange={setActiveTrendHotItem}
+            cardHeight={trendHotCardHeight}
+            showBadge={showTrendHotBadge}
+            onFullPreview={() => setShowFullPreview(true)}
+          />
+
+          <div className="bg-white rounded-lg shadow-sm p-6 space-y-4 max-w-2xl">
+            <h2 className="text-sm font-semibold text-gray-700">Nội Dung Items</h2>
+            <TrendHotEditor
+              items={trendHotItems}
+              onChange={setTrendHotItems}
+              activeIndex={activeTrendHotItem}
+              onActiveChange={setActiveTrendHotItem}
+            />
+          </div>
+
+          <FullPagePreviewModal
+            isOpen={showFullPreview}
+            onClose={() => setShowFullPreview(false)}
+            widgetType="trend-hot"
+            data={{ items: trendHotItems, settings: { cardHeight: trendHotCardHeight, showBadge: showTrendHotBadge } }}
+          />
         </div>
       )}
     </div>

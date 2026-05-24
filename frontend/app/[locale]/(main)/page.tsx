@@ -1,5 +1,4 @@
 import { ProductItem } from "@/components/ProductItem";
-import { TrendingCard } from "@/components/TrendingCard";
 import { Footer } from "@/components/Footer";
 import { BannerSlider } from "@/components/storefront/banner-slider";
 import { CollectionSlider } from "@/components/storefront/collection-slider";
@@ -7,7 +6,7 @@ import { fetchWidgets } from "@/lib/api-server";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import type { BannerSliderMetadata, BannerSliderSettings, CollectionGridMetadata, CollectionGridSettings, CollectionItem } from "@/types/api";
+import type { BannerSliderMetadata, BannerSliderSettings, CollectionGridMetadata, CollectionGridSettings, CollectionItem, TrendHotMetadata, TrendHotSettings } from "@/types/api";
 
 export default async function HomePage() {
   const t = await getTranslations("HomePage");
@@ -27,6 +26,14 @@ export default async function HomePage() {
     : [];
   const collectionSettings = collectionWidget?.settings as CollectionGridSettings | null;
   const cardHeight = collectionSettings?.cardHeight ?? 400;
+
+  const trendHotWidgets = await fetchWidgets("trend-hot");
+  const trendHotWidget = trendHotWidgets[0];
+  const trendHotItems: CollectionItem[] = trendHotWidget
+    ? ((trendHotWidget.metadata as unknown as TrendHotMetadata)?.items ?? [])
+    : [];
+  const trendHotSettings = trendHotWidget?.settings as TrendHotSettings | null;
+  const trendHotCardHeight = trendHotSettings?.cardHeight ?? 400;
 
   return (
     <>
@@ -136,40 +143,13 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-3xl font-bold text-gray-900">
-              {t("hotTrends")}
-            </h2>
-            <div className="flex gap-2">
-              <button className="p-2 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors">
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button className="p-2 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors">
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <TrendingCard
-              title={t("autumnGradient")}
-              image="https://images.unsplash.com/photo-1705675451868-014a161e591b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800"
-            />
-            <TrendingCard
-              title={t("halloween")}
-              image="https://images.unsplash.com/photo-1687481795360-77c1115d26c6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800"
-            />
-            <TrendingCard
-              title={t("blueDenim")}
-              image="https://images.unsplash.com/photo-1732257119942-a19648e482f2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800"
-            />
-            <TrendingCard
-              title={t("officeDenim")}
-              image="https://images.unsplash.com/photo-1769981653696-5ce5a59263bf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800"
-            />
-          </div>
-        </section>
+        {trendHotItems.length > 0 && (
+          <CollectionSlider
+            items={trendHotItems}
+            title={trendHotWidget?.name ?? t("hotTrends")}
+            cardHeight={trendHotCardHeight}
+          />
+        )}
       </main>
 
       <Footer />
