@@ -7,6 +7,7 @@ import {
   adminTags,
   adminWidgets,
   uploads,
+  products,
 } from "@/lib/api-resources";
 
 export { ApiError } from "@/lib/api-client";
@@ -75,4 +76,5 @@ export const api = {
   adminTags,
   adminWidgets,
   uploads,
+  products,
 };

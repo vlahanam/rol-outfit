@@ -228,3 +228,13 @@ export const uploads = {
     return request<void>(`/uploads/${filename}`, { method: "DELETE" });
   },
 };
+
+export const products = {
+  listByTags(params: { tags?: string[]; limit?: number }): Promise<ApiResponse<Product[]>> {
+    const qs = new URLSearchParams();
+    if (params.tags?.length) qs.set("tags", params.tags.join(","));
+    if (params.limit) qs.set("limit", String(params.limit));
+    const query = qs.toString();
+    return request<ApiResponse<Product[]>>(`/products${query ? `?${query}` : ""}`);
+  },
+};

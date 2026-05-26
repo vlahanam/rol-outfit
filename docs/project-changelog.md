@@ -5,6 +5,24 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Multi-Tag Product Filtering Enhancement** (2026-05-25)
+  - Backend: `GET /api/v1/products` now accepts `?tags=slug1,slug2,slug3` (comma-separated, multiple tags)
+  - Backend: Backward compatible with `?tag=slug` (single tag parameter)
+  - Backend: `productService.List()` signature updated: `tagSlug string` → `tagSlugs []string`
+  - Backend: `productRepo.ListProducts()` uses `WHERE tags.slug IN ?` with `GROUP BY products.id`
+  - Backend: Multi-tag query includes time-window validation (start_at/end_at) for each tag
+  - API: Supports flexible tag filtering — product must match ALL specified tags (intersection)
+  - Enables tag-based product discovery (e.g., "NEW,HOT" filters to products tagged with both)
+
+- **New-Product Widget System** (2026-05-25)
+  - Frontend: `NewProductEditor` component for admin widget configuration (tag-based product selection)
+  - Frontend: `NewProductPreview` component for live widget preview during editing
+  - Frontend: Widget editor unified to support 4 types (banner-slider, collection-grid, trend-hot, new-product)
+  - Frontend: `placeholder-product.svg` asset for fallback UI
+  - Frontend: Homepage loads 4 fixed widgets via metadata-driven system
+  - API: Widget system matures with complete UI/UX for all widget types
+  - Schema: Widget.metadata JSONB stores widget-type-specific configurations (slides, products, etc.)
+
 - **Shared SlideOverlay Component** (2026-05-24)
   - Frontend: New `components/shared/slide-overlay.tsx` — Reusable text overlay for banner slides with position control and scaling
   - Extracted from inline code in banner-slider editor and preview components

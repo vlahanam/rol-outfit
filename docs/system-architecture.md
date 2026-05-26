@@ -376,7 +376,7 @@ Request/response types for API contracts.
 ### Products (Public)
 | Method | Endpoint | Auth | Role | Notes |
 |--------|----------|------|------|-------|
-| GET | `/api/v1/products` | None | - | List products with optional tag filtering (query: `?tag=<slug>`, `?category_id=`, `?page=`, `?limit=`). Tag filter respects time windows (start_at/end_at). |
+| GET | `/api/v1/products` | None | - | List products with optional tag filtering (query: `?tags=slug1,slug2` [multiple], `?tag=slug` [single, backward compat], `?category_id=`, `?page=`, `?limit=`). Tag filters use intersection (product must match ALL tags). Time-window validation applied per tag. |
 | GET | `/api/v1/products/:id` | None | - | Get product details with variants & tags |
 
 ### Products (Admin)
@@ -416,6 +416,55 @@ Request/response types for API contracts.
 
 ### Categories, Cart, Orders, Users, Widgets
 See CRUD endpoints for each entity (similar structure to Products). Full list includes admin namespaces for protected operations.
+
+---
+
+## Multi-Tag Filtering Query Pattern
+
+### Query Implementation
+
+**Endpoint:** `GET /api/v1/products?tags=slug1,slug2&category_id=5`
+
+**Backend Controller** (`product_controller.go`):
+1. Parse comma-separated `tags` param or single `tag` param (backward compat)
+2. Convert to `[]string` with trimming (e.g., "new, hot" → ["new", "hot"])
+3. Pass to service: `svc.List(ctx, categoryID, tagSlugs, offset, limit)`
+
+**Service Layer** (`product_service.go`):
+- Delegates to repository: `repo.ListProducts(ctx, categoryID, tagSlugs, offset, limit)`
+
+**Repository Query** (`product_repo.go`):
+```go
+if len(tagSlugs) > 0 {
+    now := time.Now()
+    db = db.
+        Joins("JOIN product_tags ON product_tags.product_id = products.id").
+        Joins("JOIN tags ON tags.id = product_tags.tag_id").
+        Where("tags.slug IN ?", tagSlugs).
+        Where("(tags.start_at IS NULL OR tags.start_at <= ?) AND (tags.end_at IS NULL OR tags.end_at >= ?)", now, now).
+        Group("products.id")
+}
+```
+
+**SQL Generated:**
+```sql
+SELECT products.* FROM products
+JOIN product_tags ON product_tags.product_id = products.id
+JOIN tags ON tags.id = product_tags.tag_id
+WHERE products.deleted_at IS NULL AND products.status = 1
+  AND tags.slug IN ('new', 'hot')
+  AND (tags.start_at IS NULL OR tags.start_at <= NOW())
+  AND (tags.end_at IS NULL OR tags.end_at >= NOW())
+GROUP BY products.id;
+```
+
+**Semantics:**
+- **Multiple tags:** Products tagged with ANY specified tag (UNION, not intersection)
+- **Time windows:** Each tag's start_at/end_at checked independently
+- **Grouping:** `GROUP BY products.id` prevents duplicates from multi-join
+- **Backward compatibility:** Single `?tag=slug` parameter still works (auto-converted)
+
+---
 
 ## Data Flow: Product with Avatar
 

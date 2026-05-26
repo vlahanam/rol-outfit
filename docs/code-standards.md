@@ -194,6 +194,28 @@ type productRepository struct {
 - Return GORM models (not DTOs) from repositories
 - Handle GORM errors gracefully (`gorm.ErrRecordNotFound`)
 
+**Multi-Tag Query Pattern Example:**
+```go
+// Filter products by multiple tags (intersection via IN clause)
+func (r *productRepository) ListProducts(ctx context.Context, categoryID string, tagSlugs []string, offset, limit int) ([]*Product, int64, error) {
+    db := r.db.WithContext(ctx).Model(&Product{}).
+        Where("products.deleted_at IS NULL AND products.status = ?", PRODUCT_STATUS_ACTIVE)
+    
+    if len(tagSlugs) > 0 {
+        now := time.Now()
+        db = db.
+            Joins("JOIN product_tags ON product_tags.product_id = products.id").
+            Joins("JOIN tags ON tags.id = product_tags.tag_id").
+            Where("tags.slug IN ?", tagSlugs).                                    // Match any tag
+            Where("(tags.start_at IS NULL OR tags.start_at <= ?) AND (tags.end_at IS NULL OR tags.end_at >= ?)", now, now). // Time-window
+            Group("products.id")                                                  // Eliminate duplicates
+    }
+    // ... count and fetch
+}
+```
+
+**Key Pattern:** Use `GROUP BY` to deduplicate when joining on junction tables (product_tags)
+
 ### Models (GORM)
 
 **Responsibility:** Data structure definition, database schema

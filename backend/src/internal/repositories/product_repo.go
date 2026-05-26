@@ -17,7 +17,7 @@ type ProductRepository interface {
 	FindProductByIDNoFilter(ctx context.Context, id string) (*models.Product, error)
 	FindProductByIDAdmin(ctx context.Context, id string) (*models.ProductWithVariants, error)
 	FindProductBySlug(ctx context.Context, slug string) (*models.Product, error)
-	ListProducts(ctx context.Context, categoryID, tagSlug string, offset, limit int) ([]*models.Product, int64, error)
+	ListProducts(ctx context.Context, categoryID string, tagSlugs []string, offset, limit int) ([]*models.Product, int64, error)
 	UpdateProduct(ctx context.Context, id string, fields map[string]interface{}) error
 	SoftDeleteProduct(ctx context.Context, id string) error
 	ListAdminProductsWithVariants(ctx context.Context, categoryID, search string, offset, limit int) ([]*models.ProductWithVariants, int64, error)
@@ -58,25 +58,27 @@ func (r *postgreStorage) FindProductBySlug(ctx context.Context, slug string) (*m
 	return &p, nil
 }
 
-func (r *postgreStorage) ListProducts(ctx context.Context, categoryID, tagSlug string, offset, limit int) ([]*models.Product, int64, error) {
+func (r *postgreStorage) ListProducts(ctx context.Context, categoryID string, tagSlugs []string, offset, limit int) ([]*models.Product, int64, error) {
 	var products []*models.Product
 	var total int64
 
 	db := r.db.WithContext(ctx).Model(&models.Product{}).
 		Where("products.deleted_at IS NULL AND products.status = ?", models.PRODUCT_STATUS_ACTIVE)
 
-	if tagSlug != "" {
+	if categoryID != "" {
+		db = db.Where("products.category_id = ?", categoryID)
+	}
+
+	if len(tagSlugs) > 0 {
 		now := time.Now()
 		db = db.
 			Joins("JOIN product_tags ON product_tags.product_id = products.id").
 			Joins("JOIN tags ON tags.id = product_tags.tag_id").
-			Where("tags.slug = ?", tagSlug).
+			Where("tags.slug IN ?", tagSlugs).
 			Where("(tags.start_at IS NULL OR tags.start_at <= ?) AND (tags.end_at IS NULL OR tags.end_at >= ?)", now, now).
-			Distinct("products.id")
+			Group("products.id")
 	}
-	if categoryID != "" {
-		db = db.Where("products.category_id = ?", categoryID)
-	}
+
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to count products: %w", err)
 	}

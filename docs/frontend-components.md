@@ -609,3 +609,137 @@ const data = await fetchFromAPI<Product[]>("/products", {
 - Invalid JSON: Returns null
 - Empty response: Returns null
 
+---
+
+## Widget Editor Components
+
+### New-Product Widget Editor
+
+**Component:** `components/admin/widgets/new-product-editor.tsx`
+
+**Purpose:** Admin interface for configuring new-product widget with tag-based product selection.
+
+**Features:**
+- Tag selection form for filtering products
+- Product list with search/filter capability
+- Product selection checkboxes
+- Live preview via companion `NewProductPreview` component
+- Metadata persistence to widget.metadata JSONB
+
+**Data Flow:**
+1. Admin selects tags (e.g., "new", "featured")
+2. Component fetches products filtered by tags via API
+3. Admin selects products to display in widget
+4. Preview updates in real-time
+5. Metadata saved when admin saves widget configuration
+
+**Props:**
+```typescript
+interface NewProductEditorProps {
+  widget: Widget;
+  onMetadataChange: (metadata: NewProductMetadata) => void;
+}
+
+interface NewProductMetadata {
+  tags: string[];
+  productIds: string[];
+  displayLimit?: number;  // max products to show
+}
+```
+
+---
+
+### New-Product Widget Preview
+
+**Component:** `components/admin/widgets/new-product-preview.tsx`
+
+**Purpose:** Live preview panel showing how new-product widget renders on storefront.
+
+**Features:**
+- Displays products selected in editor
+- Shows product cards with image, name, price
+- Responsive grid layout (1-4 columns)
+- Fallback placeholder for missing images
+- Updates in real-time as metadata changes
+
+**Data Integration:**
+- Fetches product details from API using `productIds` from metadata
+- Handles loading and error states
+- Gracefully degrades if products deleted
+
+---
+
+### Widget Type-Specific Metadata Patterns
+
+**BannerSliderMetadata:**
+```typescript
+{
+  slides: BannerSlide[];
+}
+
+interface BannerSlide {
+  id: string;
+  image: string;
+  label: string;
+  title: string;
+  description: string;
+  cta_text: string;
+  cta_link: string;
+  text_x?: number;      // % from left
+  text_y?: number;      // % from top
+  font_scale?: number;  // scaling multiplier
+}
+```
+
+**NewProductMetadata:**
+```typescript
+{
+  tags: string[];           // Filter tags
+  productIds: string[];     // Selected product IDs
+  displayLimit?: number;    // Products to show (default: 8)
+}
+```
+
+**CollectionGridMetadata:**
+```typescript
+{
+  categoryId: string;
+  displayLimit?: number;
+}
+```
+
+**TrendHotMetadata:**
+```typescript
+{
+  tags: string[];
+  displayLimit?: number;
+  sortBy: 'newest' | 'bestselling';
+}
+```
+
+---
+
+## Widget System Architecture (Updated)
+
+**Widget Metadata Strategy:**
+- Each widget type stores config in `widget.metadata` JSONB column
+- Frontend editors marshal/unmarshal metadata to TypeScript interfaces
+- Type-safe metadata access via TypeScript discriminated unions
+- Backend validates metadata shape at database level (optional constraint)
+
+**Widget Types & Editors:**
+| Type | Editor | Preview | Metadata Storage |
+|------|--------|---------|------------------|
+| banner-slider | BannerSliderEditor | BannerSliderPreview | slides: BannerSlide[] |
+| new-product | NewProductEditor | NewProductPreview | tags, productIds |
+| collection-grid | CollectionGridEditor | CollectionGridPreview | categoryId, displayLimit |
+| trend-hot | TrendHotEditor | TrendHotPreview | tags, displayLimit, sortBy |
+
+**Admin Widget Edit Flow:**
+1. Admin navigates to `/admin/widgets/[id]/edit`
+2. Page detects `widget.type` (e.g., "new-product")
+3. Renders type-specific editor (NewProductEditor)
+4. Editor updates metadata on change
+5. Admin saves via `PUT /api/v1/widgets/:id` with updated metadata
+6. Storefront auto-refreshes (ISR or cache bust) to show new widget
+

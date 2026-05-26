@@ -11,7 +11,9 @@ import { CollectionGridPreview } from "@/components/admin/widgets/collection-gri
 import { TrendHotEditor, defaultTrendHotItem } from "@/components/admin/widgets/trend-hot-editor";
 import { TrendHotPreview } from "@/components/admin/widgets/trend-hot-preview";
 import { FullPagePreviewModal } from "@/components/admin/widgets/full-page-preview-modal";
-import type { WidgetType, BannerSlide, BannerSliderSettings, UpdateWidgetPayload, CollectionItem, CollectionGridMetadata, CollectionGridSettings, TrendHotSettings } from "@/types/api";
+import { NewProductEditor } from "@/components/admin/widgets/new-product-editor";
+import { NewProductPreview } from "@/components/admin/widgets/new-product-preview";
+import type { WidgetType, BannerSlide, BannerSliderSettings, UpdateWidgetPayload, CollectionItem, CollectionGridMetadata, CollectionGridSettings, TrendHotSettings, NewProductMetadata, NewProductSettings } from "@/types/api";
 import { Slider } from "@/components/ui/slider";
 
 export default function EditWidgetPage() {
@@ -29,6 +31,9 @@ export default function EditWidgetPage() {
   const [trendHotCardHeight, setTrendHotCardHeight] = useState(400);
   const [showTrendHotBadge, setShowTrendHotBadge] = useState(false);
   const [showFullPreview, setShowFullPreview] = useState(false);
+  const [newProductTagIds, setNewProductTagIds] = useState<string[]>([]);
+  const [newProductQuantity, setNewProductQuantity] = useState(10);
+  const [newProductColumns, setNewProductColumns] = useState(5);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +84,13 @@ export default function EditWidgetPage() {
           const settings = w.settings as TrendHotSettings | null;
           if (settings?.cardHeight) setTrendHotCardHeight(settings.cardHeight);
           if (settings?.showBadge !== undefined) setShowTrendHotBadge(settings.showBadge);
+        }
+        if (w.type === "new-product") {
+          const meta = w.metadata as NewProductMetadata | null;
+          if (meta?.tag_ids) setNewProductTagIds(meta.tag_ids);
+          const settings = w.settings as NewProductSettings | null;
+          if (settings?.quantity) setNewProductQuantity(settings.quantity);
+          if (settings?.columns) setNewProductColumns(settings.columns);
         }
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra"))
@@ -136,6 +148,10 @@ export default function EditWidgetPage() {
       if (form.type === "trend-hot") {
         payload.metadata = { items: trendHotItems };
         payload.settings = { cardHeight: trendHotCardHeight, showBadge: showTrendHotBadge };
+      }
+      if (form.type === "new-product") {
+        payload.metadata = { tag_ids: newProductTagIds };
+        payload.settings = { quantity: newProductQuantity, columns: newProductColumns };
       }
       await api.adminWidgets.update(id, payload);
       router.push("/admin/widgets");
@@ -357,6 +373,56 @@ export default function EditWidgetPage() {
             widgetType="trend-hot"
             data={{ items: trendHotItems, settings: { cardHeight: trendHotCardHeight, showBadge: showTrendHotBadge } }}
           />
+        </div>
+      )}
+
+      {form.type === "new-product" && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl">
+            <h2 className="text-sm font-semibold text-gray-700 mb-4">Cai Dat Hien Thi</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-2">
+                  So san pham: {newProductQuantity}
+                </label>
+                <Slider
+                  value={[newProductQuantity]}
+                  onValueChange={(vals) => vals[0] && setNewProductQuantity(vals[0])}
+                  min={5}
+                  max={20}
+                  step={1}
+                  className="w-full max-w-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-2">
+                  So cot: {newProductColumns}
+                </label>
+                <Slider
+                  value={[newProductColumns]}
+                  onValueChange={(vals) => vals[0] && setNewProductColumns(vals[0])}
+                  min={2}
+                  max={5}
+                  step={1}
+                  className="w-full max-w-xs"
+                />
+              </div>
+            </div>
+          </div>
+
+          <NewProductPreview
+            tagIds={newProductTagIds}
+            quantity={newProductQuantity}
+            columns={newProductColumns}
+          />
+
+          <div className="bg-white rounded-lg shadow-sm p-6 space-y-4 max-w-2xl">
+            <h2 className="text-sm font-semibold text-gray-700">Chon Tags</h2>
+            <NewProductEditor
+              selectedTagIds={newProductTagIds}
+              onChange={setNewProductTagIds}
+            />
+          </div>
         </div>
       )}
     </div>

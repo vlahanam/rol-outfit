@@ -7,14 +7,16 @@ Product catalog management and product variants (different versions of a product
 ### List Products
 **GET** `/products`
 
-Retrieve all products with pagination.
+Retrieve all products with pagination and optional tag filtering.
 
 **Query Parameters:**
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `page` | int | No | 1 | Page number |
 | `limit` | int | No | 10 | Items per page |
-| `category` | string | No | - | Filter by category slug |
+| `category_id` | string | No | - | Filter by category ID |
+| `tags` | string | No | - | Comma-separated tag slugs (e.g., `?tags=new,hot`). Products matching ANY tag returned. Time-window validated. |
+| `tag` | string | No | - | Single tag slug (backward compatible, overridden by `tags` if both present) |
 
 **Response (200 OK):**
 ```json

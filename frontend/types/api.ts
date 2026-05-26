@@ -288,6 +288,16 @@ export interface TrendHotSettings {
   showBadge?: boolean; // show "HOT" badge on cards
 }
 
+// New Product Widget (Hàng Mới Về)
+export interface NewProductMetadata {
+  tag_ids: string[];
+}
+
+export interface NewProductSettings {
+  quantity: number; // 5-20, default 10
+  columns: number; // 2-5, default 5
+}
+
 export interface Widget {
   id: string;
   parent_id: string | null;

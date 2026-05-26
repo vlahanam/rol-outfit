@@ -96,6 +96,12 @@ High-level project phases and milestones. For detailed implementation plans, see
     - [x] Frontend: BannerSliderEditor component with multi-slide management and image upload
     - [x] Frontend: BannerSliderPreview component with live preview and slide navigation
     - [x] Frontend: Widget edit page wired with banner-slider-specific UI
+  - [x] New-product widget editor (May 25, 2026)
+    - [x] Backend: Multi-tag product filtering (tags query param) in ListProducts controller
+    - [x] Frontend: NewProductEditor component for tag-based product selection
+    - [x] Frontend: NewProductPreview component with live preview
+    - [x] Frontend: Placeholder asset for missing product images
+    - [x] API: Support flexible tag combinations (multiple tags via comma-separated query string)
 - [x] New arrivals page with tag-based filtering — products tagged "NEW" fetched via real API with sort controls
 - [x] Checkout flow (shipping form, order creation, success page)
 - [x] User order pages (history list, detail view, cancel capability)
@@ -105,7 +111,7 @@ High-level project phases and milestones. For detailed implementation plans, see
 - [ ] Product catalog and search — public pages
 - [ ] Shopping cart UI — public pages
 
-**Completeness:** 81%
+**Completeness:** 84%
 
 ---
 
