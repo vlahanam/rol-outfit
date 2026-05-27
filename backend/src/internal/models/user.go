@@ -25,7 +25,6 @@ type User struct {
 	FullName  string         `gorm:"column:full_name"`
 	Email     string         `gorm:"column:email"`
 	Password  string         `gorm:"column:password"`
-	Address   string         `gorm:"column:address"`
 	Phone     string         `gorm:"column:phone"`
 	Role      int8           `gorm:"column:role"`
 	Status    int8           `gorm:"column:status"`

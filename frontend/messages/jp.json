@@ -16,6 +16,7 @@
     "searchPlaceholder": "商品を検索...",
     "switchLang": "VN",
     "myOrders": "注文履歴",
+    "myAddresses": "住所管理",
     "logout": "ログアウト"
   },
   "Footer": {
@@ -159,6 +160,23 @@
     "addressTooLong": "住所は500文字以内で入力してください",
     "invalidPhone": "電話番号が無効です"
   },
+  "AddressesPage": {
+    "title": "住所管理",
+    "addNew": "新しい住所を追加",
+    "recipientName": "受取人名",
+    "phone": "電話番号",
+    "address": "住所",
+    "setDefault": "デフォルトに設定",
+    "default": "デフォルト",
+    "edit": "編集",
+    "delete": "削除",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "maxAddresses": "住所は最大5件まで",
+    "confirmDelete": "この住所を削除しますか？",
+    "noAddresses": "住所が登録されていません",
+    "addFirst": "住所を追加して簡単にチェックアウト"
+  },
   "CheckoutPage": {
     "title": "購入手続き",
     "shippingInfo": "配送先情報",
@@ -175,7 +193,14 @@
     "free": "無料",
     "total": "合計",
     "placeOrder": "注文を確定する",
-    "submitting": "処理中..."
+    "submitting": "処理中...",
+    "changeAddress": "変更",
+    "selectAddress": "配送先を選択",
+    "noAddressSelected": "住所が登録されていません。",
+    "addNewAddress": "新しい住所を追加",
+    "pleaseSelectAddress": "配送先を選択してください",
+    "default": "デフォルト",
+    "manageAddresses": "住所を管理"
   },
   "CheckoutSuccessPage": {
     "title": "ご注文ありがとうございます！",

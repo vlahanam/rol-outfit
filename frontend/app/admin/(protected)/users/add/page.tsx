@@ -13,7 +13,6 @@ export default function AddUserPage() {
     fullName: "",
     email: "",
     phone: "",
-    address: "",
     password: "",
     confirmPassword: "",
     role: "Khách hàng",
@@ -51,7 +50,6 @@ export default function AddUserPage() {
         full_name: formData.fullName,
         email: formData.email,
         password: formData.password,
-        address: formData.address,
         phone: formData.phone,
         role: ROLE_VALUE[formData.role],
         status: STATUS_VALUE[formData.status],
@@ -131,19 +129,6 @@ export default function AddUserPage() {
                 onChange={handleChange}
                 type="tel"
                 placeholder="0123 456 789"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Địa chỉ
-              </label>
-              <input
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                type="text"
-                placeholder="Địa chỉ"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>

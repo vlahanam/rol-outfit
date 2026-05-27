@@ -11,7 +11,6 @@ type UserDTO struct {
 	ID        string `json:"id"`
 	FullName  string `json:"full_name"`
 	Email     string `json:"email"`
-	Address   string `json:"address"`
 	Phone     string `json:"phone"`
 	Role      int8   `json:"role"`
 	Status    int8   `json:"status"`
@@ -24,7 +23,6 @@ type FullUserDTO struct {
 	FullName  string `json:"full_name"`
 	Email     string `json:"email"`
 	Password  string `json:"password"`
-	Address   string `json:"address"`
 	Phone     string `json:"phone"`
 	Role      int8   `json:"role"`
 	Status    int8   `json:"status"`
@@ -38,7 +36,6 @@ func ToUserDTO(u *models.User) *UserDTO {
 		ID:        u.ID,
 		FullName:  u.FullName,
 		Email:     u.Email,
-		Address:   u.Address,
 		Phone:     u.Phone,
 		Role:      u.Role,
 		Status:    u.Status,
@@ -60,7 +57,6 @@ func ToFullDTO(u *models.User) *FullUserDTO {
 		FullName:  u.FullName,
 		Email:     u.Email,
 		Password:  u.Password,
-		Address:   u.Address,
 		Phone:     u.Phone,
 		Role:      u.Role,
 		Status:    u.Status,

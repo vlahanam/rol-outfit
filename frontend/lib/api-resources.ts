@@ -20,6 +20,9 @@ import type {
   Widget,
   CreateWidgetPayload,
   UpdateWidgetPayload,
+  UserAddress,
+  CreateAddressPayload,
+  UpdateAddressPayload,
 } from "@/types/api";
 import { ApiError, BASE, getToken, request } from "@/lib/api-client";
 
@@ -236,5 +239,29 @@ export const products = {
     if (params.limit) qs.set("limit", String(params.limit));
     const query = qs.toString();
     return request<ApiResponse<Product[]>>(`/products${query ? `?${query}` : ""}`);
+  },
+};
+
+export const userAddresses = {
+  list(): Promise<ApiResponse<UserAddress[]>> {
+    return request<ApiResponse<UserAddress[]>>("/addresses");
+  },
+  create(body: CreateAddressPayload): Promise<{ data: UserAddress }> {
+    return request<{ data: UserAddress }>("/addresses", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+  update(id: string, body: UpdateAddressPayload): Promise<void> {
+    return request<void>(`/addresses/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
+  },
+  remove(id: string): Promise<void> {
+    return request<void>(`/addresses/${id}`, { method: "DELETE" });
+  },
+  setDefault(id: string): Promise<void> {
+    return request<void>(`/addresses/${id}/default`, { method: "PUT" });
   },
 };

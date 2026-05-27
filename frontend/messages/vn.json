@@ -16,6 +16,7 @@
     "searchPlaceholder": "Tìm kiếm sản phẩm...",
     "switchLang": "JP",
     "myOrders": "Đơn hàng của tôi",
+    "myAddresses": "Địa chỉ của tôi",
     "logout": "Đăng xuất"
   },
   "Footer": {
@@ -159,6 +160,23 @@
     "addressTooLong": "Địa chỉ không được quá 500 ký tự",
     "invalidPhone": "Số điện thoại không hợp lệ"
   },
+  "AddressesPage": {
+    "title": "Địa chỉ của tôi",
+    "addNew": "Thêm địa chỉ mới",
+    "recipientName": "Tên người nhận",
+    "phone": "Số điện thoại",
+    "address": "Địa chỉ",
+    "setDefault": "Đặt làm mặc định",
+    "default": "Mặc định",
+    "edit": "Sửa",
+    "delete": "Xóa",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "maxAddresses": "Tối đa 5 địa chỉ",
+    "confirmDelete": "Xóa địa chỉ này?",
+    "noAddresses": "Chưa có địa chỉ nào",
+    "addFirst": "Thêm địa chỉ để dễ dàng thanh toán"
+  },
   "CheckoutPage": {
     "title": "Thanh toán",
     "shippingInfo": "Thông tin giao hàng",
@@ -175,7 +193,14 @@
     "free": "Miễn phí",
     "total": "Tổng cộng",
     "placeOrder": "Đặt hàng",
-    "submitting": "Đang xử lý..."
+    "submitting": "Đang xử lý...",
+    "changeAddress": "Thay đổi",
+    "selectAddress": "Chọn địa chỉ giao hàng",
+    "noAddressSelected": "Bạn chưa có địa chỉ nào.",
+    "addNewAddress": "Thêm địa chỉ mới",
+    "pleaseSelectAddress": "Vui lòng chọn địa chỉ giao hàng",
+    "default": "Mặc định",
+    "manageAddresses": "Quản lý địa chỉ"
   },
   "CheckoutSuccessPage": {
     "title": "Đặt hàng thành công!",

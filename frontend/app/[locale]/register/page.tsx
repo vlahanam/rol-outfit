@@ -9,7 +9,6 @@ import {
   Eye,
   EyeOff,
   Phone,
-  MapPin,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -26,7 +25,6 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -47,7 +45,6 @@ export default function RegisterPage() {
       name,
       email,
       phone,
-      address,
       password,
       confirmPassword,
     });
@@ -66,7 +63,6 @@ export default function RegisterPage() {
         full_name: name,
         email,
         phone,
-        address,
         password,
       });
       setTokens(res.data.access_token, res.data.refresh_token);
@@ -163,30 +159,6 @@ export default function RegisterPage() {
               </div>
               {fieldErrors.phone && (
                 <p className="mt-1 text-sm text-red-600">{fieldErrors.phone}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t("address")}
-              </label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  value={address}
-                  onChange={(e) => {
-                    setAddress(e.target.value);
-                    clearFieldError("address");
-                  }}
-                  placeholder={t("addressPlaceholder")}
-                  className={`w-full pl-10 pr-4 py-3 border ${fieldErrors.address ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                />
-              </div>
-              {fieldErrors.address && (
-                <p className="mt-1 text-sm text-red-600">
-                  {fieldErrors.address}
-                </p>
               )}
             </div>
 

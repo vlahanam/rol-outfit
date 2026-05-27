@@ -53,7 +53,22 @@ High-level project phases and milestones. For detailed implementation plans, see
 
 ---
 
-## Phase 3: Frontend Development & Admin Dashboard (IN PROGRESS)
+## Phase 3: User Address Management (COMPLETE)
+**Status:** ✓ Complete | **Target:** May 2026
+
+- [x] User address model and separate user_addresses table
+- [x] Remove address field from User model
+- [x] Database migration to remove address column from users table
+- [x] Backend address service and CRUD endpoints
+- [x] Frontend address management UI (list, add, edit, delete)
+- [x] Order shipping info update endpoint (PENDING status only)
+- [x] i18n translations for address validation errors
+
+**Completeness:** 100%
+
+---
+
+## Phase 4: Frontend Development & Admin Dashboard (IN PROGRESS)
 **Status:** ⏳ In Progress | **Target:** May–June 2026
 
 - [x] Next.js frontend setup with TailwindCSS and next-intl
@@ -106,6 +121,7 @@ High-level project phases and milestones. For detailed implementation plans, see
 - [x] Checkout flow (shipping form, order creation, success page)
 - [x] User order pages (history list, detail view, cancel capability)
 - [x] Admin order detail page with real API integration
+- [x] Order code system — human-readable codes (`ROL-YYMMDD-XXXX`) with atomic sequence generation
 - [x] Header auth state (user dropdown when logged in)
 - [ ] Authentication UI (login, registration) — public pages
 - [ ] Product catalog and search — public pages
@@ -115,7 +131,7 @@ High-level project phases and milestones. For detailed implementation plans, see
 
 ---
 
-## Phase 4: Advanced Features & Optimization (BACKLOG)
+## Phase 5: Advanced Features & Optimization (BACKLOG)
 **Status:** 📦 Backlog | **Target:** June 2026+
 
 - [ ] Product reviews and ratings
@@ -136,9 +152,9 @@ High-level project phases and milestones. For detailed implementation plans, see
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| API Endpoints | 45+ | 60+ |
+| API Endpoints | 50+ | 60+ |
 | Test Coverage | TBD | 80%+ |
 | Documentation | ~95% | 100% |
 | Production Ready | No | Q2 2026 |
-| Database Migrations | 14 | 14+ |
+| Database Migrations | 21 | 25+ |
 

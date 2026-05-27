@@ -22,7 +22,6 @@ export default function EditUserPage() {
     fullName: "",
     email: "",
     phone: "",
-    address: "",
     role: "Khách hàng",
     status: "Hoạt động",
     createdAt: "",
@@ -42,7 +41,6 @@ export default function EditUserPage() {
           fullName: u.full_name,
           email: u.email,
           phone: u.phone ?? "",
-          address: u.address ?? "",
           role: ROLE_LABEL[u.role] ?? "Khách hàng",
           status: STATUS_LABEL[u.status] ?? "Hoạt động",
           createdAt: new Date(u.created_at).toLocaleDateString("vi-VN"),
@@ -84,7 +82,6 @@ export default function EditUserPage() {
         full_name: formData.fullName,
         email: formData.email,
         phone: formData.phone,
-        address: formData.address,
         role: ROLE_VALUE[formData.role],
         status: STATUS_VALUE[formData.status],
       });
@@ -185,18 +182,6 @@ export default function EditUserPage() {
                   value={formData.phone}
                   onChange={handleChange}
                   type="tel"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Địa chỉ
-                </label>
-                <input
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  type="text"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>

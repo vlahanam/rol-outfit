@@ -1,17 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, ShoppingBag, Loader2 } from "lucide-react";
+import { ArrowLeft, ShoppingBag, Loader2, MapPin, Check, X } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { api } from "@/lib/api";
+import { userAddresses } from "@/lib/api-resources";
 import { isLoggedIn } from "@/lib/auth";
 import { useCart } from "@/context/cart-context";
-import { createCheckoutSchema } from "@/lib/validations";
-import type { ApiResponse, Cart, CartItem, Product, Order } from "@/types/api";
+import type { ApiResponse, Cart, CartItem, Product, Order, UserAddress } from "@/types/api";
 
 interface RichCartItem extends CartItem {
   productName: string;
@@ -23,7 +21,6 @@ const FALLBACK_IMG =
 
 export default function CheckoutPage() {
   const t = useTranslations("CheckoutPage");
-  const tVal = useTranslations("Validation");
   const tCommon = useTranslations("Common");
   const router = useRouter();
   const { clearCart } = useCart();
@@ -31,29 +28,29 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const checkoutSchema = createCheckoutSchema((key) => tVal(key));
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
-    resolver: zodResolver(checkoutSchema),
-  });
+  const [addresses, setAddresses] = useState<UserAddress[]>([]);
+  const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(null);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [note, setNote] = useState("");
 
   useEffect(() => {
     if (!isLoggedIn()) {
       router.push("/login");
       return;
     }
-    const fetchCart = async () => {
+    const fetchData = async () => {
       try {
-        const res = await api.get<ApiResponse<Cart>>("/cart");
-        const items = res.data?.items ?? [];
+        const [cartRes, addressRes] = await Promise.all([
+          api.get<ApiResponse<Cart>>("/cart"),
+          userAddresses.list().catch(() => ({ data: [] })),
+        ]);
+
+        const items = cartRes.data?.items ?? [];
         if (items.length === 0) {
           router.push("/cart");
           return;
         }
+
         const rich = await Promise.all(
           items.map(async (item) => {
             try {
@@ -75,13 +72,20 @@ export default function CheckoutPage() {
           })
         );
         setCartItems(rich);
+
+        const addrList = addressRes.data ?? [];
+        setAddresses(addrList);
+        const defAddr = addrList.find((a) => a.is_default) || addrList[0];
+        if (defAddr) {
+          setSelectedAddress(defAddr);
+        }
       } catch {
         router.push("/cart");
       } finally {
         setLoading(false);
       }
     };
-    fetchCart();
+    fetchData();
   }, [router]);
 
   const subtotal = cartItems.reduce(
@@ -91,14 +95,19 @@ export default function CheckoutPage() {
   const shipping = subtotal >= 500000 ? 0 : 30000;
   const total = subtotal + shipping;
 
-  const onSubmit = async (data: { shipping_address: string; phone: string; note?: string }) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAddress) {
+      setError(t("pleaseSelectAddress"));
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
       const res = await api.post<ApiResponse<Order>>("/orders", {
-        shipping_address: data.shipping_address,
-        phone: data.phone,
-        note: data.note || undefined,
+        shipping_address: selectedAddress.address,
+        phone: selectedAddress.phone,
+        note: note || undefined,
       });
       clearCart();
       router.push(`/checkout/success?orderId=${res.data.id}`);
@@ -106,6 +115,11 @@ export default function CheckoutPage() {
       setError(tCommon("errorLoading"));
       setSubmitting(false);
     }
+  };
+
+  const handleSelectAddress = (addr: UserAddress) => {
+    setSelectedAddress(addr);
+    setShowAddressModal(false);
   };
 
   if (loading) {
@@ -135,58 +149,54 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-xl font-bold mb-4">{t("shippingInfo")}</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold">{t("shippingInfo")}</h2>
+                  {addresses.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAddressModal(true)}
+                      className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    >
+                      <MapPin className="w-4 h-4" />
+                      {t("changeAddress")}
+                    </button>
+                  )}
+                </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {t("shippingAddress")} *
-                    </label>
-                    <textarea
-                      {...register("shipping_address")}
-                      rows={3}
-                      placeholder={t("addressPlaceholder")}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    {errors.shipping_address && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.shipping_address.message as string}
-                      </p>
-                    )}
+                {selectedAddress ? (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div className="text-sm text-gray-700 space-y-1">
+                      <p className="font-semibold text-gray-900">{selectedAddress.recipient_name}</p>
+                      <p>{selectedAddress.phone}</p>
+                      <p>{selectedAddress.address}</p>
+                    </div>
                   </div>
+                ) : (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                    <p className="text-yellow-700 text-sm">
+                      {t("noAddressSelected")}
+                      <Link href="/addresses" className="text-blue-600 hover:underline ml-1">
+                        {t("addNewAddress")}
+                      </Link>
+                    </p>
+                  </div>
+                )}
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {t("phone")} *
-                    </label>
-                    <input
-                      type="tel"
-                      {...register("phone")}
-                      placeholder={t("phonePlaceholder")}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    {errors.phone && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.phone.message as string}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {t("note")}
-                    </label>
-                    <textarea
-                      {...register("note")}
-                      rows={2}
-                      placeholder={t("notePlaceholder")}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("note")}
+                  </label>
+                  <textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    rows={2}
+                    placeholder={t("notePlaceholder")}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
               </div>
 
@@ -249,7 +259,7 @@ export default function CheckoutPage() {
 
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || !selectedAddress}
                   className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {submitting ? (
@@ -269,6 +279,63 @@ export default function CheckoutPage() {
           </div>
         </form>
       </div>
+
+      {showAddressModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-bold">{t("selectAddress")}</h3>
+              <button
+                type="button"
+                onClick={() => setShowAddressModal(false)}
+                className="p-1 hover:bg-gray-100 rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-96 space-y-3">
+              {addresses.map((addr) => (
+                <button
+                  key={addr.id}
+                  type="button"
+                  onClick={() => handleSelectAddress(addr)}
+                  className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
+                    selectedAddress?.id === addr.id
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <p className="font-semibold text-gray-900">
+                        {addr.recipient_name}
+                        {addr.is_default && (
+                          <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">
+                            {t("default")}
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-sm text-gray-600">{addr.phone}</p>
+                      <p className="text-sm text-gray-600">{addr.address}</p>
+                    </div>
+                    {selectedAddress?.id === addr.id && (
+                      <Check className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="p-4 border-t">
+              <Link
+                href="/addresses"
+                className="block w-full text-center text-blue-600 hover:text-blue-700 font-medium"
+              >
+                {t("manageAddresses")}
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

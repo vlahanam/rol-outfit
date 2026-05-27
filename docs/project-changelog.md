@@ -5,6 +5,39 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Order Code System** (2026-05-28)
+  - Backend: `order_code` column on orders table with format `ROL-YYMMDD-XXXX` (e.g., ROL-260528-0001)
+  - Backend: `order_code_sequences` table for atomic sequence generation per date using PostgreSQL UPSERT pattern
+  - Backend: Order model, DTO, and repository updated with `OrderCode` field
+  - Backend: Order service generates human-readable codes on order creation
+  - Frontend: Order pages (user history, detail, admin detail) display order codes
+  - Frontend: Fallback to truncated UUID for legacy orders without codes
+  - Migrations 000022 and 000023 with down migrations for rollback support
+
+- **User Address Management System** (2026-05-26)
+  - Backend: New `user_addresses` table with full address fields (street, ward, district, city, postal code, phone, is_default)
+  - Backend: Migration 000021 to remove `address` field from users table
+  - Backend: User model and UserDTO updated — address field removed
+  - Backend: Address service with full CRUD operations
+  - Backend: Admin endpoints — `GET /api/v1/admin/users/:userID/addresses` (list), `POST /` (create), `GET /:id`, `PUT /:id`, `DELETE /:id`
+  - Backend: User endpoints — `GET /api/v1/users/me/addresses` (list own addresses), `POST /` (create), `PUT /:id` (update), `DELETE /:id` (delete)
+  - Backend: Order shipping update endpoint — `PUT /api/v1/orders/:id/shipping` (updates only when order status is PENDING)
+  - Backend: UpdateOrderShippingRequest and UpdateShippingInfo service method
+  - Backend: i18n translations for address validation errors (vi.json, ja.json)
+  - Frontend: Address type definitions in `types/api.ts`
+  - Frontend: Address API client namespace (`api.addresses`) with CRUD methods
+  - Frontend: Address validation schema in `lib/validations.ts`
+  - Frontend: User registration and checkout flows refactored to use user_addresses table
+  - Frontend: Admin user pages updated to remove address field
+  - Data migration: Existing user addresses migrated to user_addresses table during 000021 migration
+
+- **Migration 000021: User Addresses Refactor** (2026-05-26)
+  - Removes `address` column from users table
+  - Creates `user_addresses` table with complete address structure
+  - Migrates existing user.address → user_addresses (default address per user)
+  - Updates orders table shipping_info constraints if needed
+
+### Added
 - **Multi-Tag Product Filtering Enhancement** (2026-05-25)
   - Backend: `GET /api/v1/products` now accepts `?tags=slug1,slug2,slug3` (comma-separated, multiple tags)
   - Backend: Backward compatible with `?tag=slug` (single tag parameter)

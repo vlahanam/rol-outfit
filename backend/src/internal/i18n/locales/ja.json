@@ -51,6 +51,7 @@
   "error.order_not_owned": "この注文を閲覧する権限がありません",
   "error.cart_empty": "カートが空です",
   "error.cannot_cancel": "現在のステータスでは注文をキャンセルできません",
+  "error.cannot_update_shipping": "処理中の注文の配送情報は変更できません",
   "error.invalid_order_status": "注文ステータスが正しくありません",
 
   "validation.order_status.required": "注文ステータスは必須です",

@@ -20,7 +20,6 @@ type RegisterRequest struct {
 	FullName string `json:"full_name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
-	Address  string `json:"address"`
 	Phone    string `json:"phone"`
 }
 
@@ -49,9 +48,6 @@ func (r RegisterRequest) Validate() error {
 		validation.Field(&r.Password,
 			validation.Required.Error("validation.password.required"),
 			validation.Length(8, 100).Error("validation.password.length"),
-		),
-		validation.Field(&r.Address,
-			validation.Required.Error("validation.address.required"),
 		),
 		validation.Field(&r.Phone,
 			validation.Required.Error("validation.phone.required"),

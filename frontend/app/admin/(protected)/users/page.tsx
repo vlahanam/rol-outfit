@@ -10,7 +10,6 @@ import {
   Edit,
   Mail,
   Phone,
-  MapPin,
   Copy,
 } from "lucide-react";
 import { DeleteConfirmModal } from "@/components/admin/DeleteConfirmModal";
@@ -123,9 +122,6 @@ export default function ListUserPage() {
                     Thông tin
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
-                    Địa chỉ
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
                     Vai Trò
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
@@ -177,12 +173,6 @@ export default function ListUserPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <MapPin className="w-4 h-4" />
-                          {user.address || "—"}
-                        </div>
-                      </td>
                       <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
                         {roleLabel}
                       </td>
@@ -215,7 +205,7 @@ export default function ListUserPage() {
                 {!loading && filtered.length === 0 && (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={5}
                       className="py-12 text-center text-gray-500 text-sm"
                     >
                       Không tìm thấy người dùng

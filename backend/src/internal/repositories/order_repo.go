@@ -26,6 +26,11 @@ type OrderItemRepository interface {
 	ListOrderItems(ctx context.Context, orderID string) ([]*models.OrderItem, error)
 }
 
+// OrderCodeRepository defines DB operations for order code generation.
+type OrderCodeRepository interface {
+	GenerateOrderCode(ctx context.Context) (string, error)
+}
+
 func (r *postgreStorage) CreateOrder(ctx context.Context, order *models.Order) error {
 	if err := r.db.WithContext(ctx).Create(order).Error; err != nil {
 		return fmt.Errorf("failed to create order: %w", err)
@@ -120,4 +125,21 @@ func (r *postgreStorage) ListOrderItems(ctx context.Context, orderID string) ([]
 		return nil, fmt.Errorf("failed to list order items: %w", err)
 	}
 	return items, nil
+}
+
+func (r *postgreStorage) GenerateOrderCode(ctx context.Context) (string, error) {
+	dateKey := time.Now().Format("060102")
+	var seq models.OrderCodeSequence
+
+	err := r.db.WithContext(ctx).Raw(`
+		INSERT INTO order_code_sequences (date_key, last_sequence)
+		VALUES (?, 1)
+		ON CONFLICT (date_key) DO UPDATE SET last_sequence = order_code_sequences.last_sequence + 1
+		RETURNING last_sequence
+	`, dateKey).Scan(&seq.LastSequence).Error
+	if err != nil {
+		return "", fmt.Errorf("failed to generate order code: %w", err)
+	}
+
+	return fmt.Sprintf("ROL-%s-%04d", dateKey, seq.LastSequence), nil
 }

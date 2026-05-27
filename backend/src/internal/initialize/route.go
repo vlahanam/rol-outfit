@@ -67,7 +67,16 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	orders.Post("/", controllers.CreateOrder(db))
 	orders.Get("/", controllers.ListOrders(db))
 	orders.Get("/:id", controllers.GetOrder(db))
+	orders.Put("/:id/shipping", controllers.UpdateOrderShipping(db))
 	orders.Delete("/:id", controllers.CancelOrder(db))
+
+	// Addresses (user auth required)
+	addresses := v1.Group("/addresses", middleware.JWTAuth(jwtSecret))
+	addresses.Get("/", controllers.ListAddresses(db))
+	addresses.Post("/", controllers.CreateAddress(db))
+	addresses.Put("/:id", controllers.UpdateAddress(db))
+	addresses.Delete("/:id", controllers.DeleteAddress(db))
+	addresses.Put("/:id/default", controllers.SetDefaultAddress(db))
 
 	// Admin orders
 	adminOrders := v1.Group("/admin/orders",
@@ -75,6 +84,7 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
 	)
 	adminOrders.Get("/", controllers.ListAllOrders(db))
+	adminOrders.Get("/:id", controllers.GetAdminOrder(db))
 	adminOrders.Put("/:id/status", controllers.UpdateOrderStatus(db))
 
 	// Admin categories

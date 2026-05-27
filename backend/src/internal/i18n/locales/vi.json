@@ -51,6 +51,7 @@
   "error.order_not_owned": "Bạn không có quyền xem đơn hàng này",
   "error.cart_empty": "Giỏ hàng của bạn đang trống",
   "error.cannot_cancel": "Không thể hủy đơn hàng ở trạng thái hiện tại",
+  "error.cannot_update_shipping": "Không thể cập nhật thông tin giao hàng cho đơn hàng đã được xử lý",
   "error.invalid_order_status": "Trạng thái đơn hàng không hợp lệ",
 
   "validation.order_status.required": "Trạng thái đơn hàng không được để trống",

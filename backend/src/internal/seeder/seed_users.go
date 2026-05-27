@@ -15,7 +15,6 @@ type seedUser struct {
 	Email    string
 	Password string
 	Phone    string
-	Address  string
 	Role     int8
 }
 
@@ -25,7 +24,6 @@ var users = []seedUser{
 		Email:    "admin@rol-outfit.com",
 		Password: "123456789",
 		Phone:    "0900000001",
-		Address:  "Trụ sở Rol Outfit, TP. Hồ Chí Minh",
 		Role:     models.USER_ROLE_ADMIN,
 	},
 	{
@@ -33,7 +31,6 @@ var users = []seedUser{
 		Email:    "customer1@rol-outfit.com",
 		Password: "123456789",
 		Phone:    "0900000002",
-		Address:  "123 Lê Lợi, Quận 1, TP. Hồ Chí Minh",
 		Role:     models.USER_ROLE_CUSTOMER,
 	},
 	{
@@ -41,7 +38,6 @@ var users = []seedUser{
 		Email:    "customer2@rol-outfit.com",
 		Password: "123456789",
 		Phone:    "0900000003",
-		Address:  "456 Trần Hưng Đạo, Quận 5, TP. Hồ Chí Minh",
 		Role:     models.USER_ROLE_CUSTOMER,
 	},
 }
@@ -71,7 +67,6 @@ func SeedUsers(db *gorm.DB) (Result, error) {
 			FullName: u.FullName,
 			Email:    u.Email,
 			Password: string(hash),
-			Address:  u.Address,
 			Phone:    u.Phone,
 			Role:     u.Role,
 			Status:   1,

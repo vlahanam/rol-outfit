@@ -16,6 +16,7 @@ type OrderItemDTO struct {
 
 type OrderDTO struct {
 	ID              string          `json:"id"`
+	OrderCode       string          `json:"order_code"`
 	UserID          string          `json:"user_id"`
 	ShippingAddress string          `json:"shipping_address"`
 	Phone           string          `json:"phone"`
@@ -46,8 +47,13 @@ func ToOrderDTO(o *models.Order, items []*models.OrderItem) *OrderDTO {
 	for _, item := range items {
 		dtoItems = append(dtoItems, ToOrderItemDTO(item))
 	}
+	orderCode := ""
+	if o.OrderCode != nil {
+		orderCode = *o.OrderCode
+	}
 	return &OrderDTO{
 		ID:              o.ID,
+		OrderCode:       orderCode,
 		UserID:          o.UserID,
 		ShippingAddress: o.ShippingAddress,
 		Phone:           o.Phone,
@@ -58,4 +64,21 @@ func ToOrderDTO(o *models.Order, items []*models.OrderItem) *OrderDTO {
 		CreatedAt:       o.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:       o.UpdatedAt.Format(time.RFC3339),
 	}
+}
+
+type AdminOrderDTO struct {
+	*OrderDTO
+	UserName  string `json:"user_name"`
+	UserEmail string `json:"user_email"`
+}
+
+func ToAdminOrderDTO(o *models.Order, items []*models.OrderItem, user *models.User) *AdminOrderDTO {
+	dto := &AdminOrderDTO{
+		OrderDTO: ToOrderDTO(o, items),
+	}
+	if user != nil {
+		dto.UserName = user.FullName
+		dto.UserEmail = user.Email
+	}
+	return dto
 }

@@ -73,7 +73,6 @@ func (s *userService) Create(ctx context.Context, req *requests.CreateAdminUserR
 		FullName: req.FullName,
 		Email:    req.Email,
 		Password: string(hash),
-		Address:  req.Address,
 		Phone:    req.Phone,
 		Role:     role,
 		Status:   status,
@@ -143,9 +142,6 @@ func (s *userService) Update(ctx context.Context, id string, req *requests.Updat
 	if req.Email != nil {
 		fields["email"] = *req.Email
 	}
-	if req.Address != nil {
-		fields["address"] = *req.Address
-	}
 	if req.Phone != nil {
 		fields["phone"] = *req.Phone
 	}
@@ -186,9 +182,6 @@ func (s *userService) UpdateMe(ctx context.Context, id string, req *requests.Upd
 	fields := map[string]interface{}{}
 	if req.FullName != nil {
 		fields["full_name"] = *req.FullName
-	}
-	if req.Address != nil {
-		fields["address"] = *req.Address
 	}
 	if req.Phone != nil {
 		fields["phone"] = *req.Phone

@@ -85,7 +85,7 @@ export default function OrdersPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <span className="font-semibold text-gray-900">
-                        {t("orderNumber")}: #{order.id.slice(0, 8).toUpperCase()}
+                        {t("orderNumber")}: {order.order_code || `#${order.id.slice(0, 8)}`}
                       </span>
                       <OrderStatusBadge status={order.status} />
                     </div>

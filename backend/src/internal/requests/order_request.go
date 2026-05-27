@@ -33,3 +33,20 @@ func (r UpdateOrderStatusRequest) Validate() error {
 		),
 	)
 }
+
+type UpdateOrderShippingRequest struct {
+	ShippingAddress *string `json:"shipping_address"`
+	Phone           *string `json:"phone"`
+	Note            *string `json:"note"`
+}
+
+func (r UpdateOrderShippingRequest) Validate() error {
+	if r.Phone != nil {
+		if err := validation.Validate(*r.Phone,
+			validation.Length(10, 15).Error("validation.phone.length"),
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}

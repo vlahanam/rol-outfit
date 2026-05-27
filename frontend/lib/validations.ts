@@ -17,7 +17,6 @@ export function createRegisterSchema(t: (key: string) => string) {
         .string()
         .min(1, t("phoneRequired"))
         .regex(/^\d{9,11}$/, t("phoneInvalid")),
-      address: z.string().min(1, t("addressRequired")),
       password: z.string().min(8, t("passwordMin")),
       confirmPassword: z.string().min(1, t("confirmPasswordRequired")),
     })
@@ -58,7 +57,6 @@ export const registerSchema = createRegisterSchema(
       emailInvalid: "Email không hợp lệ",
       phoneRequired: "Vui lòng nhập số điện thoại",
       phoneInvalid: "Số điện thoại phải có 9-11 chữ số",
-      addressRequired: "Vui lòng nhập địa chỉ",
       passwordMin: "Mật khẩu phải có ít nhất 8 ký tự",
       confirmPasswordRequired: "Vui lòng xác nhận mật khẩu",
       passwordsMismatch: "Mật khẩu không khớp",
@@ -70,7 +68,6 @@ export const addUserSchema = z
     fullName: z.string().min(2, "Họ và tên phải có ít nhất 2 ký tự"),
     email: z.string().min(1, "Vui lòng nhập email").email("Email không hợp lệ"),
     phone: z.string().optional(),
-    address: z.string().optional(),
     password: z.string().min(8, "Mật khẩu phải có ít nhất 8 ký tự"),
     confirmPassword: z.string().min(1, "Vui lòng xác nhận mật khẩu"),
     role: z.string(),
@@ -85,7 +82,6 @@ export const editUserSchema = z.object({
   fullName: z.string().min(2, "Họ và tên phải có ít nhất 2 ký tự"),
   email: z.string().min(1, "Vui lòng nhập email").email("Email không hợp lệ"),
   phone: z.string().optional(),
-  address: z.string().optional(),
   role: z.string(),
   status: z.string(),
 });

@@ -115,7 +115,7 @@ export default function OrderDetailPage() {
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">Chi Tiết Đơn Hàng</h1>
           <p className="text-gray-600">
-            ID: #{order.id.slice(0, 8).toUpperCase()} —{' '}
+            {order.order_code || `#${order.id.slice(0, 8)}`} —{' '}
             {new Date(order.created_at).toLocaleDateString('vi-VN', {
               year: 'numeric',
               month: '2-digit',
@@ -189,7 +189,8 @@ export default function OrderDetailPage() {
           <div className="bg-white rounded-lg shadow-sm p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Khách Hàng</h2>
             <div className="space-y-2 text-sm">
-              <div><span className="text-gray-500">ID:</span> <span className="ml-2">{order.user_id.slice(0, 8).toUpperCase()}</span></div>
+              {order.user_name && <div><span className="text-gray-500">Tên:</span> <span className="ml-2 font-medium">{order.user_name}</span></div>}
+              {order.user_email && <div><span className="text-gray-500">Email:</span> <span className="ml-2">{order.user_email}</span></div>}
               <div><span className="text-gray-500">Số ĐT:</span> <span className="ml-2">{order.phone}</span></div>
             </div>
           </div>

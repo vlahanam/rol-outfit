@@ -9,6 +9,7 @@ import (
 	"github.com/vlahanam/rol-outfit/src/internal/common"
 	"github.com/vlahanam/rol-outfit/src/internal/dto"
 	"github.com/vlahanam/rol-outfit/src/internal/i18n"
+	"github.com/vlahanam/rol-outfit/src/internal/models"
 	"github.com/vlahanam/rol-outfit/src/internal/repositories"
 	"github.com/vlahanam/rol-outfit/src/internal/requests"
 	"github.com/vlahanam/rol-outfit/src/internal/services"
@@ -120,6 +121,55 @@ func GetOrder(db *gorm.DB) fiber.Handler {
 	}
 }
 
+// UpdateOrderShipping PUT /api/v1/orders/:id/shipping
+func UpdateOrderShipping(db *gorm.DB) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+		userID, err := userIDFromLocals(ctx)
+		if err != nil {
+			return ctx.Status(fiber.StatusUnauthorized).JSON(common.ErrUnauthorized)
+		}
+		orderID := ctx.Params("id")
+
+		var req requests.UpdateOrderShippingRequest
+		if err := ctx.Bind().JSON(&req); err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(
+				common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_payload")),
+			)
+		}
+		if err := req.Validate(); err != nil {
+			details := common.ParseValidationErrors(err, lang)
+			resp := common.ErrBadRequest.WithReason(i18n.T(lang, "validation.failed"))
+			if details != nil {
+				resp = resp.WithDetails(details)
+			}
+			return ctx.Status(fiber.StatusBadRequest).JSON(resp)
+		}
+
+		svc := newOrderService(db)
+		if err := svc.UpdateShippingInfo(ctx.Context(), userID, orderID, &req); err != nil {
+			if errors.Is(err, services.ErrOrderNotFound) {
+				return ctx.Status(fiber.StatusNotFound).JSON(
+					common.ErrNotFound.WithReason(i18n.T(lang, "error.order_not_found")),
+				)
+			}
+			if errors.Is(err, services.ErrOrderNotOwned) {
+				return ctx.Status(fiber.StatusForbidden).JSON(
+					common.ErrForbidden.WithReason(i18n.T(lang, "error.order_not_owned")),
+				)
+			}
+			if errors.Is(err, services.ErrCannotUpdateShipping) {
+				return ctx.Status(fiber.StatusConflict).JSON(
+					common.ErrConflict.WithReason(i18n.T(lang, "error.cannot_update_shipping")),
+				)
+			}
+			slog.Error("UpdateOrderShipping failed", "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+		return ctx.SendStatus(fiber.StatusNoContent)
+	}
+}
+
 // CancelOrder DELETE /api/v1/orders/:id
 func CancelOrder(db *gorm.DB) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
@@ -175,12 +225,56 @@ func ListAllOrders(db *gorm.DB) fiber.Handler {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
 
-		result := make([]*dto.OrderDTO, 0, len(orders))
+		userIDs := make([]string, 0, len(orders))
+		seen := make(map[string]bool)
 		for _, o := range orders {
-			result = append(result, dto.ToOrderDTO(o, nil))
+			if !seen[o.UserID] {
+				userIDs = append(userIDs, o.UserID)
+				seen[o.UserID] = true
+			}
+		}
+
+		repo := repositories.NewPostgreSQLStorage(db)
+		userMap, err := repo.FindByIDs(ctx.Context(), userIDs)
+		if err != nil {
+			slog.Error("ListAllOrders: failed to fetch users", "error", err)
+			userMap = make(map[string]*models.User)
+		}
+
+		result := make([]*dto.AdminOrderDTO, 0, len(orders))
+		for _, o := range orders {
+			result = append(result, dto.ToAdminOrderDTO(o, nil, userMap[o.UserID]))
 		}
 		p.Total = total
 		return ctx.JSON(common.SuccessResponse(result, p, nil))
+	}
+}
+
+// GetAdminOrder GET /api/v1/admin/orders/:id [admin]
+func GetAdminOrder(db *gorm.DB) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+		orderID := ctx.Params("id")
+
+		svc := newOrderService(db)
+		order, items, err := svc.GetOrder(ctx.Context(), "", orderID, true)
+		if err != nil {
+			if errors.Is(err, services.ErrOrderNotFound) {
+				return ctx.Status(fiber.StatusNotFound).JSON(
+					common.ErrNotFound.WithReason(i18n.T(lang, "error.order_not_found")),
+				)
+			}
+			slog.Error("GetAdminOrder failed", "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+
+		repo := repositories.NewPostgreSQLStorage(db)
+		user, err := repo.FindByID(ctx.Context(), order.UserID)
+		if err != nil {
+			slog.Error("GetAdminOrder: failed to fetch user", "error", err, "user_id", order.UserID)
+		}
+
+		return ctx.JSON(common.ResponseData(dto.ToAdminOrderDTO(order, items, user)))
 	}
 }
 

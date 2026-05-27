@@ -134,7 +134,7 @@ export default function OrderDetailPage() {
           <div>
             <h1 className="text-3xl font-bold">{t("title")}</h1>
             <p className="text-gray-500 mt-1">
-              #{order.id.slice(0, 8).toUpperCase()} -{" "}
+              {order.order_code || `#${order.id.slice(0, 8)}`} -{" "}
               {new Date(order.created_at).toLocaleDateString(locale === "jp" ? "ja-JP" : "vi-VN", {
                 year: "numeric",
                 month: "long",

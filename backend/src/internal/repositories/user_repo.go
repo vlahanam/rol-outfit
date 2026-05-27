@@ -27,6 +27,7 @@ type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (*models.User, error)
 	FindByPhone(ctx context.Context, phone string) (*models.User, error)
 	FindByID(ctx context.Context, id string) (*models.User, error)
+	FindByIDs(ctx context.Context, ids []string) (map[string]*models.User, error)
 	List(ctx context.Context, offset, limit int) ([]*models.User, int64, error)
 	Update(ctx context.Context, id string, fields map[string]interface{}) error
 	SoftDelete(ctx context.Context, id string) error
@@ -89,6 +90,24 @@ func (r *postgreStorage) FindByID(ctx context.Context, id string) (*models.User,
 		return nil, fmt.Errorf("failed to find user by id: %w", err)
 	}
 	return &user, nil
+}
+
+func (r *postgreStorage) FindByIDs(ctx context.Context, ids []string) (map[string]*models.User, error) {
+	if len(ids) == 0 {
+		return make(map[string]*models.User), nil
+	}
+	var users []*models.User
+	err := r.db.WithContext(ctx).
+		Where("id IN ? AND deleted_at IS NULL", ids).
+		Find(&users).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to find users by ids: %w", err)
+	}
+	result := make(map[string]*models.User, len(users))
+	for _, u := range users {
+		result[u.ID] = u
+	}
+	return result, nil
 }
 
 // List lấy danh sách users có phân trang, trả về slice và tổng số bản ghi

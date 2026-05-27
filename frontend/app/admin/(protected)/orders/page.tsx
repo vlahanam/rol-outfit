@@ -43,10 +43,14 @@ export default function ListOrderPage() {
 
   const filtered = orders.filter((o) => {
     const label = STATUS_LABEL[o.status] ?? '';
+    const searchLower = search.toLowerCase();
     const matchSearch =
-      o.id.toLowerCase().includes(search.toLowerCase()) ||
+      (o.order_code?.toLowerCase().includes(searchLower) ?? false) ||
+      o.id.toLowerCase().includes(searchLower) ||
       o.phone.includes(search) ||
-      o.shipping_address.toLowerCase().includes(search.toLowerCase());
+      o.shipping_address.toLowerCase().includes(searchLower) ||
+      (o.user_name?.toLowerCase().includes(searchLower) ?? false) ||
+      (o.user_email?.toLowerCase().includes(searchLower) ?? false);
     const matchStatus = statusFilter === '' || label === statusFilter;
     return matchSearch && matchStatus;
   });
@@ -91,6 +95,7 @@ export default function ListOrderPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Mã ĐH</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Người Đặt</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Địa chỉ giao</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Tổng Tiền</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Trạng Thái</th>
@@ -104,7 +109,12 @@ export default function ListOrderPage() {
                   return (
                     <tr key={order.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
-                        {order.id.slice(0, 8).toUpperCase()}
+                        {order.order_code || order.id.slice(0, 8)}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        <div className="space-y-0.5">
+                          <div className="font-medium">{order.user_name || '—'}</div>
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">{order.shipping_address}</td>
                       <td className="px-6 py-4 text-sm font-medium text-blue-600 whitespace-nowrap">

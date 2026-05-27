@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { User, Package, LogOut, ChevronDown } from "lucide-react";
+import { User, Package, MapPin, LogOut, ChevronDown } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 
@@ -58,6 +58,14 @@ export function UserDropdown({ user, onLogout }: Props) {
           >
             <Package className="w-4 h-4" />
             {t("myOrders")}
+          </Link>
+          <Link
+            href="/addresses"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            <MapPin className="w-4 h-4" />
+            {t("myAddresses")}
           </Link>
           <button
             onClick={() => {

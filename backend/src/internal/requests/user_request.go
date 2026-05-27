@@ -12,7 +12,6 @@ type CreateAdminUserRequest struct {
 	FullName string `json:"full_name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
-	Address  string `json:"address"`
 	Phone    string `json:"phone"`
 	Role     *int8  `json:"role"`   // default: USER_ROLE_CUSTOMER (2)
 	Status   *int8  `json:"status"` // default: USER_STATUS_ACTIVE (1)
@@ -69,7 +68,6 @@ func (r CreateAdminUserRequest) Validate() error {
 type UpdateUserRequest struct {
 	FullName *string `json:"full_name"`
 	Email    *string `json:"email"`
-	Address  *string `json:"address"`
 	Phone    *string `json:"phone"`
 	Role     *int8   `json:"role"`
 	Status   *int8   `json:"status"`
@@ -118,7 +116,6 @@ func (r UpdateUserRequest) Validate() error {
 // UpdateMeRequest dùng cho user tự cập nhật thông tin cá nhân (không đổi role/status).
 type UpdateMeRequest struct {
 	FullName *string `json:"full_name"`
-	Address  *string `json:"address"`
 	Phone    *string `json:"phone"`
 }
 

@@ -19,12 +19,15 @@ var (
 	ErrCannotCancel  = errors.New("order cannot be cancelled in current status")
 )
 
+var ErrCannotUpdateShipping = errors.New("cannot update shipping info for non-pending order")
+
 type OrderService interface {
 	CreateFromCart(ctx context.Context, userID string, req *requests.CreateOrderRequest) (*models.Order, []*models.OrderItem, error)
 	GetOrder(ctx context.Context, userID, orderID string, isAdmin bool) (*models.Order, []*models.OrderItem, error)
 	ListUserOrders(ctx context.Context, userID string, offset, limit int) ([]*models.Order, int64, error)
 	ListAllOrders(ctx context.Context, status int8, offset, limit int) ([]*models.Order, int64, error)
 	UpdateStatus(ctx context.Context, orderID string, status int8) error
+	UpdateShippingInfo(ctx context.Context, userID, orderID string, req *requests.UpdateOrderShippingRequest) error
 	CancelOrder(ctx context.Context, userID, orderID string) error
 }
 
@@ -78,8 +81,14 @@ func (s *orderService) CreateFromCart(ctx context.Context, userID string, req *r
 			totalPrice += item.PriceAtAdd * float64(item.Quantity)
 		}
 
+		orderCode, err := txRepo.GenerateOrderCode(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to generate order code: %w", err)
+		}
+
 		order = &models.Order{
 			ID:              uuid.New().String(),
+			OrderCode:       &orderCode,
 			UserID:          userID,
 			ShippingAddress: req.ShippingAddress,
 			Phone:           req.Phone,
@@ -150,6 +159,38 @@ func (s *orderService) UpdateStatus(ctx context.Context, orderID string, status 
 		return ErrOrderNotFound
 	}
 	return s.orderRepo.UpdateOrder(ctx, orderID, map[string]interface{}{"status": status})
+}
+
+func (s *orderService) UpdateShippingInfo(ctx context.Context, userID, orderID string, req *requests.UpdateOrderShippingRequest) error {
+	order, err := s.orderRepo.FindOrderByID(ctx, orderID)
+	if err != nil {
+		return fmt.Errorf("failed to find order: %w", err)
+	}
+	if order == nil {
+		return ErrOrderNotFound
+	}
+	if order.UserID != userID {
+		return ErrOrderNotOwned
+	}
+	if order.Status != models.ORDER_STATUS_PENDING {
+		return ErrCannotUpdateShipping
+	}
+
+	fields := map[string]interface{}{}
+	if req.ShippingAddress != nil {
+		fields["shipping_address"] = *req.ShippingAddress
+	}
+	if req.Phone != nil {
+		fields["phone"] = *req.Phone
+	}
+	if req.Note != nil {
+		fields["note"] = *req.Note
+	}
+
+	if len(fields) == 0 {
+		return nil
+	}
+	return s.orderRepo.UpdateOrder(ctx, orderID, fields)
 }
 
 func (s *orderService) CancelOrder(ctx context.Context, userID, orderID string) error {

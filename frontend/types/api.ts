@@ -127,6 +127,7 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  order_code?: string;
   user_id: string;
   shipping_address: string;
   phone: string;
@@ -134,6 +135,8 @@ export interface Order {
   status: number;
   note?: string;
   items?: OrderItem[];
+  user_name?: string;
+  user_email?: string;
   created_at: string;
   updated_at: string;
 }
@@ -143,7 +146,6 @@ export interface User {
   id: string;
   full_name: string;
   email: string;
-  address: string;
   phone: string;
   role: number; // 1=admin, 2=customer
   status: number; // 1=active, 0=locked
@@ -155,7 +157,6 @@ export interface CreateUserPayload {
   full_name: string;
   email: string;
   password: string;
-  address: string;
   phone: string;
   role?: number;
   status?: number;
@@ -164,7 +165,6 @@ export interface CreateUserPayload {
 export interface UpdateUserPayload {
   full_name?: string;
   email?: string;
-  address?: string;
   phone?: string;
   role?: number;
   status?: number;
@@ -324,6 +324,29 @@ export interface UpdateWidgetPayload {
   status?: number;
   settings?: Record<string, unknown>;
   metadata?: Record<string, unknown>;
+}
+
+// User Address
+export interface UserAddress {
+  id: string;
+  recipient_name: string;
+  phone: string;
+  address: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateAddressPayload {
+  recipient_name: string;
+  phone: string;
+  address: string;
+}
+
+export interface UpdateAddressPayload {
+  recipient_name?: string;
+  phone?: string;
+  address?: string;
 }
 
 // Error response from backend
