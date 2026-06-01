@@ -20,6 +20,11 @@ func newCartService(db *gorm.DB) services.CartService {
 	return services.NewCartService(repo, repo, repo, repo)
 }
 
+func newAdminCartService(db *gorm.DB) services.CartService {
+	repo := repositories.NewPostgreSQLStorage(db)
+	return services.NewCartServiceWithUserRepo(repo, repo, repo, repo, repo)
+}
+
 func userIDFromLocals(ctx fiber.Ctx) (string, error) {
 	raw := ctx.Locals("userID")
 	if raw == nil {
@@ -156,6 +161,70 @@ func RemoveCartItem(db *gorm.DB) fiber.Handler {
 				)
 			}
 			slog.Error("RemoveCartItem failed", "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+		return ctx.SendStatus(fiber.StatusNoContent)
+	}
+}
+
+// AdminListCarts GET /api/v1/admin/carts
+func AdminListCarts(db *gorm.DB) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		var p common.Paging
+		if err := ctx.Bind().Query(&p); err != nil {
+			p = common.Paging{}
+		}
+		p.Process()
+		offset := (p.Page - 1) * p.Limit
+		search := ctx.Query("search", "")
+
+		svc := newAdminCartService(db)
+		carts, total, err := svc.ListAllCarts(ctx.Context(), offset, p.Limit, search)
+		if err != nil {
+			slog.Error("AdminListCarts failed", "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+
+		p.Total = total
+		return ctx.JSON(common.SuccessResponse(carts, p, nil))
+	}
+}
+
+// AdminGetCart GET /api/v1/admin/carts/:id
+func AdminGetCart(db *gorm.DB) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+		id := ctx.Params("id")
+
+		svc := newAdminCartService(db)
+		cart, err := svc.GetCartByID(ctx.Context(), id)
+		if err != nil {
+			if errors.Is(err, services.ErrCartNotFound) {
+				return ctx.Status(fiber.StatusNotFound).JSON(
+					common.ErrNotFound.WithReason(i18n.T(lang, "error.cart_not_found")),
+				)
+			}
+			slog.Error("AdminGetCart failed", "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+		return ctx.JSON(common.ResponseData(cart))
+	}
+}
+
+// AdminDeleteCart DELETE /api/v1/admin/carts/:id
+func AdminDeleteCart(db *gorm.DB) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+		id := ctx.Params("id")
+
+		svc := newAdminCartService(db)
+		if err := svc.DeleteCart(ctx.Context(), id); err != nil {
+			if errors.Is(err, services.ErrCartNotFound) {
+				return ctx.Status(fiber.StatusNotFound).JSON(
+					common.ErrNotFound.WithReason(i18n.T(lang, "error.cart_not_found")),
+				)
+			}
+			slog.Error("AdminDeleteCart failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
 		return ctx.SendStatus(fiber.StatusNoContent)

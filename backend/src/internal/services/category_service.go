@@ -80,11 +80,13 @@ func (s *categoryService) Create(ctx context.Context, req *requests.CreateCatego
 	}
 
 	c := &models.Category{
-		ID:          uuid.New().String(),
-		Name:        req.Name,
-		Slug:        slug,
-		Description: req.Description,
-		Status:      models.CATEGORY_STATUS_ACTIVE,
+		ID:            uuid.New().String(),
+		Name:          req.Name,
+		NameJa:        req.NameJa,
+		Slug:          slug,
+		Description:   req.Description,
+		DescriptionJa: req.DescriptionJa,
+		Status:        models.CATEGORY_STATUS_ACTIVE,
 	}
 	if err := s.repo.CreateCategory(ctx, c); err != nil {
 		return nil, fmt.Errorf("failed to create category: %w", err)
@@ -116,6 +118,12 @@ func (s *categoryService) Update(ctx context.Context, id string, req *requests.U
 	}
 	if req.Description != nil {
 		fields["description"] = *req.Description
+	}
+	if req.DescriptionJa != nil {
+		fields["description_ja"] = *req.DescriptionJa
+	}
+	if req.NameJa != nil {
+		fields["name_ja"] = *req.NameJa
 	}
 	if req.Status != nil {
 		fields["status"] = *req.Status

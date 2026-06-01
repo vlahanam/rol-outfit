@@ -14,6 +14,9 @@ import (
 type CartRepository interface {
 	FindOrCreateCart(ctx context.Context, userID string) (*models.Cart, error)
 	FindCartByUserID(ctx context.Context, userID string) (*models.Cart, error)
+	ListAllCarts(ctx context.Context, offset, limit int, search string) ([]*models.Cart, int64, error)
+	FindCartByID(ctx context.Context, id string) (*models.Cart, error)
+	DeleteCart(ctx context.Context, id string) error
 }
 
 // CartItemRepository defines DB operations for the cart_item table.
@@ -125,4 +128,58 @@ func (r *postgreStorage) ClearCart(ctx context.Context, cartID string) error {
 		return fmt.Errorf("failed to clear cart: %w", err)
 	}
 	return nil
+}
+
+func (r *postgreStorage) ListAllCarts(ctx context.Context, offset, limit int, search string) ([]*models.Cart, int64, error) {
+	var carts []*models.Cart
+	var total int64
+
+	q := r.db.WithContext(ctx).Model(&models.Cart{})
+
+	if search != "" {
+		q = q.Joins("LEFT JOIN users ON users.id = carts.user_id").
+			Where("users.full_name ILIKE ? OR users.email ILIKE ? OR carts.id::text ILIKE ?",
+				"%"+search+"%", "%"+search+"%", "%"+search+"%")
+	}
+
+	if err := q.Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("failed to count carts: %w", err)
+	}
+
+	q2 := r.db.WithContext(ctx).Model(&models.Cart{})
+	if search != "" {
+		q2 = q2.Joins("LEFT JOIN users ON users.id = carts.user_id").
+			Where("users.full_name ILIKE ? OR users.email ILIKE ? OR carts.id::text ILIKE ?",
+				"%"+search+"%", "%"+search+"%", "%"+search+"%")
+	}
+
+	if err := q2.Order("created_at DESC").Offset(offset).Limit(limit).Find(&carts).Error; err != nil {
+		return nil, 0, fmt.Errorf("failed to list carts: %w", err)
+	}
+
+	return carts, total, nil
+}
+
+func (r *postgreStorage) FindCartByID(ctx context.Context, id string) (*models.Cart, error) {
+	var cart models.Cart
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&cart).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find cart by id: %w", err)
+	}
+	return &cart, nil
+}
+
+func (r *postgreStorage) DeleteCart(ctx context.Context, id string) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("cart_id = ?", id).Delete(&models.CartItem{}).Error; err != nil {
+			return fmt.Errorf("failed to delete cart items: %w", err)
+		}
+		if err := tx.Where("id = ?", id).Delete(&models.Cart{}).Error; err != nil {
+			return fmt.Errorf("failed to delete cart: %w", err)
+		}
+		return nil
+	})
 }

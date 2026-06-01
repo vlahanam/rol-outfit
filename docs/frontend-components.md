@@ -719,6 +719,23 @@ interface BannerSlide {
 
 ---
 
+## User Profile & Address Management
+
+**Profile Page** (`app/[locale]/(main)/profile/page.tsx`):
+- Avatar upload, info editing, password change, address management
+- Uses ImageUploader for avatar, AddressForm components for address CRUD
+- API: `GET/PUT /api/v1/users/me`, `PUT /api/v1/users/me/password`, address endpoints
+
+**Address Form Component** (`components/admin/address-form.tsx`):
+- Zod validation for all address fields (street, ward, district, city, postal, phone)
+- Default address toggle, submit/cancel actions
+
+**User Dropdown** (`components/common/user-dropdown.tsx`):
+- Shows logged-in user with avatar, profile link, logout with BroadcastChannel multi-tab sync
+- Graceful auth state detection and redirect
+
+---
+
 ## Widget System Architecture (Updated)
 
 **Widget Metadata Strategy:**
@@ -727,13 +744,15 @@ interface BannerSlide {
 - Type-safe metadata access via TypeScript discriminated unions
 - Backend validates metadata shape at database level (optional constraint)
 
-**Widget Types & Editors:**
-| Type | Editor | Preview | Metadata Storage |
-|------|--------|---------|------------------|
-| banner-slider | BannerSliderEditor | BannerSliderPreview | slides: BannerSlide[] |
-| new-product | NewProductEditor | NewProductPreview | tags, productIds |
-| collection-grid | CollectionGridEditor | CollectionGridPreview | categoryId, displayLimit |
-| trend-hot | TrendHotEditor | TrendHotPreview | tags, displayLimit, sortBy |
+**Widget Types & Editors (6 Widget Types):**
+| Type | Editor Component | Preview Component | Metadata Storage |
+|------|---------|---------|------------------|
+| HERO_BANNER | BannerSliderEditor | BannerSliderPreview | slides: BannerSlide[] |
+| COLLECTION_GRID | CollectionGridEditor | CollectionGridPreview | categoryId, displayLimit |
+| NEW_ARRIVALS | NewProductEditor | NewProductPreview | tags, productIds, displayLimit |
+| PRODUCT_GRID | ProductGridEditor | ProductGridPreview | categoryId, displayLimit, sortBy |
+| LIST_IMAGE | ListImageEditor | ListImagePreview | images, links |
+| CATEGORY_CAROUSEL | CategoryCarouselEditor | CategoryCarouselPreview | categoryIds, displayLimit |
 
 **Admin Widget Edit Flow:**
 1. Admin navigates to `/admin/widgets/[id]/edit`

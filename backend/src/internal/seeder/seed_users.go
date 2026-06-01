@@ -62,11 +62,12 @@ func SeedUsers(db *gorm.DB) (Result, error) {
 			return res, err
 		}
 
+		hashStr := string(hash)
 		row := models.User{
 			ID:       uuid.New().String(),
 			FullName: u.FullName,
 			Email:    u.Email,
-			Password: string(hash),
+			Password: &hashStr,
 			Phone:    u.Phone,
 			Role:     u.Role,
 			Status:   1,

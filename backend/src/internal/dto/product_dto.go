@@ -7,21 +7,24 @@ import (
 )
 
 type ProductDTO struct {
-	ID              string   `json:"id"`
-	CategoryID      string   `json:"category_id"`
-	Name            string   `json:"name"`
-	Slug            string   `json:"slug"`
-	DefaultPrice    float64  `json:"default_price"`
-	Description     string   `json:"description"`
-	Status          int8     `json:"status"`
-	AttributeNames  []string `json:"attribute_names"`
-	Avatar          string   `json:"avatar,omitempty"`
-	DiscountPercent float64  `json:"discount_percent"`
-	DiscountStartAt string   `json:"discount_start_at,omitempty"`
-	DiscountEndAt   string   `json:"discount_end_at,omitempty"`
-	SalePrice       float64  `json:"sale_price"`
-	CreatedAt       string   `json:"created_at"`
-	UpdatedAt       string   `json:"updated_at"`
+	ID              string    `json:"id"`
+	CategoryID      string    `json:"category_id"`
+	Name            string    `json:"name"`
+	NameJa          string    `json:"name_ja,omitempty"`
+	Slug            string    `json:"slug"`
+	DefaultPrice    float64   `json:"default_price"`
+	Description     string    `json:"description"`
+	DescriptionJa   string    `json:"description_ja,omitempty"`
+	Status          int8      `json:"status"`
+	AttributeNames  []string  `json:"attribute_names"`
+	Avatar          string    `json:"avatar,omitempty"`
+	DiscountPercent float64   `json:"discount_percent"`
+	DiscountStartAt string    `json:"discount_start_at,omitempty"`
+	DiscountEndAt   string    `json:"discount_end_at,omitempty"`
+	SalePrice       float64   `json:"sale_price"`
+	Tags            []*TagDTO `json:"tags,omitempty"`
+	CreatedAt       string    `json:"created_at"`
+	UpdatedAt       string    `json:"updated_at"`
 }
 
 func ToProductDTO(p *models.Product) *ProductDTO {
@@ -29,13 +32,22 @@ func ToProductDTO(p *models.Product) *ProductDTO {
 	if attrNames == nil {
 		attrNames = []string{}
 	}
+	var tags []*TagDTO
+	if len(p.Tags) > 0 {
+		tags = make([]*TagDTO, 0, len(p.Tags))
+		for _, t := range p.Tags {
+			tags = append(tags, ToTagDTO(&t))
+		}
+	}
 	return &ProductDTO{
 		ID:              p.ID,
 		CategoryID:      p.CategoryID,
 		Name:            p.Name,
+		NameJa:          p.NameJa,
 		Slug:            p.Slug,
 		DefaultPrice:    p.DefaultPrice,
 		Description:     p.Description,
+		DescriptionJa:   p.DescriptionJa,
 		Status:          p.Status,
 		AttributeNames:  attrNames,
 		Avatar:          p.Avatar,
@@ -43,6 +55,7 @@ func ToProductDTO(p *models.Product) *ProductDTO {
 		DiscountStartAt: formatTimePtr(p.DiscountStartAt),
 		DiscountEndAt:   formatTimePtr(p.DiscountEndAt),
 		SalePrice:       EffectivePrice(p.DefaultPrice, p.DiscountPercent, p.DiscountStartAt, p.DiscountEndAt),
+		Tags:            tags,
 		CreatedAt:       p.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:       p.UpdatedAt.Format(time.RFC3339),
 	}
@@ -53,9 +66,11 @@ type ProductWithVariantsDTO struct {
 	ID              string               `json:"id"`
 	CategoryID      string               `json:"category_id"`
 	Name            string               `json:"name"`
+	NameJa          string               `json:"name_ja,omitempty"`
 	Slug            string               `json:"slug"`
 	DefaultPrice    float64              `json:"default_price"`
 	Description     string               `json:"description"`
+	DescriptionJa   string               `json:"description_ja,omitempty"`
 	Status          int8                 `json:"status"`
 	AttributeNames  []string             `json:"attribute_names"`
 	Avatar          string               `json:"avatar,omitempty"`
@@ -90,9 +105,11 @@ func ToProductWithVariantsDTO(p *models.ProductWithVariants) *ProductWithVariant
 		ID:              p.ID,
 		CategoryID:      p.CategoryID,
 		Name:            p.Name,
+		NameJa:          p.NameJa,
 		Slug:            p.Slug,
 		DefaultPrice:    p.DefaultPrice,
 		Description:     p.Description,
+		DescriptionJa:   p.DescriptionJa,
 		Status:          p.Status,
 		AttributeNames:  attrNames,
 		Avatar:          p.Avatar,

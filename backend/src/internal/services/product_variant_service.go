@@ -92,6 +92,8 @@ func (s *productVariantService) Create(ctx context.Context, productID string, re
 	v := &models.ProductVariant{
 		ID:              uuid.New().String(),
 		ProductID:       productID,
+		Name:            req.Name,
+		NameJa:          req.NameJa,
 		Attributes:      req.Attributes,
 		Price:           req.Price,
 		Stock:           req.Stock,
@@ -120,6 +122,12 @@ func (s *productVariantService) Update(ctx context.Context, productID, id string
 	}
 
 	fields := map[string]interface{}{}
+	if req.Name != nil {
+		fields["name"] = *req.Name
+	}
+	if req.NameJa != nil {
+		fields["name_ja"] = *req.NameJa
+	}
 	if len(req.Attributes) > 0 {
 		product, err := s.prodRepo.FindProductByIDNoFilter(ctx, productID)
 		if err != nil {

@@ -23,6 +23,8 @@ import type {
   UserAddress,
   CreateAddressPayload,
   UpdateAddressPayload,
+  AdminCartListItem,
+  AdminCartDetail,
 } from "@/types/api";
 import { ApiError, BASE, getToken, request } from "@/lib/api-client";
 
@@ -198,6 +200,23 @@ export const adminWidgets = {
   },
 };
 
+export const adminCarts = {
+  list(params?: { page?: number; limit?: number; search?: string }): Promise<ApiResponse<AdminCartListItem[]>> {
+    const qs = new URLSearchParams();
+    if (params?.page) qs.set("page", String(params.page));
+    if (params?.limit) qs.set("limit", String(params.limit));
+    if (params?.search) qs.set("search", params.search);
+    const query = qs.toString();
+    return request<ApiResponse<AdminCartListItem[]>>(`/admin/carts${query ? `?${query}` : ""}`);
+  },
+  get(id: string): Promise<{ data: AdminCartDetail }> {
+    return request<{ data: AdminCartDetail }>(`/admin/carts/${id}`);
+  },
+  remove(id: string): Promise<void> {
+    return request<void>(`/admin/carts/${id}`, { method: "DELETE" });
+  },
+};
+
 export const uploads = {
   async upload(file: File): Promise<string> {
     const token = getToken();
@@ -240,6 +259,12 @@ export const products = {
     const query = qs.toString();
     return request<ApiResponse<Product[]>>(`/products${query ? `?${query}` : ""}`);
   },
+  search(query: string, limit = 6): Promise<ApiResponse<Product[]>> {
+    const qs = new URLSearchParams();
+    qs.set("search", query);
+    qs.set("limit", String(limit));
+    return request<ApiResponse<Product[]>>(`/products?${qs.toString()}`);
+  },
 };
 
 export const userAddresses = {
@@ -263,5 +288,23 @@ export const userAddresses = {
   },
   setDefault(id: string): Promise<void> {
     return request<void>(`/addresses/${id}/default`, { method: "PUT" });
+  },
+};
+
+export const userProfile = {
+  get(): Promise<{ data: User }> {
+    return request<{ data: User }>("/users/me");
+  },
+  update(body: { full_name?: string; phone?: string; avatar?: string }): Promise<void> {
+    return request<void>("/users/me", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
+  },
+  changePassword(body: { current_password: string; new_password: string }): Promise<void> {
+    return request<void>("/users/me/password", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
   },
 };

@@ -9,6 +9,7 @@ import (
 type TagDTO struct {
 	ID        string  `json:"id"`
 	Name      string  `json:"name"`
+	NameJa    string  `json:"name_ja,omitempty"`
 	Slug      string  `json:"slug"`
 	StartAt   *string `json:"start_at"`
 	EndAt     *string `json:"end_at"`
@@ -29,6 +30,7 @@ func ToTagDTO(t *models.Tag) *TagDTO {
 	return &TagDTO{
 		ID:        t.ID,
 		Name:      t.Name,
+		NameJa:    t.NameJa,
 		Slug:      t.Slug,
 		StartAt:   startAt,
 		EndAt:     endAt,

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // AppConfig chứa toàn bộ cấu hình ứng dụng được nạp từ biến môi trường.
@@ -19,6 +20,14 @@ type AppConfig struct {
 	UploadDir      string
 	UploadURL      string
 	UploadMaxSize  int64
+
+	// OAuth
+	GoogleClientID        string
+	GoogleClientSecret    string
+	FacebookAppID         string
+	FacebookAppSecret     string
+	OAuthAllowedRedirects []string
+	OAuthCallbackBaseURL  string
 }
 
 // DSN trả về chuỗi kết nối PostgreSQL cho GORM.
@@ -55,6 +64,8 @@ func getEnvInt64(key string, fallback int64) int64 {
 
 // LoadConfig nạp cấu hình từ biến môi trường với giá trị mặc định hợp lý.
 func LoadConfig() *AppConfig {
+	redirects := getEnv("OAUTH_ALLOWED_REDIRECT_URIS", "http://localhost:3000/login/callback")
+
 	return &AppConfig{
 		AppPort:        getEnv("APP_PORT", "8080"),
 		DBHost:         getEnv("DB_HOST", "localhost"),
@@ -67,5 +78,13 @@ func LoadConfig() *AppConfig {
 		UploadDir:      getEnv("UPLOAD_DIR", "/app/uploads"),
 		UploadURL:      getEnv("UPLOAD_URL", "/uploads"),
 		UploadMaxSize:  getEnvInt64("UPLOAD_MAX_SIZE", 10*1024*1024), // default 10 MB
+
+		// OAuth
+		GoogleClientID:        getEnv("GOOGLE_CLIENT_ID", ""),
+		GoogleClientSecret:    getEnv("GOOGLE_CLIENT_SECRET", ""),
+		FacebookAppID:         getEnv("FACEBOOK_APP_ID", ""),
+		FacebookAppSecret:     getEnv("FACEBOOK_APP_SECRET", ""),
+		OAuthAllowedRedirects: strings.Split(redirects, ","),
+		OAuthCallbackBaseURL:  getEnv("OAUTH_CALLBACK_BASE_URL", "http://localhost:8080"),
 	}
 }

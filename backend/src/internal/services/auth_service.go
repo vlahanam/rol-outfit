@@ -36,6 +36,7 @@ type AuthService interface {
 	Login(ctx context.Context, req *requests.LoginRequest) (*models.AuthTokens, error)
 	Refresh(ctx context.Context, refreshToken string) (*models.AuthTokens, error)
 	Logout(ctx context.Context, refreshToken string) error
+	GenerateTokensForUser(ctx context.Context, user *models.User) (*models.AuthTokens, error)
 }
 
 // authService là implementation của AuthService
@@ -82,12 +83,13 @@ func (s *authService) Register(ctx context.Context, req *requests.RegisterReques
 	if err != nil {
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
+	hashedPasswordStr := string(hashedPassword)
 
 	// Tạo user mới
 	user := &models.User{
 		ID:       uuid.New().String(),
 		Email:    req.Email,
-		Password: string(hashedPassword),
+		Password: &hashedPasswordStr,
 		Role:     models.USER_ROLE_CUSTOMER,
 		FullName: req.FullName,
 		Phone:    req.Phone,
@@ -115,8 +117,11 @@ func (s *authService) Login(ctx context.Context, req *requests.LoginRequest) (*m
 		return nil, ErrInvalidCredentials
 	}
 
-	// Kiểm tra password
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+	// Kiểm tra password (OAuth-only users have nil password)
+	if user.Password == nil {
+		return nil, ErrInvalidCredentials
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(req.Password)); err != nil {
 		return nil, ErrInvalidCredentials
 	}
 
@@ -186,4 +191,9 @@ func (s *authService) generateTokens(ctx context.Context, user *models.User, fam
 		TokenType:    "Bearer",
 		ExpiresIn:    int64(accessTokenTTL.Seconds()),
 	}, nil
+}
+
+// GenerateTokensForUser creates tokens for a user (used by OAuth)
+func (s *authService) GenerateTokensForUser(ctx context.Context, user *models.User) (*models.AuthTokens, error) {
+	return s.generateTokens(ctx, user, nil)
 }

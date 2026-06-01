@@ -101,8 +101,7 @@ export function NewProductPreview({ tagIds, quantity, columns }: Props) {
               price={`${p.sale_price.toLocaleString()}d`}
               originalPrice={p.discount_percent > 0 ? `${p.default_price.toLocaleString()}d` : undefined}
               discountPercent={p.discount_percent > 0 ? p.discount_percent : undefined}
-              image={p.avatar || "/placeholder-product.svg"}
-              isNew
+              image={p.avatar}
             />
           ))}
         </div>

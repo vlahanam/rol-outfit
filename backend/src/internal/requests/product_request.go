@@ -16,8 +16,10 @@ func validateDiscountWindow(start, end *time.Time) error {
 type CreateProductRequest struct {
 	CategoryID      string     `json:"category_id"`
 	Name            string     `json:"name"`
+	NameJa          string     `json:"name_ja"`
 	DefaultPrice    float64    `json:"default_price"`
 	Description     string     `json:"description"`
+	DescriptionJa   string     `json:"description_ja"`
 	Avatar          string     `json:"avatar"`
 	AttributeNames  []string   `json:"attribute_names"`
 	DiscountPercent float64    `json:"discount_percent"`
@@ -53,8 +55,10 @@ func (r CreateProductRequest) Validate() error {
 type UpdateProductRequest struct {
 	CategoryID      *string    `json:"category_id"`
 	Name            *string    `json:"name"`
+	NameJa          *string    `json:"name_ja"`
 	DefaultPrice    *float64   `json:"default_price"`
 	Description     *string    `json:"description"`
+	DescriptionJa   *string    `json:"description_ja"`
 	Avatar          *string    `json:"avatar"`
 	Status          *int8      `json:"status"`
 	AttributeNames  []string   `json:"attribute_names"`

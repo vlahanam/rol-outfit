@@ -47,3 +47,36 @@ func ToCartDTO(cart *models.Cart, items []*models.CartItem) *CartDTO {
 		CreatedAt: cart.CreatedAt.Format(time.RFC3339),
 	}
 }
+
+type AdminCartListItemDTO struct {
+	ID           string  `json:"id"`
+	UserID       string  `json:"user_id"`
+	UserFullName string  `json:"user_full_name"`
+	UserEmail    string  `json:"user_email"`
+	ItemCount    int     `json:"item_count"`
+	Total        float64 `json:"total"`
+	UpdatedAt    string  `json:"updated_at"`
+}
+
+type AdminCartDetailDTO struct {
+	ID           string              `json:"id"`
+	UserID       string              `json:"user_id"`
+	UserFullName string              `json:"user_full_name"`
+	UserEmail    string              `json:"user_email"`
+	Items        []*AdminCartItemDTO `json:"items"`
+	Total        float64             `json:"total"`
+	CreatedAt    string              `json:"created_at"`
+	UpdatedAt    string              `json:"updated_at"`
+}
+
+type AdminCartItemDTO struct {
+	ID           string  `json:"id"`
+	ProductID    string  `json:"product_id"`
+	ProductName  string  `json:"product_name"`
+	ProductImage string  `json:"product_image"`
+	AttrID       string  `json:"attr_id,omitempty"`
+	AttrName     string  `json:"attr_name,omitempty"`
+	PriceAtAdd   float64 `json:"price_at_add"`
+	Quantity     int     `json:"quantity"`
+	Subtotal     float64 `json:"subtotal"`
+}

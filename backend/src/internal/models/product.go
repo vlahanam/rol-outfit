@@ -92,9 +92,11 @@ type Product struct {
 	ID              string         `gorm:"type:uuid;primaryKey"`
 	CategoryID      string         `gorm:"column:category_id;type:uuid"`
 	Name            string         `gorm:"column:name"`
+	NameJa          string         `gorm:"column:name_ja"`
 	Slug            string         `gorm:"column:slug"`
 	DefaultPrice    float64        `gorm:"column:default_price;type:numeric(12,2)"`
 	Description     string         `gorm:"column:description"`
+	DescriptionJa   string         `gorm:"column:description_ja"`
 	Status          int8           `gorm:"column:status"`
 	AttributeNames  StringSlice    `gorm:"column:attribute_names;type:text[]"`
 	Avatar          string         `gorm:"column:avatar"`
@@ -104,6 +106,7 @@ type Product struct {
 	CreatedAt       time.Time      `gorm:"column:created_at"`
 	UpdatedAt       time.Time      `gorm:"column:updated_at"`
 	DeletedAt       gorm.DeletedAt `gorm:"column:deleted_at;index"`
+	Tags            []Tag          `gorm:"-"`
 }
 
 func (Product) TableName() string { return "products" }

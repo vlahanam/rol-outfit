@@ -22,6 +22,9 @@ type CartService interface {
 	AddItem(ctx context.Context, userID string, req *requests.AddCartItemRequest) (*models.CartItem, error)
 	UpdateItem(ctx context.Context, userID, itemID string, req *requests.UpdateCartItemRequest) error
 	RemoveItem(ctx context.Context, userID, itemID string) error
+	ListAllCarts(ctx context.Context, offset, limit int, search string) ([]*dto.AdminCartListItemDTO, int64, error)
+	GetCartByID(ctx context.Context, cartID string) (*dto.AdminCartDetailDTO, error)
+	DeleteCart(ctx context.Context, cartID string) error
 }
 
 type cartService struct {
@@ -29,6 +32,7 @@ type cartService struct {
 	cartItemRepo repositories.CartItemRepository
 	productRepo  repositories.ProductRepository
 	variantRepo  repositories.ProductVariantRepository
+	userRepo     repositories.UserRepository
 }
 
 func NewCartService(
@@ -42,6 +46,22 @@ func NewCartService(
 		cartItemRepo: cartItemRepo,
 		productRepo:  productRepo,
 		variantRepo:  variantRepo,
+	}
+}
+
+func NewCartServiceWithUserRepo(
+	cartRepo repositories.CartRepository,
+	cartItemRepo repositories.CartItemRepository,
+	productRepo repositories.ProductRepository,
+	variantRepo repositories.ProductVariantRepository,
+	userRepo repositories.UserRepository,
+) CartService {
+	return &cartService{
+		cartRepo:     cartRepo,
+		cartItemRepo: cartItemRepo,
+		productRepo:  productRepo,
+		variantRepo:  variantRepo,
+		userRepo:     userRepo,
 	}
 }
 
@@ -71,7 +91,6 @@ func (s *cartService) AddItem(ctx context.Context, userID string, req *requests.
 		return nil, ErrProductNotFound
 	}
 
-	// Accumulate quantity if same product+attr already in cart
 	existing, err := s.cartItemRepo.FindCartItem(ctx, cart.ID, req.ProductID, req.AttrID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check existing cart item: %w", err)
@@ -151,4 +170,136 @@ func (s *cartService) verifyItemOwnership(ctx context.Context, userID, itemID st
 		return ErrCartItemNotOwned
 	}
 	return nil
+}
+
+var ErrCartNotFound = errors.New("cart not found")
+
+func (s *cartService) ListAllCarts(ctx context.Context, offset, limit int, search string) ([]*dto.AdminCartListItemDTO, int64, error) {
+	carts, total, err := s.cartRepo.ListAllCarts(ctx, offset, limit, search)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to list carts: %w", err)
+	}
+
+	result := make([]*dto.AdminCartListItemDTO, 0, len(carts))
+	for _, cart := range carts {
+		user, _ := s.userRepo.FindByID(ctx, cart.UserID)
+		items, _ := s.cartItemRepo.ListCartItems(ctx, cart.ID)
+
+		var total float64
+		var updatedAt string
+		for _, item := range items {
+			total += item.PriceAtAdd * float64(item.Quantity)
+			if updatedAt == "" || item.UpdatedAt.After(cart.CreatedAt) {
+				updatedAt = item.UpdatedAt.Format("15:04 02/01/2006")
+			}
+		}
+		if updatedAt == "" {
+			updatedAt = cart.CreatedAt.Format("15:04 02/01/2006")
+		}
+
+		fullName := ""
+		email := ""
+		if user != nil {
+			fullName = user.FullName
+			email = user.Email
+		}
+
+		result = append(result, &dto.AdminCartListItemDTO{
+			ID:           cart.ID,
+			UserID:       cart.UserID,
+			UserFullName: fullName,
+			UserEmail:    email,
+			ItemCount:    len(items),
+			Total:        total,
+			UpdatedAt:    updatedAt,
+		})
+	}
+
+	return result, total, nil
+}
+
+func (s *cartService) GetCartByID(ctx context.Context, cartID string) (*dto.AdminCartDetailDTO, error) {
+	cart, err := s.cartRepo.FindCartByID(ctx, cartID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find cart: %w", err)
+	}
+	if cart == nil {
+		return nil, ErrCartNotFound
+	}
+
+	user, _ := s.userRepo.FindByID(ctx, cart.UserID)
+	items, err := s.cartItemRepo.ListCartItems(ctx, cart.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list cart items: %w", err)
+	}
+
+	var total float64
+	var latestUpdate = cart.CreatedAt
+	dtoItems := make([]*dto.AdminCartItemDTO, 0, len(items))
+	for _, item := range items {
+		subtotal := item.PriceAtAdd * float64(item.Quantity)
+		total += subtotal
+		if item.UpdatedAt.After(latestUpdate) {
+			latestUpdate = item.UpdatedAt
+		}
+
+		product, _ := s.productRepo.FindProductByID(ctx, item.ProductID)
+		productName := ""
+		productImage := ""
+		if product != nil {
+			productName = product.Name
+			productImage = product.Avatar
+		}
+
+		attrID := ""
+		attrName := ""
+		if item.AttrID != nil {
+			attrID = *item.AttrID
+			variant, _ := s.variantRepo.FindVariantByID(ctx, attrID)
+			if variant != nil && len(variant.Attributes) > 0 {
+				attrName = string(variant.Attributes)
+			}
+		}
+
+		dtoItems = append(dtoItems, &dto.AdminCartItemDTO{
+			ID:           item.ID,
+			ProductID:    item.ProductID,
+			ProductName:  productName,
+			ProductImage: productImage,
+			AttrID:       attrID,
+			AttrName:     attrName,
+			PriceAtAdd:   item.PriceAtAdd,
+			Quantity:     item.Quantity,
+			Subtotal:     subtotal,
+		})
+	}
+
+	fullName := ""
+	email := ""
+	if user != nil {
+		fullName = user.FullName
+		email = user.Email
+	}
+
+	return &dto.AdminCartDetailDTO{
+		ID:           cart.ID,
+		UserID:       cart.UserID,
+		UserFullName: fullName,
+		UserEmail:    email,
+		Items:        dtoItems,
+		Total:        total,
+		CreatedAt:    cart.CreatedAt.Format("15:04 02/01/2006"),
+		UpdatedAt:    latestUpdate.Format("15:04 02/01/2006"),
+	}, nil
+}
+
+func (s *cartService) DeleteCart(ctx context.Context, cartID string) error {
+	cart, err := s.cartRepo.FindCartByID(ctx, cartID)
+	if err != nil {
+		return fmt.Errorf("failed to find cart: %w", err)
+	}
+	if cart == nil {
+		return ErrCartNotFound
+	}
+	return s.cartRepo.DeleteCart(ctx, cartID)
 }

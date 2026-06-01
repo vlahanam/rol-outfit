@@ -15,11 +15,12 @@ import { NewProductEditor } from "@/components/admin/widgets/new-product-editor"
 import { NewProductPreview } from "@/components/admin/widgets/new-product-preview";
 import type { WidgetType, BannerSlide, BannerSliderSettings, UpdateWidgetPayload, CollectionItem, CollectionGridMetadata, CollectionGridSettings, TrendHotSettings, NewProductMetadata, NewProductSettings } from "@/types/api";
 import { Slider } from "@/components/ui/slider";
+import { LanguageTabsForm } from "@/components/admin/language-tabs-form";
 
 export default function EditWidgetPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const [form, setForm] = useState({ name: "", type: "" as WidgetType, status: 2 });
+  const [form, setForm] = useState({ name: "", name_ja: "", type: "" as WidgetType, status: 2 });
   const [slides, setSlides] = useState<BannerSlide[]>([defaultSlide()]);
   const [activeSlide, setActiveSlide] = useState(0);
   const [autoPlayInterval, setAutoPlayInterval] = useState(5); // seconds
@@ -44,7 +45,7 @@ export default function EditWidgetPage() {
       .get(id)
       .then((res) => {
         const w = res.data;
-        setForm({ name: w.name, type: w.type as WidgetType, status: w.status });
+        setForm({ name: w.name, name_ja: w.name_ja ?? "", type: w.type as WidgetType, status: w.status });
         if (w.type === "banner-slider") {
           const meta = w.metadata as { slides?: unknown[] } | null;
           const existing = meta?.slides;
@@ -136,7 +137,7 @@ export default function EditWidgetPage() {
 
     setSubmitting(true);
     try {
-      const payload: UpdateWidgetPayload = { name: form.name, status: form.status };
+      const payload: UpdateWidgetPayload = { name: form.name, name_ja: form.name_ja || undefined, status: form.status };
       if (form.type === "banner-slider") {
         payload.metadata = { slides };
         payload.settings = { autoPlayInterval: autoPlayInterval * 1000 }; // store in ms
@@ -186,16 +187,31 @@ export default function EditWidgetPage() {
       )}
 
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm p-6 space-y-5 max-w-2xl">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Tên Widget *</label>
-          <input
-            type="text"
-            value={form.name}
-            onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          {nameError && <p className="text-red-600 text-xs mt-1">{nameError}</p>}
-        </div>
+        <LanguageTabsForm
+          viContent={
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tên Widget *</label>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {nameError && <p className="text-red-600 text-xs mt-1">{nameError}</p>}
+            </div>
+          }
+          jaContent={
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">ウィジェット名 (Japanese name)</label>
+              <input
+                type="text"
+                value={form.name_ja}
+                onChange={(e) => setForm((p) => ({ ...p, name_ja: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          }
+        />
 
         <div className="grid grid-cols-2 gap-4">
           <div>

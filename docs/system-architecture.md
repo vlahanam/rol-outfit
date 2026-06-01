@@ -130,12 +130,20 @@ Request/response types for API contracts.
 **Connection:** Defined in `loadconfig.go`, uses GORM
 
 **Key Tables:**
-- `users` — Authentication and profiles
+- `users` — Authentication and profiles (with `avatar` field for user avatars)
+- `user_addresses` — User address management with default address tracking
+- `user_oauth_providers` — OAuth provider mappings (Google, Facebook)
 - `categories` — Product categories with slugs
-- `products` — Product catalog with `avatar` column (migration 000008)
-- `cart_items` — User shopping carts
-- `orders` — Order history
+- `products` — Product catalog with avatar, discount, and Japanese i18n fields
+- `product_variants` — Variants with attributes, pricing, and Japanese i18n fields
+- `tags` — Taggable categories with time-window activation and Japanese i18n fields
+- `product_tags` — Product-to-tags many-to-many relationship
+- `widgets` — Page layout widgets with metadata JSONB and Japanese i18n fields
+- `cart_items` — User shopping carts with item-level pricing
+- `orders` — Order history with order codes (ROL-YYMMDD-XXXX format)
 - `order_items` — Order line items
+- `refresh_tokens` — Stateful token rotation with family-based theft detection
+- `order_code_sequences` — Atomic sequence generation per date
 
 ### File Storage
 
@@ -304,6 +312,68 @@ Request/response types for API contracts.
 **Migrations:**
 - `000011_create_tags_table.sql` — Tags table with time-window fields
 - `000012_create_product_tags_junction.sql` — Junction table
+
+---
+
+### User Address Management
+
+**Purpose:** Decoupled address storage for flexible user profile and order shipping management.
+
+**Database Table** (`user_addresses`):
+- `ID` (PK) — Address identifier
+- `UserID` (FK to users) — Address owner
+- `StreetAddress` (VARCHAR 255) — Street address
+- `Ward` (VARCHAR 100) — Ward/district subdivision
+- `District` (VARCHAR 100) — District/subdivision
+- `City` (VARCHAR 100) — City/province
+- `PostalCode` (VARCHAR 20) — ZIP/postal code
+- `Phone` (VARCHAR 20) — Contact phone number
+- `IsDefault` (BOOLEAN) — Default address flag
+- `CreatedAt`, `UpdatedAt` (TIMESTAMP)
+
+**API Endpoints:**
+- `GET /api/v1/users/me/addresses` — List own addresses
+- `POST /api/v1/users/me/addresses` — Create address
+- `PUT /api/v1/users/me/addresses/:id` — Update address
+- `DELETE /api/v1/users/me/addresses/:id` — Delete address
+- `GET /api/v1/admin/users/:userID/addresses` — Admin list user addresses (admin-only)
+- `PUT /api/v1/orders/:id/shipping` — Update order shipping info (PENDING status only)
+
+**Validation:**
+- All fields required except IsDefault
+- Phone number format validated (length, digits)
+- i18n error keys for Vietnamese/Japanese locales
+
+**Migration:**
+- `000018_create_user_addresses_table.sql` — Create table
+- `000019_remove_address_from_users.sql` — Remove address field from users table, migrate existing data
+
+---
+
+### User Profile Management
+
+**Purpose:** Support user avatar uploads and profile information updates.
+
+**Database Additions:**
+- `users.avatar` (VARCHAR 500, nullable) — User avatar file path
+
+**API Endpoints:**
+- `GET /api/v1/users/me` — Retrieve own profile
+- `PUT /api/v1/users/me` — Update profile (avatar, name fields)
+- `PUT /api/v1/users/me/password` — Change password with bcrypt verification
+
+**Password Change Flow:**
+1. User provides current password + new password
+2. Backend verifies current password against stored hash
+3. If valid, rehash new password and update
+4. i18n error messages for invalid password/mismatch
+5. Automatic JWT refresh after successful change
+
+**Profile Picture Integration:**
+- User uploads file via `POST /api/v1/uploads`
+- Receives URL like `/uploads/{uuid}.{ext}`
+- Updates profile via `PUT /api/v1/users/me` with avatar field
+- Avatar displayed in UserDropdown and profile page
 
 ---
 
@@ -558,6 +628,17 @@ GROUP BY products.id;
 | 000012 | `create_product_tags_junction.sql` | Product-to-tags many-to-many |
 | 000013 | `add_discount_to_products.sql` | Discount fields on products |
 | 000014 | `add_discount_to_variants.sql` | Discount fields on variants |
+| 000015 | `add_metadata_to_widgets.sql` | Metadata JSONB column for widgets |
+| 000016 | `seed_fixed_widgets.sql` | Seed 4 fixed widgets (banner, collection, new-arrivals, trend-hot) |
+| 000017 | `add_display_order_to_widgets.sql` | Display order field for widget ordering |
+| 000018 | `create_user_addresses_table.sql` | User address management |
+| 000019 | `remove_address_from_users.sql` | Migrate address to separate table |
+| 000020 | `add_order_code_to_orders.sql` | Order code field (ROL-YYMMDD-XXXX format) |
+| 000021 | `create_order_code_sequences.sql` | Atomic sequence generation for order codes |
+| 000022 | `add_avatar_to_users.sql` | User avatar field for profiles |
+| 000023 | `add_japanese_i18n_columns.sql` | Japanese (_ja) columns on products, variants, categories, tags, widgets |
+| 000024 | `add_password_change_support.sql` | Support for password change operations |
+| 000025 | `add_oauth_providers_table.sql` | OAuth provider management |
 
 ---
 

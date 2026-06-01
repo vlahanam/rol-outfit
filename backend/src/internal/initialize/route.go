@@ -5,6 +5,7 @@ import (
 	"github.com/vlahanam/rol-outfit/src/internal/controllers"
 	"github.com/vlahanam/rol-outfit/src/internal/middleware"
 	"github.com/vlahanam/rol-outfit/src/internal/models"
+	"github.com/vlahanam/rol-outfit/src/internal/repositories"
 	"github.com/vlahanam/rol-outfit/src/internal/services"
 	"gorm.io/gorm"
 )
@@ -12,6 +13,19 @@ import (
 // InitRoutes đăng ký toàn bộ route của ứng dụng vào Fiber app.
 func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	jwtSecret := cfg.JWTSecret
+
+	// Create OAuth service
+	repo := repositories.NewPostgreSQLStorage(db)
+	oauthRepo := repositories.NewOAuthRepository(db)
+	authSvc := services.NewAuthService(repo, repo, jwtSecret)
+	oauthSvc := services.NewOAuthService(
+		cfg.GoogleClientID, cfg.GoogleClientSecret,
+		cfg.FacebookAppID, cfg.FacebookAppSecret,
+		cfg.OAuthCallbackBaseURL,
+		cfg.OAuthAllowedRedirects,
+		oauthRepo, repo, authSvc,
+	)
+
 	api := app.Group("/api")
 
 	api.Get("/health", func(c fiber.Ctx) error {
@@ -26,6 +40,13 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	auth.Post("/login", controllers.Login(db, jwtSecret))
 	auth.Post("/refresh", controllers.Refresh(db, jwtSecret))
 	auth.Post("/logout", controllers.Logout(db, jwtSecret))
+
+	// OAuth (public)
+	oauth := auth.Group("/oauth")
+	oauth.Get("/google", controllers.OAuthGoogle(oauthSvc))
+	oauth.Get("/google/callback", controllers.OAuthGoogleCallback(oauthSvc))
+	oauth.Get("/facebook", controllers.OAuthFacebook(oauthSvc))
+	oauth.Get("/facebook/callback", controllers.OAuthFacebookCallback(oauthSvc))
 
 	// Categories
 	cats := v1.Group("/categories")
@@ -86,6 +107,15 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	adminOrders.Get("/", controllers.ListAllOrders(db))
 	adminOrders.Get("/:id", controllers.GetAdminOrder(db))
 	adminOrders.Put("/:id/status", controllers.UpdateOrderStatus(db))
+
+	// Admin carts
+	adminCarts := v1.Group("/admin/carts",
+		middleware.JWTAuth(jwtSecret),
+		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
+	)
+	adminCarts.Get("/", controllers.AdminListCarts(db))
+	adminCarts.Get("/:id", controllers.AdminGetCart(db))
+	adminCarts.Delete("/:id", controllers.AdminDeleteCart(db))
 
 	// Admin categories
 	adminCatsGroup := v1.Group("/admin/categories",
@@ -150,6 +180,9 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	me := v1.Group("/users", middleware.JWTAuth(jwtSecret))
 	me.Get("/me", controllers.GetMe(db))
 	me.Put("/me", controllers.UpdateMe(db))
+	me.Put("/me/password", controllers.ChangePassword(db))
+	me.Get("/me/oauth-providers", controllers.GetMyOAuthProviders(db))
+	me.Delete("/me/oauth-providers/:provider", controllers.UnlinkOAuthProvider(oauthSvc))
 
 	// Admin users
 	adminUsers := v1.Group("/admin/users",

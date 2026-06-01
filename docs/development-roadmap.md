@@ -156,5 +156,7 @@ High-level project phases and milestones. For detailed implementation plans, see
 | Test Coverage | TBD | 80%+ |
 | Documentation | ~95% | 100% |
 | Production Ready | No | Q2 2026 |
-| Database Migrations | 21 | 25+ |
+| Database Migrations | 25 | 30+ |
+| Backend LOC | ~10,724 | - |
+| Frontend LOC | ~14,083 | - |
 

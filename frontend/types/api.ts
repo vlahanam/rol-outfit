@@ -34,21 +34,27 @@ export interface JwtClaims {
 export interface Category {
   id: string;
   name: string;
+  name_ja?: string;
   slug: string;
   status: number;
   description: string;
+  description_ja?: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface CreateCategoryPayload {
   name: string;
+  name_ja?: string;
   description?: string;
+  description_ja?: string;
 }
 
 export interface UpdateCategoryPayload {
   name?: string;
+  name_ja?: string;
   description?: string;
+  description_ja?: string;
   status?: number;
 }
 
@@ -57,9 +63,11 @@ export interface Product {
   id: string;
   category_id: string;
   name: string;
+  name_ja?: string;
   slug: string;
   default_price: number;
   description: string;
+  description_ja?: string;
   status: number;
   attribute_names: string[];
   data?: unknown;
@@ -77,6 +85,8 @@ export interface Product {
 export interface ProductVariant {
   id: string;
   product_id: string;
+  name?: string;
+  name_ja?: string;
   attributes: Record<string, string>;
   price: number;
   stock: number;
@@ -116,6 +126,40 @@ export interface Cart {
   created_at: string;
 }
 
+// Admin Cart
+export interface AdminCartListItem {
+  id: string;
+  user_id: string;
+  user_full_name: string;
+  user_email: string;
+  item_count: number;
+  total: number;
+  updated_at: string;
+}
+
+export interface AdminCartItem {
+  id: string;
+  product_id: string;
+  product_name: string;
+  product_image: string;
+  attr_id?: string;
+  attr_name?: string;
+  price_at_add: number;
+  quantity: number;
+  subtotal: number;
+}
+
+export interface AdminCartDetail {
+  id: string;
+  user_id: string;
+  user_full_name: string;
+  user_email: string;
+  items: AdminCartItem[];
+  total: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // Order
 export interface OrderItem {
   id: string;
@@ -147,6 +191,7 @@ export interface User {
   full_name: string;
   email: string;
   phone: string;
+  avatar?: string;
   role: number; // 1=admin, 2=customer
   status: number; // 1=active, 0=locked
   created_at: string;
@@ -174,8 +219,10 @@ export interface UpdateUserPayload {
 export interface CreateProductPayload {
   category_id: string;
   name: string;
+  name_ja?: string;
   default_price: number;
   description?: string;
+  description_ja?: string;
   avatar: string;
   attribute_names: string[];
   discount_percent?: number;
@@ -186,8 +233,10 @@ export interface CreateProductPayload {
 export interface UpdateProductPayload {
   category_id?: string;
   name?: string;
+  name_ja?: string;
   default_price?: number;
   description?: string;
+  description_ja?: string;
   avatar?: string;
   status?: number;
   attribute_names?: string[];
@@ -197,6 +246,8 @@ export interface UpdateProductPayload {
 }
 
 export interface CreateVariantPayload {
+  name?: string;
+  name_ja?: string;
   attributes: Record<string, string>;
   price: number;
   stock: number;
@@ -207,6 +258,8 @@ export interface CreateVariantPayload {
 }
 
 export interface UpdateVariantPayload {
+  name?: string;
+  name_ja?: string;
   attributes?: Record<string, string>;
   price?: number;
   stock?: number;
@@ -221,6 +274,7 @@ export interface UpdateVariantPayload {
 export interface Tag {
   id: string;
   name: string;
+  name_ja?: string;
   slug: string;
   start_at: string | null;
   end_at: string | null;
@@ -230,12 +284,14 @@ export interface Tag {
 
 export interface CreateTagPayload {
   name: string;
+  name_ja?: string;
   start_at?: string | null;
   end_at?: string | null;
 }
 
 export interface UpdateTagPayload {
   name?: string;
+  name_ja?: string;
   start_at?: string | null;
   end_at?: string | null;
 }
@@ -302,6 +358,7 @@ export interface Widget {
   id: string;
   parent_id: string | null;
   name: string;
+  name_ja?: string;
   type: WidgetType;
   display_order: number;
   depth: number;
@@ -314,12 +371,14 @@ export interface Widget {
 
 export interface CreateWidgetPayload {
   name: string;
+  name_ja?: string;
   type: WidgetType;
   status: number;
 }
 
 export interface UpdateWidgetPayload {
   name?: string;
+  name_ja?: string;
   display_order?: number;
   status?: number;
   settings?: Record<string, unknown>;

@@ -3,8 +3,10 @@ package requests
 import validation "github.com/go-ozzo/ozzo-validation/v4"
 
 type CreateCategoryRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name          string `json:"name"`
+	NameJa        string `json:"name_ja"`
+	Description   string `json:"description"`
+	DescriptionJa string `json:"description_ja"`
 }
 
 func (r CreateCategoryRequest) Validate() error {
@@ -17,9 +19,11 @@ func (r CreateCategoryRequest) Validate() error {
 }
 
 type UpdateCategoryRequest struct {
-	Name        *string `json:"name"`
-	Description *string `json:"description"`
-	Status      *int8   `json:"status"`
+	Name          *string `json:"name"`
+	NameJa        *string `json:"name_ja"`
+	Description   *string `json:"description"`
+	DescriptionJa *string `json:"description_ja"`
+	Status        *int8   `json:"status"`
 }
 
 func (r UpdateCategoryRequest) Validate() error {

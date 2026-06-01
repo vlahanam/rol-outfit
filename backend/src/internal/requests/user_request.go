@@ -117,6 +117,7 @@ func (r UpdateUserRequest) Validate() error {
 type UpdateMeRequest struct {
 	FullName *string `json:"full_name"`
 	Phone    *string `json:"phone"`
+	Avatar   *string `json:"avatar"`
 }
 
 func (r UpdateMeRequest) Validate() error {
@@ -134,5 +135,30 @@ func (r UpdateMeRequest) Validate() error {
 			return err
 		}
 	}
+	if r.Avatar != nil {
+		if err := validation.Validate(*r.Avatar,
+			validation.Length(0, 500).Error("validation.avatar.length"),
+		); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+// ChangePasswordRequest dùng cho user đổi mật khẩu.
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password"`
+	NewPassword     string `json:"new_password"`
+}
+
+func (r ChangePasswordRequest) Validate() error {
+	return validation.ValidateStruct(&r,
+		validation.Field(&r.CurrentPassword,
+			validation.Required.Error("validation.current_password.required"),
+		),
+		validation.Field(&r.NewPassword,
+			validation.Required.Error("validation.new_password.required"),
+			validation.Length(8, 100).Error("validation.password.length"),
+		),
+	)
 }

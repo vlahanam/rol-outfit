@@ -14,7 +14,9 @@
     "shop": "ショップ",
     "newArrivals": "新着",
     "searchPlaceholder": "商品を検索...",
+    "noResults": "商品が見つかりません",
     "switchLang": "VN",
+    "myProfile": "アカウント情報",
     "myOrders": "注文履歴",
     "myAddresses": "住所管理",
     "logout": "ログアウト"
@@ -41,7 +43,14 @@
     "shop": "ショップ",
     "newArrivals": "新着",
     "login": "ログイン",
-    "register": "新規登録"
+    "register": "新規登録",
+    "searchPlaceholder": "商品を検索...",
+    "language": "言語",
+    "account": "アカウント",
+    "myProfile": "アカウント情報",
+    "myOrders": "注文履歴",
+    "myAddresses": "住所管理",
+    "logout": "ログアウト"
   },
   "HomePage": {
     "specialCollections": "スペシャルコレクション",
@@ -176,6 +185,30 @@
     "confirmDelete": "この住所を削除しますか？",
     "noAddresses": "住所が登録されていません",
     "addFirst": "住所を追加して簡単にチェックアウト"
+  },
+  "ProfilePage": {
+    "title": "アカウント情報",
+    "personalInfo": "個人情報",
+    "fullName": "氏名",
+    "email": "メールアドレス",
+    "emailReadonly": "メールアドレスは変更できません",
+    "phone": "電話番号",
+    "phonePlaceholder": "電話番号を入力",
+    "save": "保存",
+    "changePassword": "パスワード変更",
+    "currentPassword": "現在のパスワード",
+    "newPassword": "新しいパスワード",
+    "confirmPassword": "パスワード確認",
+    "showPasswords": "パスワードを表示",
+    "hidePasswords": "パスワードを非表示",
+    "passwordMismatch": "パスワードが一致しません",
+    "passwordChanged": "パスワードを変更しました",
+    "updateSuccess": "更新しました",
+    "updateFailed": "更新に失敗しました",
+    "avatarUpdated": "プロフィール画像を更新しました",
+    "avatarFailed": "画像のアップロードに失敗しました",
+    "passwordFailed": "パスワードの変更に失敗しました",
+    "loadFailed": "情報を読み込めませんでした"
   },
   "CheckoutPage": {
     "title": "購入手続き",

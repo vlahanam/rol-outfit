@@ -6,12 +6,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { addTagSchema } from "@/lib/validations";
+import { LanguageTabsForm } from "@/components/admin/language-tabs-form";
 
 const toIso = (v: string) => (v ? new Date(v).toISOString() : null);
 
 export default function AddTagPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({ name: "", start_at: "", end_at: "" });
+  const [formData, setFormData] = useState({ name: "", name_ja: "", start_at: "", end_at: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -40,6 +41,7 @@ export default function AddTagPage() {
     try {
       await api.adminTags.create({
         name: formData.name,
+        name_ja: formData.name_ja || undefined,
         start_at: toIso(formData.start_at),
         end_at: toIso(formData.end_at),
       });
@@ -68,20 +70,39 @@ export default function AddTagPage() {
           <div className="mb-4 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
         )}
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tên thẻ tag <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              type="text"
-              placeholder="Ví dụ: Hàng Mới Về"
-              className={`w-full px-3 py-2 border ${fieldErrors.name ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
-            />
-            {fieldErrors.name && <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>}
-          </div>
+          <LanguageTabsForm
+            viContent={
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tên thẻ tag <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  type="text"
+                  placeholder="Ví dụ: Hàng Mới Về"
+                  className={`w-full px-3 py-2 border ${fieldErrors.name ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                />
+                {fieldErrors.name && <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>}
+              </div>
+            }
+            jaContent={
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  タグ名 (Japanese name)
+                </label>
+                <input
+                  name="name_ja"
+                  value={formData.name_ja}
+                  onChange={handleChange}
+                  type="text"
+                  placeholder="例: 新着商品"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            }
+          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

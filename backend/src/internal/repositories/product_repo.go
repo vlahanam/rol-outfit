@@ -17,7 +17,7 @@ type ProductRepository interface {
 	FindProductByIDNoFilter(ctx context.Context, id string) (*models.Product, error)
 	FindProductByIDAdmin(ctx context.Context, id string) (*models.ProductWithVariants, error)
 	FindProductBySlug(ctx context.Context, slug string) (*models.Product, error)
-	ListProducts(ctx context.Context, categoryID string, tagSlugs []string, offset, limit int) ([]*models.Product, int64, error)
+	ListProducts(ctx context.Context, categoryID, search string, tagSlugs []string, offset, limit int) ([]*models.Product, int64, error)
 	UpdateProduct(ctx context.Context, id string, fields map[string]interface{}) error
 	SoftDeleteProduct(ctx context.Context, id string) error
 	ListAdminProductsWithVariants(ctx context.Context, categoryID, search string, offset, limit int) ([]*models.ProductWithVariants, int64, error)
@@ -58,7 +58,7 @@ func (r *postgreStorage) FindProductBySlug(ctx context.Context, slug string) (*m
 	return &p, nil
 }
 
-func (r *postgreStorage) ListProducts(ctx context.Context, categoryID string, tagSlugs []string, offset, limit int) ([]*models.Product, int64, error) {
+func (r *postgreStorage) ListProducts(ctx context.Context, categoryID, search string, tagSlugs []string, offset, limit int) ([]*models.Product, int64, error) {
 	var products []*models.Product
 	var total int64
 
@@ -67,6 +67,9 @@ func (r *postgreStorage) ListProducts(ctx context.Context, categoryID string, ta
 
 	if categoryID != "" {
 		db = db.Where("products.category_id = ?", categoryID)
+	}
+	if search != "" {
+		db = db.Where("products.name ILIKE ?", "%"+search+"%")
 	}
 
 	if len(tagSlugs) > 0 {
@@ -85,6 +88,51 @@ func (r *postgreStorage) ListProducts(ctx context.Context, categoryID string, ta
 	if err := db.Offset(offset).Limit(limit).Order("products.created_at DESC").Find(&products).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to list products: %w", err)
 	}
+
+	if len(products) > 0 {
+		var ids []string
+		for _, p := range products {
+			ids = append(ids, p.ID)
+		}
+		now := time.Now()
+		type productTagRow struct {
+			ProductID string     `gorm:"column:product_id"`
+			TagID     string     `gorm:"column:id"`
+			Name      string     `gorm:"column:name"`
+			NameJa    string     `gorm:"column:name_ja"`
+			Slug      string     `gorm:"column:slug"`
+			StartAt   *time.Time `gorm:"column:start_at"`
+			EndAt     *time.Time `gorm:"column:end_at"`
+			CreatedAt time.Time  `gorm:"column:created_at"`
+			UpdatedAt time.Time  `gorm:"column:updated_at"`
+		}
+		var rows []productTagRow
+		if err := r.db.WithContext(ctx).
+			Table("product_tags").
+			Select("product_tags.product_id, tags.id, tags.name, tags.name_ja, tags.slug, tags.start_at, tags.end_at, tags.created_at, tags.updated_at").
+			Joins("JOIN tags ON tags.id = product_tags.tag_id").
+			Where("product_tags.product_id IN ?", ids).
+			Where("(tags.start_at IS NULL OR tags.start_at <= ?) AND (tags.end_at IS NULL OR tags.end_at >= ?)", now, now).
+			Scan(&rows).Error; err == nil {
+			tagMap := make(map[string][]models.Tag)
+			for _, r := range rows {
+				tagMap[r.ProductID] = append(tagMap[r.ProductID], models.Tag{
+					ID:        r.TagID,
+					Name:      r.Name,
+					NameJa:    r.NameJa,
+					Slug:      r.Slug,
+					StartAt:   r.StartAt,
+					EndAt:     r.EndAt,
+					CreatedAt: r.CreatedAt,
+					UpdatedAt: r.UpdatedAt,
+				})
+			}
+			for _, p := range products {
+				p.Tags = tagMap[p.ID]
+			}
+		}
+	}
+
 	return products, total, nil
 }
 

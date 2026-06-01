@@ -18,7 +18,7 @@ var (
 )
 
 type ProductService interface {
-	List(ctx context.Context, categoryID string, tagSlugs []string, offset, limit int) ([]*models.Product, int64, error)
+	List(ctx context.Context, categoryID, search string, tagSlugs []string, offset, limit int) ([]*models.Product, int64, error)
 	AdminList(ctx context.Context, categoryID, search string, offset, limit int) ([]*models.ProductWithVariants, int64, error)
 	GetByID(ctx context.Context, id string) (*models.Product, error)
 	AdminGetByID(ctx context.Context, id string) (*models.ProductWithVariants, error)
@@ -35,8 +35,8 @@ func NewProductService(repo repositories.ProductRepository) ProductService {
 	return &productService{repo: repo}
 }
 
-func (s *productService) List(ctx context.Context, categoryID string, tagSlugs []string, offset, limit int) ([]*models.Product, int64, error) {
-	return s.repo.ListProducts(ctx, categoryID, tagSlugs, offset, limit)
+func (s *productService) List(ctx context.Context, categoryID, search string, tagSlugs []string, offset, limit int) ([]*models.Product, int64, error) {
+	return s.repo.ListProducts(ctx, categoryID, search, tagSlugs, offset, limit)
 }
 
 func (s *productService) AdminList(ctx context.Context, categoryID, search string, offset, limit int) ([]*models.ProductWithVariants, int64, error) {
@@ -83,9 +83,11 @@ func (s *productService) Create(ctx context.Context, req *requests.CreateProduct
 		ID:              uuid.New().String(),
 		CategoryID:      req.CategoryID,
 		Name:            req.Name,
+		NameJa:          req.NameJa,
 		Slug:            slug,
 		DefaultPrice:    req.DefaultPrice,
 		Description:     req.Description,
+		DescriptionJa:   req.DescriptionJa,
 		Avatar:          req.Avatar,
 		Status:          models.PRODUCT_STATUS_ACTIVE,
 		AttributeNames:  models.StringSlice(req.AttributeNames),
@@ -129,6 +131,12 @@ func (s *productService) Update(ctx context.Context, id string, req *requests.Up
 	}
 	if req.Description != nil {
 		fields["description"] = *req.Description
+	}
+	if req.DescriptionJa != nil {
+		fields["description_ja"] = *req.DescriptionJa
+	}
+	if req.NameJa != nil {
+		fields["name_ja"] = *req.NameJa
 	}
 	if req.Status != nil {
 		fields["status"] = *req.Status

@@ -91,7 +91,8 @@ export default async function HomePage() {
                     originalPrice={p.discount_percent > 0 ? `${p.default_price.toLocaleString()}d` : undefined}
                     discountPercent={p.discount_percent > 0 ? p.discount_percent : undefined}
                     image={p.avatar || "/placeholder-product.svg"}
-                    isNew
+                    tags={p.tags}
+                    maxTags={2}
                   />
                 </Link>
               ))}
@@ -118,73 +119,53 @@ export default async function HomePage() {
                 <ProductItem
                   name={t("cottonLogo")}
                   price="720.000d"
-                  image="https://images.unsplash.com/photo-1599012307530-d163bd04ecab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
                   rating={4.5}
-                  isNew
                 />
               </Link>
               <ProductItem
                 name={t("officeSuit")}
                 price="4.480.000d"
-                image="https://images.unsplash.com/photo-1687481795360-77c1115d26c6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
                 rating={5.0}
-                isNew
               />
               <ProductItem
                 name={t("crewneck")}
                 price="2.840.000d"
-                image="https://images.unsplash.com/photo-1732257119942-a19648e482f2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
                 rating={4.8}
-                isNew
               />
               <ProductItem
                 name={t("leatherBag")}
                 price="8.360.000d"
-                image="https://images.unsplash.com/photo-1721884258091-4fe7b737fb08?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
                 rating={4.7}
-                isNew
               />
               <ProductItem
                 name={t("classicShoes")}
                 price="1.780.000d"
-                image="https://images.unsplash.com/photo-1770226415002-dbbd40327ec7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
                 rating={4.6}
-                isNew
               />
               <ProductItem
                 name={t("casualShirt")}
                 price="1.040.000d"
-                image="https://images.unsplash.com/photo-1769981653696-5ce5a59263bf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
                 rating={4.4}
-                isNew
               />
               <ProductItem
                 name={t("winterJacket")}
                 price="3.720.000d"
-                image="https://images.unsplash.com/photo-1705675451868-014a161e591b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
                 rating={4.9}
-                isNew
               />
               <ProductItem
                 name={t("sportsSneakers")}
                 price="1.900.000d"
-                image="https://images.unsplash.com/photo-1721884258144-5d788061e4c4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
                 rating={4.7}
-                isNew
               />
               <ProductItem
                 name={t("denim")}
                 price="1.560.000d"
-                image="https://images.unsplash.com/photo-1627342229908-71efbac25f08?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
                 rating={4.5}
-                isNew
               />
               <ProductItem
                 name={t("summerDress")}
                 price="2.240.000d"
-                image="https://images.unsplash.com/photo-1732257119942-a19648e482f2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
                 rating={4.8}
-                isNew
               />
             </div>
           </section>

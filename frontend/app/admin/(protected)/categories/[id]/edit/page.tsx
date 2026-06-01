@@ -6,13 +6,16 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { api, CATEGORY_STATUS_LABEL, CATEGORY_STATUS_VALUE, ApiError } from "@/lib/api";
 import { editCategorySchema } from "@/lib/validations";
+import { LanguageTabsForm } from "@/components/admin/language-tabs-form";
 
 export default function EditCategoryPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
+    name_ja: "",
     description: "",
+    description_ja: "",
     status: "Hiển thị",
     slug: "",
     createdAt: "",
@@ -30,7 +33,9 @@ export default function EditCategoryPage() {
         const c = res.data;
         setFormData({
           name: c.name,
+          name_ja: c.name_ja ?? "",
           description: c.description ?? "",
+          description_ja: c.description_ja ?? "",
           status: CATEGORY_STATUS_LABEL[c.status] ?? "Hiển thị",
           slug: c.slug,
           createdAt: new Date(c.created_at).toLocaleDateString("vi-VN"),
@@ -68,7 +73,9 @@ export default function EditCategoryPage() {
     try {
       await api.adminCategories.update(id, {
         name: formData.name,
+        name_ja: formData.name_ja || undefined,
         description: formData.description || undefined,
+        description_ja: formData.description_ja || undefined,
         status: CATEGORY_STATUS_VALUE[formData.status],
       });
       router.push("/admin/categories");
@@ -111,36 +118,65 @@ export default function EditCategoryPage() {
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tên danh mục <span className="text-red-500">*</span>
-              </label>
-              <input
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                type="text"
-                className={`w-full px-3 py-2 border ${
-                  fieldErrors.name ? "border-red-500" : "border-gray-300"
-                } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
-              />
-              {fieldErrors.name && (
-                <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mô tả
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-              />
-            </div>
+            <LanguageTabsForm
+              viContent={
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tên danh mục <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      type="text"
+                      className={`w-full px-3 py-2 border ${
+                        fieldErrors.name ? "border-red-500" : "border-gray-300"
+                      } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    />
+                    {fieldErrors.name && (
+                      <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Mô tả</label>
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    />
+                  </div>
+                </div>
+              }
+              jaContent={
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      カテゴリ名 (Japanese name)
+                    </label>
+                    <input
+                      name="name_ja"
+                      value={formData.name_ja}
+                      onChange={handleChange}
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">説明 (Japanese description)</label>
+                    <textarea
+                      name="description_ja"
+                      value={formData.description_ja}
+                      onChange={handleChange}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    />
+                  </div>
+                </div>
+              }
+            />
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

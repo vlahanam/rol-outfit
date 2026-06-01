@@ -59,6 +59,10 @@
 
   "error.user_not_found": "Người dùng không tồn tại",
   "error.user_email_taken": "Email này đã được sử dụng bởi tài khoản khác",
+  "error.invalid_password": "Mật khẩu hiện tại không đúng",
+
+  "validation.current_password.required": "Vui lòng nhập mật khẩu hiện tại",
+  "validation.avatar.length": "URL ảnh đại diện quá dài",
 
   "error.widget_not_found": "Widget không tồn tại",
 
@@ -82,5 +86,9 @@
   "error.tag_invalid_window": "Khoảng thời gian hiển thị không hợp lệ",
 
   "error.too_many_tags": "Mỗi sản phẩm chỉ có tối đa 3 thẻ tag",
-  "validation.tags.max_3": "Tối đa 3 thẻ tag"
+  "validation.tags.max_3": "Tối đa 3 thẻ tag",
+
+  "auth.oauth_failed": "Đăng nhập thất bại. Vui lòng thử lại.",
+  "auth.admin_oauth_forbidden": "Tài khoản admin không thể đăng nhập bằng OAuth.",
+  "auth.cannot_unlink_last_method": "Không thể gỡ phương thức đăng nhập cuối cùng."
 }

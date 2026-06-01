@@ -13,9 +13,10 @@ import (
 )
 
 var (
-	ErrUserNotFound   = errors.New("user not found")
-	ErrUserEmailTaken = errors.New("email already taken by another user")
-	ErrUserPhoneTaken = errors.New("phone already taken by another user")
+	ErrUserNotFound    = errors.New("user not found")
+	ErrUserEmailTaken  = errors.New("email already taken by another user")
+	ErrUserPhoneTaken  = errors.New("phone already taken by another user")
+	ErrInvalidPassword = errors.New("invalid password")
 )
 
 type UserService interface {
@@ -24,6 +25,7 @@ type UserService interface {
 	GetByID(ctx context.Context, id string) (*models.User, error)
 	Update(ctx context.Context, id string, req *requests.UpdateUserRequest) error
 	UpdateMe(ctx context.Context, id string, req *requests.UpdateMeRequest) error
+	ChangePassword(ctx context.Context, id string, req *requests.ChangePasswordRequest) error
 	Delete(ctx context.Context, id string) error
 }
 
@@ -58,6 +60,7 @@ func (s *userService) Create(ctx context.Context, req *requests.CreateAdminUserR
 	if err != nil {
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
+	hashStr := string(hash)
 
 	role := models.USER_ROLE_CUSTOMER
 	if req.Role != nil {
@@ -72,7 +75,7 @@ func (s *userService) Create(ctx context.Context, req *requests.CreateAdminUserR
 		ID:       uuid.New().String(),
 		FullName: req.FullName,
 		Email:    req.Email,
-		Password: string(hash),
+		Password: &hashStr,
 		Phone:    req.Phone,
 		Role:     role,
 		Status:   status,
@@ -179,6 +182,17 @@ func (s *userService) UpdateMe(ctx context.Context, id string, req *requests.Upd
 		return ErrUserNotFound
 	}
 
+	// Check phone uniqueness if changing
+	if req.Phone != nil && *req.Phone != "" && *req.Phone != existing.Phone {
+		phoneTaken, err := s.repo.FindByPhone(ctx, *req.Phone)
+		if err != nil {
+			return fmt.Errorf("failed to check phone: %w", err)
+		}
+		if phoneTaken != nil {
+			return ErrUserPhoneTaken
+		}
+	}
+
 	fields := map[string]interface{}{}
 	if req.FullName != nil {
 		fields["full_name"] = *req.FullName
@@ -186,11 +200,38 @@ func (s *userService) UpdateMe(ctx context.Context, id string, req *requests.Upd
 	if req.Phone != nil {
 		fields["phone"] = *req.Phone
 	}
+	if req.Avatar != nil {
+		fields["avatar"] = *req.Avatar
+	}
 
 	if len(fields) == 0 {
 		return nil
 	}
 	return s.repo.Update(ctx, id, fields)
+}
+
+func (s *userService) ChangePassword(ctx context.Context, id string, req *requests.ChangePasswordRequest) error {
+	existing, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to find user: %w", err)
+	}
+	if existing == nil {
+		return ErrUserNotFound
+	}
+
+	// For OAuth users setting password for first time, CurrentPassword can be empty
+	if existing.Password != nil && *existing.Password != "" {
+		if err := bcrypt.CompareHashAndPassword([]byte(*existing.Password), []byte(req.CurrentPassword)); err != nil {
+			return ErrInvalidPassword
+		}
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	return s.repo.Update(ctx, id, map[string]interface{}{"password": string(hash)})
 }
 
 func (s *userService) Delete(ctx context.Context, id string) error {

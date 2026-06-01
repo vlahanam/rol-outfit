@@ -5,6 +5,28 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Admin Japanese i18n Input** (2026-05-31)
+  - Backend: Migrations 000023-000024 add _ja columns to products, product_variants, categories, tags, widgets tables
+  - Backend: Models (Product, ProductVariant, Category, Tag, Widget) updated with NameJA, DescriptionJA fields
+  - Backend: DTOs, Create/Update requests updated with Japanese field mapping
+  - Backend: Services (product, variant, category, tag, widget) handle _ja field validation and storage
+  - Backend: i18n_helper.go utility created for language-aware content resolution (GetLocalizedString, IsJapanese)
+  - Frontend: LanguageTabsForm component for [VI]/[JA] tab switching in admin forms
+  - Frontend: TypeScript types (Product, Category, Tag, Widget) updated with _ja fields
+  - Frontend: Admin pages fully internationalized (products add/edit, categories, tags, widgets)
+  - Design: Vietnamese required (fallback), Japanese optional; all admin forms with dual-language support
+
+- **User Profile Management** (2026-05-31)
+  - Backend: `avatar` field added to User model (nullable, VARCHAR 500)
+  - Backend: `PUT /api/v1/users/me` updated to support avatar field
+  - Backend: `PUT /api/v1/users/me/password` new endpoint for password change
+  - Backend: `ChangePasswordRequest` with bcrypt verification of current password
+  - Backend: i18n keys for password change errors (vi.json, ja.json)
+  - Frontend: Profile page at `/profile` with avatar upload, info editing, password change
+  - Frontend: UserDropdown updated with "Thông tin tài khoản" menu item
+  - Frontend: `userProfile` API resource for GET/PUT /users/me and password change
+  - Frontend: i18n keys for ProfilePage (vi.json, ja.json)
+
 - **Order Code System** (2026-05-28)
   - Backend: `order_code` column on orders table with format `ROL-YYMMDD-XXXX` (e.g., ROL-260528-0001)
   - Backend: `order_code_sequences` table for atomic sequence generation per date using PostgreSQL UPSERT pattern

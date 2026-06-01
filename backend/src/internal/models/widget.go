@@ -23,6 +23,7 @@ type Widget struct {
 	ID           string          `gorm:"type:uuid;primaryKey"`
 	ParentID     *string         `gorm:"column:parent_id;type:uuid"`
 	Name         string          `gorm:"column:name"`
+	NameJa       string          `gorm:"column:name_ja"`
 	Type         WidgetType      `gorm:"column:type;type:widget_type"`
 	DisplayOrder int             `gorm:"column:display_order"`
 	Depth        int             `gorm:"column:depth;default:0"`

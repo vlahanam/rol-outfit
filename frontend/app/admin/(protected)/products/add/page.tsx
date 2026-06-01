@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { addProductSchema, createVariantSchema } from "@/lib/validations";
 import { ImageUploader } from "@/components/admin/image-uploader";
 import { TiptapEditor } from "@/components/admin/tiptap-editor";
+import { LanguageTabsForm } from "@/components/admin/language-tabs-form";
 import type { ApiResponse, Category } from "@/types/api";
 
 type Variant = Record<string, string> & { price: string; stock: string };
@@ -18,9 +19,11 @@ export default function AddProductPage() {
 
   // Basic info
   const [name, setName] = useState("");
+  const [nameJa, setNameJa] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [defaultPrice, setDefaultPrice] = useState("");
   const [description, setDescription] = useState("");
+  const [descriptionJa, setDescriptionJa] = useState("");
   const [productAvatar, setProductAvatar] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -154,9 +157,11 @@ export default function AddProductPage() {
     try {
       const { data: created } = await api.adminProducts.create({
         name,
+        name_ja: nameJa || undefined,
         category_id: categoryId,
         default_price: Number(defaultPrice),
         description,
+        description_ja: descriptionJa || undefined,
         attribute_names: attributeNames,
         avatar: productAvatar,
         discount_percent: Number(discountPercent) || 0,
@@ -233,25 +238,55 @@ export default function AddProductPage() {
             label="Ảnh sản phẩm"
             error={fieldErrors.avatar}
           />
+          <LanguageTabsForm
+            viContent={
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tên sản phẩm <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      setFieldErrors((p) => ({ ...p, name: "" }));
+                    }}
+                    type="text"
+                    placeholder="Áo Thun Cotton"
+                    className={`w-full px-3 py-2 border ${fieldErrors.name ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  />
+                  {fieldErrors.name && (
+                    <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Mô tả</label>
+                  <TiptapEditor value={description} onChange={setDescription} />
+                </div>
+              </div>
+            }
+            jaContent={
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    商品名 (Japanese name)
+                  </label>
+                  <input
+                    value={nameJa}
+                    onChange={(e) => setNameJa(e.target.value)}
+                    type="text"
+                    placeholder="コットンTシャツ"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">説明 (Japanese description)</label>
+                  <TiptapEditor value={descriptionJa} onChange={setDescriptionJa} />
+                </div>
+              </div>
+            }
+          />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tên sản phẩm <span className="text-red-500">*</span>
-              </label>
-              <input
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  setFieldErrors((p) => ({ ...p, name: "" }));
-                }}
-                type="text"
-                placeholder="Áo Thun Cotton"
-                className={`w-full px-3 py-2 border ${fieldErrors.name ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
-              />
-              {fieldErrors.name && (
-                <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>
-              )}
-            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Danh mục <span className="text-red-500">*</span>
@@ -298,12 +333,6 @@ export default function AddProductPage() {
                 </p>
               )}
             </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Mô tả
-            </label>
-            <TiptapEditor value={description} onChange={setDescription} />
           </div>
           <div className="border-t border-gray-200 pt-4 mt-2">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Giảm giá</h3>

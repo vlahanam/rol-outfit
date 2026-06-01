@@ -18,11 +18,12 @@ func TestUserModel_Constants(t *testing.T) {
 
 // Test User model fields
 func TestUserModel_Fields(t *testing.T) {
+	password := "hashed-password"
 	user := &User{
 		ID:        "test-id",
 		FullName:  "Test User",
 		Email:     "test@example.com",
-		Password:  "hashed-password",
+		Password:  &password,
 		Phone:     "1234567890",
 		Role:      USER_ROLE_CUSTOMER,
 		Status:    USER_STATUS_ACTIVE,
@@ -34,7 +35,7 @@ func TestUserModel_Fields(t *testing.T) {
 	assert.Equal(t, "test-id", user.ID)
 	assert.Equal(t, "Test User", user.FullName)
 	assert.Equal(t, "test@example.com", user.Email)
-	assert.Equal(t, "hashed-password", user.Password)
+	assert.Equal(t, "hashed-password", *user.Password)
 	assert.Equal(t, "1234567890", user.Phone)
 	assert.Equal(t, USER_ROLE_CUSTOMER, user.Role)
 	assert.Equal(t, USER_STATUS_ACTIVE, user.Status)

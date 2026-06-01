@@ -83,6 +83,7 @@ func (s *widgetService) Create(ctx context.Context, req *requests.CreateWidgetRe
 		ID:           uuid.New().String(),
 		ParentID:     req.ParentID,
 		Name:         req.Name,
+		NameJa:       req.NameJa,
 		Type:         req.Type,
 		DisplayOrder: maxOrder + 1,
 		Depth:        depth,
@@ -108,6 +109,9 @@ func (s *widgetService) Update(ctx context.Context, id string, req *requests.Upd
 	fields := map[string]interface{}{}
 	if req.Name != nil {
 		fields["name"] = *req.Name
+	}
+	if req.NameJa != nil {
+		fields["name_ja"] = *req.NameJa
 	}
 	if req.Type != nil {
 		fields["type"] = *req.Type

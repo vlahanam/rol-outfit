@@ -10,6 +10,8 @@ import (
 type ProductVariantDTO struct {
 	ID              string          `json:"id"`
 	ProductID       string          `json:"product_id"`
+	Name            string          `json:"name,omitempty"`
+	NameJa          string          `json:"name_ja,omitempty"`
 	Attributes      json.RawMessage `json:"attributes"`
 	Price           float64         `json:"price"`
 	Stock           int             `json:"stock"`
@@ -35,6 +37,8 @@ func ToVariantDTOWithProduct(v *models.ProductVariant, p *models.Product) *Produ
 	return &ProductVariantDTO{
 		ID:              v.ID,
 		ProductID:       v.ProductID,
+		Name:            v.Name,
+		NameJa:          v.NameJa,
 		Attributes:      v.Attributes,
 		Price:           v.Price,
 		Stock:           v.Stock,

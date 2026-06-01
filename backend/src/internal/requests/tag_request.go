@@ -8,6 +8,7 @@ import (
 
 type CreateTagRequest struct {
 	Name    string     `json:"name"`
+	NameJa  string     `json:"name_ja"`
 	StartAt *time.Time `json:"start_at"`
 	EndAt   *time.Time `json:"end_at"`
 }
@@ -23,6 +24,7 @@ func (r CreateTagRequest) Validate() error {
 
 type UpdateTagRequest struct {
 	Name    *string    `json:"name"`
+	NameJa  *string    `json:"name_ja"`
 	StartAt *time.Time `json:"start_at"`
 	EndAt   *time.Time `json:"end_at"`
 }

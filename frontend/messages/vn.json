@@ -14,7 +14,9 @@
     "shop": "Cửa Hàng",
     "newArrivals": "Hàng Mới",
     "searchPlaceholder": "Tìm kiếm sản phẩm...",
+    "noResults": "Không tìm thấy sản phẩm",
     "switchLang": "JP",
+    "myProfile": "Thông tin tài khoản",
     "myOrders": "Đơn hàng của tôi",
     "myAddresses": "Địa chỉ của tôi",
     "logout": "Đăng xuất"
@@ -41,7 +43,14 @@
     "shop": "Cửa Hàng",
     "newArrivals": "Hàng Mới",
     "login": "Đăng Nhập",
-    "register": "Đăng Ký"
+    "register": "Đăng Ký",
+    "searchPlaceholder": "Tìm kiếm sản phẩm...",
+    "language": "Ngôn ngữ",
+    "account": "Tài khoản",
+    "myProfile": "Thông tin tài khoản",
+    "myOrders": "Đơn hàng của tôi",
+    "myAddresses": "Địa chỉ của tôi",
+    "logout": "Đăng xuất"
   },
   "HomePage": {
     "specialCollections": "Bộ Sưu Tập Đặc Biệt",
@@ -176,6 +185,30 @@
     "confirmDelete": "Xóa địa chỉ này?",
     "noAddresses": "Chưa có địa chỉ nào",
     "addFirst": "Thêm địa chỉ để dễ dàng thanh toán"
+  },
+  "ProfilePage": {
+    "title": "Thông tin tài khoản",
+    "personalInfo": "Thông tin cá nhân",
+    "fullName": "Họ tên",
+    "email": "Email",
+    "emailReadonly": "Email không thể thay đổi",
+    "phone": "Số điện thoại",
+    "phonePlaceholder": "Nhập số điện thoại",
+    "save": "Lưu thay đổi",
+    "changePassword": "Đổi mật khẩu",
+    "currentPassword": "Mật khẩu hiện tại",
+    "newPassword": "Mật khẩu mới",
+    "confirmPassword": "Xác nhận mật khẩu mới",
+    "showPasswords": "Hiện mật khẩu",
+    "hidePasswords": "Ẩn mật khẩu",
+    "passwordMismatch": "Mật khẩu xác nhận không khớp",
+    "passwordChanged": "Đổi mật khẩu thành công",
+    "updateSuccess": "Cập nhật thành công",
+    "updateFailed": "Cập nhật thất bại",
+    "avatarUpdated": "Cập nhật ảnh đại diện thành công",
+    "avatarFailed": "Tải ảnh thất bại",
+    "passwordFailed": "Đổi mật khẩu thất bại",
+    "loadFailed": "Không thể tải thông tin"
   },
   "CheckoutPage": {
     "title": "Thanh toán",

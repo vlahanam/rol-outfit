@@ -90,6 +90,53 @@ func UpdateMe(db *gorm.DB) fiber.Handler {
 	}
 }
 
+// ChangePassword PUT /api/v1/users/me/password — user đổi mật khẩu.
+func ChangePassword(db *gorm.DB) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+		userID, ok := ctx.Locals("userID").(string)
+		if !ok || userID == "" {
+			return ctx.Status(fiber.StatusUnauthorized).JSON(
+				common.ErrUnauthorized.WithReason(i18n.T(lang, "error.missing_token")),
+			)
+		}
+
+		var req requests.ChangePasswordRequest
+		if err := ctx.Bind().JSON(&req); err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(
+				common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_payload")),
+			)
+		}
+		if err := req.Validate(); err != nil {
+			details := common.ParseValidationErrors(err, lang)
+			resp := common.ErrBadRequest.WithReason(i18n.T(lang, "validation.failed"))
+			if details != nil {
+				resp = resp.WithDetails(details)
+			}
+			return ctx.Status(fiber.StatusBadRequest).JSON(resp)
+		}
+
+		repo := repositories.NewPostgreSQLStorage(db)
+		svc := services.NewUserService(repo)
+
+		if err := svc.ChangePassword(ctx.Context(), userID, &req); err != nil {
+			if errors.Is(err, services.ErrUserNotFound) {
+				return ctx.Status(fiber.StatusNotFound).JSON(
+					common.ErrNotFound.WithReason(i18n.T(lang, "error.user_not_found")),
+				)
+			}
+			if errors.Is(err, services.ErrInvalidPassword) {
+				return ctx.Status(fiber.StatusBadRequest).JSON(
+					common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_password")),
+				)
+			}
+			slog.Error("ChangePassword failed", "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+		return ctx.SendStatus(fiber.StatusNoContent)
+	}
+}
+
 // CreateUser POST /api/v1/admin/users [admin]
 func CreateUser(db *gorm.DB) fiber.Handler {
 	return func(ctx fiber.Ctx) error {

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { api } from "@/lib/api";
 import { ImageUploader } from "@/components/admin/image-uploader";
 import { TiptapEditor } from "@/components/admin/tiptap-editor";
+import { LanguageTabsForm } from "@/components/admin/language-tabs-form";
 import type { AdminProduct, Category } from "@/types/api";
 
 const STATUS_LABEL: Record<number, string> = { 1: "Hiển thị", 2: "Ẩn" };
@@ -30,9 +31,11 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({
     name: product.name,
+    name_ja: product.name_ja ?? "",
     category_id: product.category_id,
     default_price: String(product.default_price),
     description: product.description ?? "",
+    description_ja: product.description_ja ?? "",
     status: String(product.status),
     avatar: product.avatar ?? "",
     discount_percent: String(product.discount_percent ?? 0),
@@ -51,9 +54,11 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
     try {
       await api.adminProducts.update(product.id, {
         name: form.name,
+        name_ja: form.name_ja || undefined,
         category_id: form.category_id,
         default_price: Number(form.default_price),
         description: form.description,
+        description_ja: form.description_ja || undefined,
         status: Number(form.status),
         avatar: form.avatar || undefined,
         discount_percent: Number(form.discount_percent) || 0,
@@ -62,9 +67,11 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
       });
       onSaved({
         name: form.name,
+        name_ja: form.name_ja || undefined,
         category_id: form.category_id,
         default_price: Number(form.default_price),
         description: form.description,
+        description_ja: form.description_ja || undefined,
         status: Number(form.status),
         avatar: form.avatar || undefined,
         discount_percent: Number(form.discount_percent) || 0,
@@ -87,9 +94,11 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
     }
     setForm({
       name: product.name,
+      name_ja: product.name_ja ?? "",
       category_id: product.category_id,
       default_price: String(product.default_price),
       description: product.description ?? "",
+      description_ja: product.description_ja ?? "",
       status: String(product.status),
       avatar: product.avatar ?? "",
       discount_percent: String(product.discount_percent ?? 0),
@@ -145,16 +154,46 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
               label="Ảnh sản phẩm"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tên sản phẩm
-            </label>
-            <input
-              value={form.name}
-              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          <LanguageTabsForm
+            viContent={
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên sản phẩm</label>
+                  <input
+                    value={form.name}
+                    onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+                  <TiptapEditor
+                    value={form.description}
+                    onChange={(html) => setForm((p) => ({ ...p, description: html }))}
+                  />
+                </div>
+              </div>
+            }
+            jaContent={
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">商品名 (Japanese name)</label>
+                  <input
+                    value={form.name_ja}
+                    onChange={(e) => setForm((p) => ({ ...p, name_ja: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">説明 (Japanese description)</label>
+                  <TiptapEditor
+                    value={form.description_ja}
+                    onChange={(html) => setForm((p) => ({ ...p, description_ja: html }))}
+                  />
+                </div>
+              </div>
+            }
+          />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Danh mục
@@ -202,15 +241,6 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
               <option value="1">Hiển thị</option>
               <option value="2">Ẩn</option>
             </select>
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mô tả
-            </label>
-            <TiptapEditor
-              value={form.description}
-              onChange={(html) => setForm((p) => ({ ...p, description: html }))}
-            />
           </div>
           <div className="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Giảm giá</h3>

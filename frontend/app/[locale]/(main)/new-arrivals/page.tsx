@@ -114,11 +114,9 @@ export default function NewArrivalsPage() {
                         )
                       : undefined
                   }
-                  image={
-                    product.avatar ||
-                    "https://images.unsplash.com/photo-1599012307530-d163bd04ecab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
-                  }
-                  isNew
+                  image={product.avatar}
+                  tags={product.tags}
+                  maxTags={2}
                 />
               </div>
             ))}

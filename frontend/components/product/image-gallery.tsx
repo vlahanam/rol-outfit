@@ -1,4 +1,4 @@
-const FALLBACK = "https://images.unsplash.com/photo-1599012307530-d163bd04ecab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
+import { ImageIcon } from "lucide-react";
 
 interface Props {
   images: string[];
@@ -8,12 +8,16 @@ interface Props {
 }
 
 export function ImageGallery({ images, activeIndex, onSelect, alt = "Product" }: Props) {
-  const src = images.length > 0 ? images[activeIndex] ?? images[0] : FALLBACK;
+  const src = images.length > 0 ? images[activeIndex] ?? images[0] : null;
 
   return (
     <div>
-      <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
-        <img id="product-main-img" src={src} alt={alt} className="w-full h-full object-cover" />
+      <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4 flex items-center justify-center">
+        {src ? (
+          <img id="product-main-img" src={src} alt={alt} className="w-full h-full object-cover" />
+        ) : (
+          <ImageIcon className="w-16 h-16 text-gray-400" />
+        )}
       </div>
       {images.length > 1 && (
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">

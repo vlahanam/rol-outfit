@@ -11,6 +11,7 @@ type WidgetDTO struct {
 	ID           string          `json:"id"`
 	ParentID     *string         `json:"parent_id"`
 	Name         string          `json:"name"`
+	NameJa       string          `json:"name_ja,omitempty"`
 	Type         string          `json:"type"`
 	DisplayOrder int             `json:"display_order"`
 	Depth        int             `json:"depth"`
@@ -26,6 +27,7 @@ func ToWidgetDTO(w *models.Widget) *WidgetDTO {
 		ID:           w.ID,
 		ParentID:     w.ParentID,
 		Name:         w.Name,
+		NameJa:       w.NameJa,
 		Type:         w.Type,
 		DisplayOrder: w.DisplayOrder,
 		Depth:        w.Depth,

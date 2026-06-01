@@ -84,6 +84,7 @@ func (s *tagService) Create(ctx context.Context, req *requests.CreateTagRequest)
 	t := &models.Tag{
 		ID:      uuid.New().String(),
 		Name:    req.Name,
+		NameJa:  req.NameJa,
 		Slug:    slug,
 		StartAt: req.StartAt,
 		EndAt:   req.EndAt,
@@ -127,6 +128,9 @@ func (s *tagService) Update(ctx context.Context, id string, req *requests.Update
 		}
 		fields["name"] = *req.Name
 		fields["slug"] = newSlug
+	}
+	if req.NameJa != nil {
+		fields["name_ja"] = *req.NameJa
 	}
 	if req.StartAt != nil {
 		fields["start_at"] = req.StartAt

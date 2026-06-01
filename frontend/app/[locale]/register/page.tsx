@@ -13,6 +13,7 @@ import {
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api, ApiError } from "@/lib/api";
+import { OAuthButtons } from "@/components/oauth-buttons";
 import { setTokens } from "@/lib/auth";
 import { createRegisterSchema } from "@/lib/validations";
 import type { ApiResponse, AuthTokens } from "@/types/api";
@@ -262,6 +263,14 @@ export default function RegisterPage() {
               {loading ? t("submitting") : t("submit")}
             </button>
           </form>
+
+          <div className="my-6 flex items-center">
+            <div className="flex-1 border-t border-gray-200" />
+            <span className="px-4 text-sm text-gray-500">or</span>
+            <div className="flex-1 border-t border-gray-200" />
+          </div>
+
+          <OAuthButtons disabled={loading} />
 
           <div className="mt-6 text-center">
             <p className="text-gray-600 text-sm">

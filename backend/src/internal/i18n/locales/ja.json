@@ -59,6 +59,10 @@
 
   "error.user_not_found": "ユーザーが見つかりません",
   "error.user_email_taken": "このメールアドレスはすでに別のアカウントで使用されています",
+  "error.invalid_password": "現在のパスワードが正しくありません",
+
+  "validation.current_password.required": "現在のパスワードを入力してください",
+  "validation.avatar.length": "プロフィール画像のURLが長すぎます",
 
   "error.widget_not_found": "ウィジェットが見つかりません",
 
@@ -82,5 +86,9 @@
   "error.tag_invalid_window": "表示期間が無効です",
 
   "error.too_many_tags": "1商品につき最大3タグまで",
-  "validation.tags.max_3": "最大3タグ"
+  "validation.tags.max_3": "最大3タグ",
+
+  "auth.oauth_failed": "ログインに失敗しました。もう一度���試しください。",
+  "auth.admin_oauth_forbidden": "管理者アカウントはOAuthでログインできません。",
+  "auth.cannot_unlink_last_method": "最後のログイン方法を解除することはできません。"
 }

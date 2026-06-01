@@ -12,11 +12,13 @@ const (
 )
 
 type Category struct {
-	ID          string         `gorm:"type:uuid;primaryKey"`
-	Name        string         `gorm:"column:name"`
-	Slug        string         `gorm:"column:slug"`
-	Status      int8           `gorm:"column:status"`
-	Description string         `gorm:"column:description"`
+	ID            string         `gorm:"type:uuid;primaryKey"`
+	Name          string         `gorm:"column:name"`
+	NameJa        string         `gorm:"column:name_ja"`
+	Slug          string         `gorm:"column:slug"`
+	Status        int8           `gorm:"column:status"`
+	Description   string         `gorm:"column:description"`
+	DescriptionJa string         `gorm:"column:description_ja"`
 	CreatedAt   time.Time      `gorm:"column:created_at"`
 	UpdatedAt   time.Time      `gorm:"column:updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"column:deleted_at;index"`

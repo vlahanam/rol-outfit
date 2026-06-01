@@ -15,6 +15,8 @@ func validateVariantDiscountWindow(start, end *time.Time) error {
 }
 
 type CreateVariantRequest struct {
+	Name            string          `json:"name"`
+	NameJa          string          `json:"name_ja"`
 	Attributes      json.RawMessage `json:"attributes"`
 	Price           float64         `json:"price"`
 	Stock           int             `json:"stock"`
@@ -47,6 +49,8 @@ func (r CreateVariantRequest) Validate() error {
 }
 
 type UpdateVariantRequest struct {
+	Name            *string         `json:"name"`
+	NameJa          *string         `json:"name_ja"`
 	Attributes      json.RawMessage `json:"attributes"`
 	Price           *float64        `json:"price"`
 	Stock           *int            `json:"stock"`

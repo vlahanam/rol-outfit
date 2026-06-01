@@ -11,6 +11,7 @@ var validWidgetTypes = []interface{}{"banner-slider", "collection-grid", "new-pr
 type CreateWidgetRequest struct {
 	ParentID     *string         `json:"parent_id"`
 	Name         string          `json:"name"`
+	NameJa       string          `json:"name_ja"`
 	Type         string          `json:"type"`
 	DisplayOrder int             `json:"display_order"`
 	Status       int8            `json:"status"`
@@ -39,6 +40,7 @@ func (r CreateWidgetRequest) Validate() error {
 
 type UpdateWidgetRequest struct {
 	Name         *string         `json:"name"`
+	NameJa       *string         `json:"name_ja"`
 	Type         *string         `json:"type"`
 	DisplayOrder *int            `json:"display_order"`
 	Status       *int8           `json:"status"`

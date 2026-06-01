@@ -13,6 +13,8 @@ const (
 type ProductVariant struct {
 	ID              string          `gorm:"type:uuid;primaryKey"`
 	ProductID       string          `gorm:"column:product_id;type:uuid"`
+	Name            string          `gorm:"column:name"`
+	NameJa          string          `gorm:"column:name_ja"`
 	Attributes      json.RawMessage `gorm:"column:attributes;type:jsonb"`
 	Price           float64         `gorm:"column:price;type:numeric(12,2)"`
 	Stock           int             `gorm:"column:stock"`

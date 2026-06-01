@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Minus, Plus, Trash2, ArrowLeft, ShoppingBag } from "lucide-react";
+import { Minus, Plus, Trash2, ArrowLeft, ShoppingBag, ImageIcon } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -12,11 +12,9 @@ import type { ApiResponse, Cart, CartItem, Product } from "@/types/api";
 
 interface RichCartItem extends CartItem {
   productName: string;
-  productImage: string;
+  productImage?: string;
+  variantName?: string;
 }
-
-const FALLBACK_IMG =
-  "https://images.unsplash.com/photo-1599012307530-d163bd04ecab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400";
 
 export default function CartPage() {
   const t = useTranslations("CartPage");
@@ -35,23 +33,37 @@ export default function CartPage() {
       try {
         const res = await api.get<ApiResponse<Cart>>("/cart");
         const items = res.data?.items ?? [];
-        // Enrich items with product info
+        // Enrich items with product and variant info
         const rich = await Promise.all(
           items.map(async (item) => {
             try {
               const pRes = await api.get<ApiResponse<Product>>(
                 `/products/${item.product_id}`,
               );
+              let variantName: string | undefined;
+              if (item.attr_id) {
+                try {
+                  const vRes = await api.get<ApiResponse<{ attributes: Record<string, string> }>>(
+                    `/products/${item.product_id}/variants/${item.attr_id}`,
+                  );
+                  if (vRes.data?.attributes) {
+                    variantName = Object.values(vRes.data.attributes).join(", ");
+                  }
+                } catch {
+                  // ignore variant fetch error
+                }
+              }
               return {
                 ...item,
                 productName: pRes.data.name,
-                productImage: pRes.data.avatar || FALLBACK_IMG,
+                productImage: pRes.data.avatar,
+                variantName,
               };
             } catch {
               return {
                 ...item,
                 productName: item.product_id,
-                productImage: FALLBACK_IMG,
+                productImage: undefined,
               };
             }
           }),
@@ -141,28 +153,37 @@ export default function CartPage() {
                     key={item.id}
                     className={`p-6 flex gap-4 ${index !== cartItems.length - 1 ? "border-b border-gray-200" : ""}`}
                   >
-                    <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                      <img
-                        src={item.productImage}
-                        alt={item.productName}
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center">
+                      {item.productImage ? (
+                        <img
+                          src={item.productImage}
+                          alt={item.productName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <ImageIcon className="w-8 h-8 text-gray-400" />
+                      )}
                     </div>
 
-                    <div className="flex-1">
-                      <div className="flex justify-between mb-2">
-                        <h3 className="font-semibold text-gray-900">
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <h3 className="font-semibold text-gray-900 line-clamp-2">
                           {item.productName}
                         </h3>
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          className="text-gray-400 hover:text-red-500 transition-colors"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
+                        {item.variantName && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            {item.variantName}
+                          </p>
+                        )}
+                        <p className="text-lg font-bold text-blue-600 mt-1">
+                          {(item.price_at_add * item.quantity).toLocaleString(
+                            "vi-VN",
+                          )}
+                          ₫
+                        </p>
                       </div>
 
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center gap-3">
                           <button
                             onClick={() =>
@@ -185,12 +206,12 @@ export default function CartPage() {
                           </button>
                         </div>
 
-                        <p className="text-lg font-bold text-blue-600">
-                          {(item.price_at_add * item.quantity).toLocaleString(
-                            "vi-VN",
-                          )}
-                          ₫
-                        </p>
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </div>
                     </div>
                   </div>

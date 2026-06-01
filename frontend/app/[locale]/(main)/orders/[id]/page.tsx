@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Loader2, Package } from "lucide-react";
+import { ArrowLeft, Loader2, Package, ImageIcon } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { useTranslations, useLocale } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -18,11 +18,8 @@ interface RichOrderItem {
   price: number;
   quantity: number;
   productName: string;
-  productImage: string;
+  productImage?: string;
 }
-
-const FALLBACK_IMG =
-  "https://images.unsplash.com/photo-1599012307530-d163bd04ecab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400";
 
 export default function OrderDetailPage() {
   const t = useTranslations("OrderDetailPage");
@@ -55,13 +52,13 @@ export default function OrderDetailPage() {
               return {
                 ...item,
                 productName: pRes.data.name,
-                productImage: pRes.data.avatar || FALLBACK_IMG,
+                productImage: pRes.data.avatar,
               };
             } catch {
               return {
                 ...item,
                 productName: item.product_id,
-                productImage: FALLBACK_IMG,
+                productImage: undefined,
               };
             }
           })
@@ -152,12 +149,16 @@ export default function OrderDetailPage() {
               <div className="space-y-4">
                 {items.map((item) => (
                   <div key={item.id} className="flex gap-4">
-                    <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                      <img
-                        src={item.productImage}
-                        alt={item.productName}
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center">
+                      {item.productImage ? (
+                        <img
+                          src={item.productImage}
+                          alt={item.productName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <ImageIcon className="w-6 h-6 text-gray-400" />
+                      )}
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900">

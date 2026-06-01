@@ -6,6 +6,7 @@ import { ShoppingCart, Minus, Plus, ArrowLeft } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { ImageGallery } from "@/components/product/image-gallery";
 import { TagBadges } from "@/components/product/tag-badges";
+import { DiscountCountdown } from "@/components/product/discount-countdown";
 import { VariantPicker } from "@/components/product/variant-picker";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -49,6 +50,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
   const { incrementCart } = useCart();
   const { trigger: flyToCart } = useFlyToCart();
 
@@ -180,7 +182,7 @@ export default function ProductDetailPage() {
                 <span className="text-3xl font-bold text-blue-600">
                   {formatPrice(salePrice)}
                 </span>
-                {isDiscounted && (
+                {isDiscounted && !isExpired && (
                   <>
                     <span className="text-xl text-gray-400 line-through">
                       {formatPrice(price)}
@@ -188,7 +190,17 @@ export default function ProductDetailPage() {
                     <span className="px-2 py-0.5 bg-red-100 text-red-600 text-sm font-semibold rounded">
                       -{Math.round((1 - salePrice / price) * 100)}%
                     </span>
+                    <DiscountCountdown
+                      key={variant?.discount_end_at ?? product?.discount_end_at ?? "no-end"}
+                      discountEndAt={variant?.discount_end_at ?? product?.discount_end_at}
+                      onExpire={() => setIsExpired(true)}
+                    />
                   </>
+                )}
+                {isExpired && (
+                  <span className="text-sm text-orange-500 font-medium">
+                    Đã hết hạn khuyến mãi
+                  </span>
                 )}
               </div>
               {hasVariants && (
