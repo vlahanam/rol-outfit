@@ -28,10 +28,9 @@ var (
 )
 
 type OAuthUserInfo struct {
-	ID        string
-	Email     string
-	Name      string
-	AvatarURL string
+	ID    string
+	Email string
+	Name  string
 }
 
 type OAuthService interface {
@@ -166,25 +165,23 @@ func (s *oauthService) fetchGoogleUserInfo(client *http.Client) (*OAuthUserInfo,
 
 	body, _ := io.ReadAll(resp.Body)
 	var data struct {
-		ID      string `json:"id"`
-		Email   string `json:"email"`
-		Name    string `json:"name"`
-		Picture string `json:"picture"`
+		ID    string `json:"id"`
+		Email string `json:"email"`
+		Name  string `json:"name"`
 	}
 	if err := json.Unmarshal(body, &data); err != nil {
 		return nil, err
 	}
 
 	return &OAuthUserInfo{
-		ID:        data.ID,
-		Email:     data.Email,
-		Name:      data.Name,
-		AvatarURL: data.Picture,
+		ID:    data.ID,
+		Email: data.Email,
+		Name:  data.Name,
 	}, nil
 }
 
 func (s *oauthService) fetchFacebookUserInfo(client *http.Client, accessToken string) (*OAuthUserInfo, error) {
-	url := fmt.Sprintf("https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=%s", accessToken)
+	url := fmt.Sprintf("https://graph.facebook.com/me?fields=id,name,email&access_token=%s", accessToken)
 	resp, err := client.Get(url)
 	if err != nil {
 		return nil, err
@@ -193,24 +190,18 @@ func (s *oauthService) fetchFacebookUserInfo(client *http.Client, accessToken st
 
 	body, _ := io.ReadAll(resp.Body)
 	var data struct {
-		ID      string `json:"id"`
-		Email   string `json:"email"`
-		Name    string `json:"name"`
-		Picture struct {
-			Data struct {
-				URL string `json:"url"`
-			} `json:"data"`
-		} `json:"picture"`
+		ID    string `json:"id"`
+		Email string `json:"email"`
+		Name  string `json:"name"`
 	}
 	if err := json.Unmarshal(body, &data); err != nil {
 		return nil, err
 	}
 
 	return &OAuthUserInfo{
-		ID:        data.ID,
-		Email:     data.Email,
-		Name:      data.Name,
-		AvatarURL: data.Picture.Data.URL,
+		ID:    data.ID,
+		Email: data.Email,
+		Name:  data.Name,
 	}, nil
 }
 
@@ -246,7 +237,6 @@ func (s *oauthService) findOrCreateUser(ctx context.Context, provider string, in
 				ProviderUserID: info.ID,
 				Email:          &info.Email,
 				Name:           &info.Name,
-				AvatarURL:      &info.AvatarURL,
 			}
 			if err := s.oauthRepo.Create(ctx, oauth); err != nil {
 				return nil, err
@@ -263,9 +253,6 @@ func (s *oauthService) findOrCreateUser(ctx context.Context, provider string, in
 		Role:     models.USER_ROLE_CUSTOMER,
 		Status:   models.USER_STATUS_ACTIVE,
 	}
-	if info.AvatarURL != "" {
-		newUser.Avatar = &info.AvatarURL
-	}
 
 	if err := s.userRepo.Create(ctx, newUser); err != nil {
 		return nil, err
@@ -278,7 +265,6 @@ func (s *oauthService) findOrCreateUser(ctx context.Context, provider string, in
 		ProviderUserID: info.ID,
 		Email:          &info.Email,
 		Name:           &info.Name,
-		AvatarURL:      &info.AvatarURL,
 	}
 	if err := s.oauthRepo.Create(ctx, oauth); err != nil {
 		return nil, err

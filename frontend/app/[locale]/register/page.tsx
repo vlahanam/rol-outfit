@@ -1,15 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  ArrowLeft,
-  User,
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  Phone,
-} from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api, ApiError } from "@/lib/api";
@@ -23,9 +15,7 @@ export default function RegisterPage() {
   const tCommon = useTranslations("Common");
   const tVal = useTranslations("Validation");
   const router = useRouter();
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -43,9 +33,7 @@ export default function RegisterPage() {
 
     const schema = createRegisterSchema(tVal);
     const result = schema.safeParse({
-      name,
       email,
-      phone,
       password,
       confirmPassword,
     });
@@ -61,9 +49,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const res = await api.post<ApiResponse<AuthTokens>>("/auth/register", {
-        full_name: name,
         email,
-        phone,
         password,
       });
       setTokens(res.data.access_token, res.data.refresh_token);
@@ -99,28 +85,6 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t("name")}
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    clearFieldError("name");
-                  }}
-                  placeholder={t("namePlaceholder")}
-                  className={`w-full pl-10 pr-4 py-3 border ${fieldErrors.name ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                />
-              </div>
-              {fieldErrors.name && (
-                <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t("email")}
               </label>
               <div className="relative">
@@ -138,28 +102,6 @@ export default function RegisterPage() {
               </div>
               {fieldErrors.email && (
                 <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t("phone")}
-              </label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => {
-                    setPhone(e.target.value);
-                    clearFieldError("phone");
-                  }}
-                  placeholder={t("phonePlaceholder")}
-                  className={`w-full pl-10 pr-4 py-3 border ${fieldErrors.phone ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                />
-              </div>
-              {fieldErrors.phone && (
-                <p className="mt-1 text-sm text-red-600">{fieldErrors.phone}</p>
               )}
             </div>
 

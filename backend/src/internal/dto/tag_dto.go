@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/vlahanam/rol-outfit/src/internal/models"
+	"github.com/vlahanam/rol-outfit/src/internal/utils"
 )
 
 type TagDTO struct {
@@ -36,5 +37,27 @@ func ToTagDTO(t *models.Tag) *TagDTO {
 		EndAt:     endAt,
 		CreatedAt: t.CreatedAt.Format(time.RFC3339),
 		UpdatedAt: t.UpdatedAt.Format(time.RFC3339),
+	}
+}
+
+type LocalizedTagDTO struct {
+	ID        string  `json:"id"`
+	Name      string  `json:"name"`
+	Slug      string  `json:"slug"`
+	StartAt   *string `json:"start_at"`
+	EndAt     *string `json:"end_at"`
+	CreatedAt string  `json:"created_at"`
+	UpdatedAt string  `json:"updated_at"`
+}
+
+func (t *TagDTO) ToLocalized(lang string) *LocalizedTagDTO {
+	return &LocalizedTagDTO{
+		ID:        t.ID,
+		Name:      utils.GetLocalizedString(t.Name, t.NameJa, lang),
+		Slug:      t.Slug,
+		StartAt:   t.StartAt,
+		EndAt:     t.EndAt,
+		CreatedAt: t.CreatedAt,
+		UpdatedAt: t.UpdatedAt,
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/vlahanam/rol-outfit/src/internal/models"
+	"github.com/vlahanam/rol-outfit/src/internal/utils"
 )
 
 type ProductDTO struct {
@@ -58,6 +59,53 @@ func ToProductDTO(p *models.Product) *ProductDTO {
 		Tags:            tags,
 		CreatedAt:       p.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:       p.UpdatedAt.Format(time.RFC3339),
+	}
+}
+
+type LocalizedProductDTO struct {
+	ID              string              `json:"id"`
+	CategoryID      string              `json:"category_id"`
+	Name            string              `json:"name"`
+	Slug            string              `json:"slug"`
+	DefaultPrice    float64             `json:"default_price"`
+	Description     string              `json:"description"`
+	Status          int8                `json:"status"`
+	AttributeNames  []string            `json:"attribute_names"`
+	Avatar          string              `json:"avatar,omitempty"`
+	DiscountPercent float64             `json:"discount_percent"`
+	DiscountStartAt string              `json:"discount_start_at,omitempty"`
+	DiscountEndAt   string              `json:"discount_end_at,omitempty"`
+	SalePrice       float64             `json:"sale_price"`
+	Tags            []*LocalizedTagDTO  `json:"tags,omitempty"`
+	CreatedAt       string              `json:"created_at"`
+	UpdatedAt       string              `json:"updated_at"`
+}
+
+func (p *ProductDTO) ToLocalized(lang string) *LocalizedProductDTO {
+	var tags []*LocalizedTagDTO
+	if len(p.Tags) > 0 {
+		tags = make([]*LocalizedTagDTO, 0, len(p.Tags))
+		for _, t := range p.Tags {
+			tags = append(tags, t.ToLocalized(lang))
+		}
+	}
+	return &LocalizedProductDTO{
+		ID:              p.ID,
+		CategoryID:      p.CategoryID,
+		Name:            utils.GetLocalizedString(p.Name, p.NameJa, lang),
+		Slug:            p.Slug,
+		DefaultPrice:    p.DefaultPrice,
+		Description:     utils.GetLocalizedString(p.Description, p.DescriptionJa, lang),
+		Status:          p.Status,
+		AttributeNames:  p.AttributeNames,
+		Avatar:          p.Avatar,
+		DiscountPercent: p.DiscountPercent,
+		DiscountStartAt: p.DiscountStartAt,
+		DiscountEndAt:   p.DiscountEndAt,
+		SalePrice:       p.SalePrice,
+		Tags:            tags,
+		CreatedAt:       p.CreatedAt,
+		UpdatedAt:       p.UpdatedAt,
 	}
 }
 
@@ -141,6 +189,25 @@ func ToProductDetailDTO(p *models.Product, tags []*models.Tag) *ProductDetailDTO
 	return &ProductDetailDTO{
 		ProductDTO: ToProductDTO(p),
 		Tags:       tagDTOs,
+	}
+}
+
+type LocalizedProductDetailDTO struct {
+	*LocalizedProductDTO
+	Tags []*LocalizedTagDTO `json:"tags"`
+}
+
+func (p *ProductDetailDTO) ToLocalized(lang string) *LocalizedProductDetailDTO {
+	var tags []*LocalizedTagDTO
+	if len(p.Tags) > 0 {
+		tags = make([]*LocalizedTagDTO, 0, len(p.Tags))
+		for _, t := range p.Tags {
+			tags = append(tags, t.ToLocalized(lang))
+		}
+	}
+	return &LocalizedProductDetailDTO{
+		LocalizedProductDTO: p.ProductDTO.ToLocalized(lang),
+		Tags:                tags,
 	}
 }
 

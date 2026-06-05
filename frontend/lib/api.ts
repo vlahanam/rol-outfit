@@ -1,5 +1,5 @@
 import { getRefreshToken, clearAuth } from "@/lib/auth";
-import { ApiError, BASE, request } from "@/lib/api-client";
+import { ApiError, BASE, request, getLangFromLocale } from "@/lib/api-client";
 import {
   adminUsers,
   adminProducts,
@@ -39,17 +39,25 @@ export const STATUS_VALUE: Record<string, number> = {
 };
 
 export const api = {
-  get<T>(path: string): Promise<T> {
-    return request<T>(path);
+  get<T>(path: string, locale?: string): Promise<T> {
+    return request<T>(path, { locale });
   },
-  post<T>(path: string, body: unknown): Promise<T> {
-    return request<T>(path, { method: "POST", body: JSON.stringify(body) });
+  post<T>(path: string, body?: unknown, locale?: string): Promise<T> {
+    return request<T>(path, {
+      method: "POST",
+      body: body != null ? JSON.stringify(body) : undefined,
+      locale,
+    });
   },
-  put<T>(path: string, body: unknown): Promise<T> {
-    return request<T>(path, { method: "PUT", body: JSON.stringify(body) });
+  put<T>(path: string, body?: unknown, locale?: string): Promise<T> {
+    return request<T>(path, {
+      method: "PUT",
+      body: body != null ? JSON.stringify(body) : undefined,
+      locale,
+    });
   },
-  delete<T>(path: string): Promise<T> {
-    return request<T>(path, { method: "DELETE" });
+  delete<T>(path: string, locale?: string): Promise<T> {
+    return request<T>(path, { method: "DELETE", locale });
   },
 
   auth: {

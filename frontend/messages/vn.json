@@ -266,7 +266,8 @@
     "cancelOrder": "Hủy đơn hàng",
     "cancelConfirm": "Bạn có chắc muốn hủy đơn hàng này?",
     "cancelled": "Đã hủy đơn hàng",
-    "cancelFailed": "Không thể hủy đơn hàng"
+    "cancelFailed": "Không thể hủy đơn hàng",
+    "waitingForVerification": "Đang chờ xác nhận thanh toán"
   },
   "OrderStatus": {
     "pending": "Chờ xử lý",
@@ -274,6 +275,18 @@
     "shipped": "Đang giao",
     "delivered": "Đã giao",
     "paid": "Đã thanh toán",
-    "cancelled": "Đã hủy"
+    "cancelled": "Đã hủy",
+    "awaitingPayment": "Chờ chuyển khoản",
+    "paymentSubmitted": "Đã báo chuyển khoản"
+  },
+  "Payment": {
+    "title": "Thanh toán đơn hàng",
+    "transferContent": "Nội dung chuyển khoản",
+    "alreadyTransferred": "Đã chuyển khoản",
+    "close": "Đóng",
+    "paymentInfo": "Thông tin thanh toán",
+    "markAsTransferred": "Đã chuyển khoản",
+    "waitingForVerification": "Đang chờ xác nhận thanh toán",
+    "verifyPayment": "Xác nhận thanh toán"
   }
 }

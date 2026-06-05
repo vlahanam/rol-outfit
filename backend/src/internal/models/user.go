@@ -26,7 +26,6 @@ type User struct {
 	Email     string         `gorm:"column:email"`
 	Password  *string        `gorm:"column:password"`
 	Phone     string         `gorm:"column:phone"`
-	Avatar    *string        `gorm:"column:avatar;type:varchar(500)"`
 	Role      int8           `gorm:"column:role"`
 	Status    int8           `gorm:"column:status"`
 	CreatedAt time.Time      `gorm:"column:created_at"`

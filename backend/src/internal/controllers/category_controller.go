@@ -84,9 +84,10 @@ func ListCategories(db *gorm.DB) fiber.Handler {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
 
-		result := make([]*dto.CategoryDTO, 0, len(categories))
+		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+		result := make([]*dto.LocalizedCategoryDTO, 0, len(categories))
 		for _, c := range categories {
-			result = append(result, dto.ToCategoryDTO(c))
+			result = append(result, dto.ToCategoryDTO(c).ToLocalized(lang))
 		}
 		p.Total = total
 		return ctx.JSON(common.SuccessResponse(result, p, nil))
@@ -112,7 +113,7 @@ func GetCategory(db *gorm.DB) fiber.Handler {
 			slog.Error("GetCategory failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
-		return ctx.JSON(common.ResponseData(dto.ToCategoryDTO(c)))
+		return ctx.JSON(common.ResponseData(dto.ToCategoryDTO(c).ToLocalized(lang)))
 	}
 }
 

@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl';
 import { routing } from '@/i18n/routing';
 import { Header } from './Header';
 import { MobileSidebar } from './MobileSidebar';
+import { Footer } from './Footer';
 import { CartProvider, useCart } from '@/context/cart-context';
 import { isLoggedIn, subscribeAuthEvents } from '@/lib/auth';
 import { api } from '@/lib/api';
@@ -58,7 +59,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header
         onMenuClick={() => setIsSidebarOpen(true)}
         user={user}
@@ -74,7 +75,8 @@ function LayoutContent({ children }: { children: ReactNode }) {
         locale={locale}
         onChangeLocale={handleChangeLocale}
       />
-      {children}
+      <main className="flex-1">{children}</main>
+      <Footer />
     </div>
   );
 }

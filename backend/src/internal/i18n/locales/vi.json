@@ -55,7 +55,8 @@
   "error.invalid_order_status": "Trạng thái đơn hàng không hợp lệ",
 
   "validation.order_status.required": "Trạng thái đơn hàng không được để trống",
-  "validation.order_status.invalid": "Trạng thái đơn hàng không hợp lệ (phải từ 1 đến 6)",
+  "validation.order_status.invalid": "Trạng thái đơn hàng không hợp lệ (phải từ 1 đến 8)",
+  "error.not_awaiting_payment": "Đơn hàng không ở trạng thái chờ chuyển khoản",
 
   "error.user_not_found": "Người dùng không tồn tại",
   "error.user_email_taken": "Email này đã được sử dụng bởi tài khoản khác",
@@ -90,5 +91,9 @@
 
   "auth.oauth_failed": "Đăng nhập thất bại. Vui lòng thử lại.",
   "auth.admin_oauth_forbidden": "Tài khoản admin không thể đăng nhập bằng OAuth.",
-  "auth.cannot_unlink_last_method": "Không thể gỡ phương thức đăng nhập cuối cùng."
+  "auth.cannot_unlink_last_method": "Không thể gỡ phương thức đăng nhập cuối cùng.",
+
+  "error.file_required": "Vui lòng chọn tệp",
+  "error.file_too_large": "Kích thước tệp quá lớn",
+  "error.file_type_not_allowed": "Loại tệp không được hỗ trợ"
 }

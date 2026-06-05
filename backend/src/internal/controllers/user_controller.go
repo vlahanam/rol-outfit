@@ -15,6 +15,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// NOTE: UploadMeAvatar removed - avatar feature deprecated
+
 // GetMe GET /api/v1/users/me — trả về thông tin user đang đăng nhập.
 func GetMe(db *gorm.DB) fiber.Handler {
 	return func(ctx fiber.Ctx) error {

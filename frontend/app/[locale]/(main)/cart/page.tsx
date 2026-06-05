@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Minus, Plus, Trash2, ArrowLeft, ShoppingBag, ImageIcon } from "lucide-react";
-import { Footer } from "@/components/Footer";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { isLoggedIn } from "@/lib/auth";
@@ -20,6 +19,7 @@ export default function CartPage() {
   const t = useTranslations("CartPage");
   const tCommon = useTranslations("Common");
   const router = useRouter();
+  const locale = useLocale();
   const [cartItems, setCartItems] = useState<RichCartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { incrementCart, decrementCart } = useCart();
@@ -31,7 +31,7 @@ export default function CartPage() {
     }
     const fetchCart = async () => {
       try {
-        const res = await api.get<ApiResponse<Cart>>("/cart");
+        const res = await api.get<ApiResponse<Cart>>("/cart", locale);
         const items = res.data?.items ?? [];
         // Enrich items with product and variant info
         const rich = await Promise.all(
@@ -39,12 +39,14 @@ export default function CartPage() {
             try {
               const pRes = await api.get<ApiResponse<Product>>(
                 `/products/${item.product_id}`,
+                locale,
               );
               let variantName: string | undefined;
               if (item.attr_id) {
                 try {
                   const vRes = await api.get<ApiResponse<{ attributes: Record<string, string> }>>(
                     `/products/${item.product_id}/variants/${item.attr_id}`,
+                    locale,
                   );
                   if (vRes.data?.attributes) {
                     variantName = Object.values(vRes.data.attributes).join(", ");
@@ -76,7 +78,7 @@ export default function CartPage() {
       }
     };
     fetchCart();
-  }, [router]);
+  }, [router, locale]);
 
   const updateQuantity = async (id: string, newQuantity: number) => {
     if (newQuantity < 1) return;
@@ -114,8 +116,7 @@ export default function CartPage() {
   const total = subtotal + shipping;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8">
         <Link
           href="/"
           className="flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-6 transition-colors"
@@ -291,8 +292,5 @@ export default function CartPage() {
           </div>
         )}
       </div>
-
-      <Footer />
-    </div>
   );
 }

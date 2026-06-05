@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, ImageIcon } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import { useParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import type { AdminCartDetail } from "@/types/api";
@@ -129,15 +128,17 @@ export default function CartDetailPage() {
                       <tr key={item.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            {item.product_image && (
-                              <Image
-                                src={item.product_image}
-                                alt={item.product_name}
-                                width={40}
-                                height={40}
-                                className="w-10 h-10 object-cover rounded"
-                              />
-                            )}
+                            <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center">
+                              {item.product_image ? (
+                                <img
+                                  src={item.product_image}
+                                  alt={item.product_name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <ImageIcon className="w-6 h-6 text-gray-400" />
+                              )}
+                            </div>
                             <span className="text-sm font-medium text-gray-900">
                               {item.product_name || "Sản phẩm không tồn tại"}
                             </span>

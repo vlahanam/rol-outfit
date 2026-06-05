@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { ArrowLeft, MapPin, Plus, Star, Pencil, Trash2, X, Loader2 } from "lucide-react";
-import { Footer } from "@/components/Footer";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { isLoggedIn } from "@/lib/auth";
@@ -92,8 +91,7 @@ export default function AddressesPage() {
   const canAddMore = addresses.length < 5;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8">
         <Link
           href="/"
           className="flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-6 transition-colors"
@@ -247,8 +245,5 @@ export default function AddressesPage() {
           </div>
         )}
       </div>
-
-      <Footer />
-    </div>
   );
 }

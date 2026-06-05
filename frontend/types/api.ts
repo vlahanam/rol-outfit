@@ -191,7 +191,6 @@ export interface User {
   full_name: string;
   email: string;
   phone: string;
-  avatar?: string;
   role: number; // 1=admin, 2=customer
   status: number; // 1=active, 0=locked
   created_at: string;

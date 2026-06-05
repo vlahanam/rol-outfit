@@ -8,15 +8,14 @@ import (
 
 // UserDTO là DTO public, không chứa password.
 type UserDTO struct {
-	ID        string  `json:"id"`
-	FullName  string  `json:"full_name"`
-	Email     string  `json:"email"`
-	Phone     string  `json:"phone"`
-	Avatar    *string `json:"avatar"`
-	Role      int8    `json:"role"`
-	Status    int8    `json:"status"`
-	CreatedAt string  `json:"created_at"`
-	UpdatedAt string  `json:"updated_at"`
+	ID        string `json:"id"`
+	FullName  string `json:"full_name"`
+	Email     string `json:"email"`
+	Phone     string `json:"phone"`
+	Role      int8   `json:"role"`
+	Status    int8   `json:"status"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
 type FullUserDTO struct {
@@ -38,7 +37,6 @@ func ToUserDTO(u *models.User) *UserDTO {
 		FullName:  u.FullName,
 		Email:     u.Email,
 		Phone:     u.Phone,
-		Avatar:    u.Avatar,
 		Role:      u.Role,
 		Status:    u.Status,
 		CreatedAt: u.CreatedAt.Format(time.RFC3339),

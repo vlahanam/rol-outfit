@@ -55,7 +55,8 @@
   "error.invalid_order_status": "注文ステータスが正しくありません",
 
   "validation.order_status.required": "注文ステータスは必須です",
-  "validation.order_status.invalid": "注文ステータスは1から6の間で入力してください",
+  "validation.order_status.invalid": "注文ステータスは1から8の間で入力してください",
+  "error.not_awaiting_payment": "注文は支払い待ち状態ではありません",
 
   "error.user_not_found": "ユーザーが見つかりません",
   "error.user_email_taken": "このメールアドレスはすでに別のアカウントで使用されています",
@@ -88,7 +89,11 @@
   "error.too_many_tags": "1商品につき最大3タグまで",
   "validation.tags.max_3": "最大3タグ",
 
-  "auth.oauth_failed": "ログインに失敗しました。もう一度���試しください。",
+  "auth.oauth_failed": "ログインに失敗しました。もう一度お試しください。",
   "auth.admin_oauth_forbidden": "管理者アカウントはOAuthでログインできません。",
-  "auth.cannot_unlink_last_method": "最後のログイン方法を解除することはできません。"
+  "auth.cannot_unlink_last_method": "最後のログイン方法を解除することはできません。",
+
+  "error.file_required": "ファイルを選択してください",
+  "error.file_too_large": "ファイルサイズが大きすぎます",
+  "error.file_type_not_allowed": "このファイル形式はサポートされていません"
 }

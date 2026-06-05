@@ -20,6 +20,7 @@ var (
 )
 
 var ErrCannotUpdateShipping = errors.New("cannot update shipping info for non-pending order")
+var ErrNotAwaitingPayment = errors.New("order is not awaiting payment")
 
 type OrderService interface {
 	CreateFromCart(ctx context.Context, userID string, req *requests.CreateOrderRequest) (*models.Order, []*models.OrderItem, error)
@@ -29,6 +30,7 @@ type OrderService interface {
 	UpdateStatus(ctx context.Context, orderID string, status int8) error
 	UpdateShippingInfo(ctx context.Context, userID, orderID string, req *requests.UpdateOrderShippingRequest) error
 	CancelOrder(ctx context.Context, userID, orderID string) error
+	MarkAsTransferred(ctx context.Context, userID, orderID string) error
 }
 
 type orderService struct {
@@ -93,7 +95,7 @@ func (s *orderService) CreateFromCart(ctx context.Context, userID string, req *r
 			ShippingAddress: req.ShippingAddress,
 			Phone:           req.Phone,
 			TotalPrice:      totalPrice,
-			Status:          models.ORDER_STATUS_PENDING,
+			Status:          models.ORDER_STATUS_AWAITING_PAYMENT,
 			Note:            req.Note,
 		}
 
@@ -204,8 +206,28 @@ func (s *orderService) CancelOrder(ctx context.Context, userID, orderID string) 
 	if order.UserID != userID {
 		return ErrOrderNotOwned
 	}
-	if order.Status != models.ORDER_STATUS_PENDING {
+	if order.Status != models.ORDER_STATUS_PENDING && order.Status != models.ORDER_STATUS_AWAITING_PAYMENT {
 		return ErrCannotCancel
 	}
 	return s.orderRepo.UpdateOrder(ctx, orderID, map[string]interface{}{"status": models.ORDER_STATUS_CANCELLED})
+}
+
+func (s *orderService) MarkAsTransferred(ctx context.Context, userID, orderID string) error {
+	order, err := s.orderRepo.FindOrderByID(ctx, orderID)
+	if err != nil {
+		return fmt.Errorf("failed to find order: %w", err)
+	}
+	if order == nil {
+		return ErrOrderNotFound
+	}
+	if order.UserID != userID {
+		return ErrOrderNotOwned
+	}
+	if order.Status == models.ORDER_STATUS_PAYMENT_SUBMITTED {
+		return nil
+	}
+	if order.Status != models.ORDER_STATUS_AWAITING_PAYMENT {
+		return ErrNotAwaitingPayment
+	}
+	return s.orderRepo.UpdateOrder(ctx, orderID, map[string]interface{}{"status": models.ORDER_STATUS_PAYMENT_SUBMITTED})
 }

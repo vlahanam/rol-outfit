@@ -102,13 +102,16 @@ type Product struct {
 #### 5. DTOs (`dto/`)
 Request/response types for API contracts.
 
-**Product DTO Fields:**
-- `Name`, `Slug`, `Description`, `Price`, `Image`, `Avatar`
-- Used in Create/Update request bodies and responses
+**Product DTO Variants:**
+- `ProductDTO` — Full DTO with both `Name` and `NameJa` fields (admin responses)
+- `LocalizedProductDTO` — Single-language DTO with only one `Name` field selected via `ToLocalized(lang)` (public responses)
+- Uses `utils.GetLocalizedString(viValue, jaValue, lang)` to select appropriate localized content
+- Admin endpoints return full DTO; public endpoints return localized version based on Accept-Language header
 
 **Variant DTO Fields:**
 - `ID`, `ProductID`, `Attributes` (JSON), `Price`, `Stock`, `Sold`, `Avatar`, `Status`
 - Attributes validated against product's `attribute_names`
+- Includes `LocalizedProductVariantDTO` for public responses
 
 **Widget DTO Fields:**
 - `ID`, `ParentID` (nullable, for nested widgets), `Name`, `Type`, `DisplayOrder`, `Depth`, `Status`, `Settings` (JSON)
@@ -282,6 +285,49 @@ Request/response types for API contracts.
 
 ---
 
+### Multilingual Localization System
+
+**Purpose:** Serve localized content (Vietnamese, Japanese) based on client's Accept-Language header.
+
+**Language Detection:**
+- Backend reads `Accept-Language` HTTP header via `i18n.LangFromHeader(header string) string`
+- Returns "vi" (Vietnamese), "ja" (Japanese), or "en" (English) code
+- Falls back to "vi" if header missing or unrecognized
+
+**DTO Localization Pattern:**
+- **Admin DTOs** — Full data with all language variants (e.g., `Name` + `NameJa`)
+- **Public DTOs** — Single localized field selected by language (e.g., `LocalizedProductDTO` with one `Name`)
+- Each public DTO has `ToLocalized(lang string)` method that calls `utils.GetLocalizedString(viValue, jaValue, lang)`
+- `GetLocalizedString` logic: if lang is "ja" and jaValue is non-empty, return jaValue; otherwise return viValue
+
+**API Response Types:**
+- **Public endpoints** (GET /api/v1/products, /categories, etc.) return `LocalizedXxxDTO` structs
+- **Admin endpoints** (GET /api/v1/admin/products) return full `XxxDTO` structs with all fields
+- Controllers call `ToLocalized(lang)` before marshalling response
+
+**Example Flow:**
+```
+GET /api/v1/products?page=1
+Accept-Language: ja
+
+1. Controller extracts lang = "ja" from header
+2. Service returns ProductDTO with {Name: "Áo Nam", NameJa: "男性用シャツ"}
+3. Controller calls dto.ToLocalized("ja")
+   → Returns LocalizedProductDTO with {Name: "男性用シャツ"}
+4. Response marshalled as JSON with single Name field
+```
+
+**Supported Languages:**
+- "vi" — Vietnamese (primary/fallback)
+- "ja" — Japanese
+- "en" — English (treated as fallback, no language variant in DB)
+
+**Migrations for Localization:**
+- Migration 000023 adds `*_ja` columns to: products, product_variants, categories, tags, widgets
+- For other entities (orders, users), localization handled in i18n keys, not DB fields
+
+---
+
 ### Tag System
 
 **Purpose:** Time-windowed product tags with public/admin filtering.
@@ -412,24 +458,43 @@ Request/response types for API contracts.
 
 ### Updated DTO Schema
 
-**Product DTO** (includes discount-adjusted pricing):
-- Base fields: `ID`, `Name`, `Slug`, `Description`, `Price`
+**Product DTO** (full admin response — includes discount-adjusted pricing):
+- Base fields: `ID`, `Name`, `NameJa`, `Slug`, `Description`, `DescriptionJa`, `Price`
 - Image fields: `Image`, `Avatar`
 - Discount fields: `DiscountPercent`, `DiscountStartAt`, `DiscountEndAt`
 - Computed: `SalePrice` (effective price via discount_helper)
 - Relations: `Variants` (nested), `Tags` (active only)
+- Method: `ToLocalized(lang string) *LocalizedProductDTO` — returns single-language variant
 
-**Variant DTO** (includes discount-adjusted pricing):
+**LocalizedProductDTO** (public response — single localized language):
+- Base fields: `ID`, `Name` (single, localized), `Slug`, `Description` (single, localized), `Price`
+- Image fields: `Image`, `Avatar`
+- Discount fields: `DiscountPercent`, `DiscountStartAt`, `DiscountEndAt`
+- Computed: `SalePrice`
+- Relations: `Tags` (as `LocalizedTagDTO[]`)
+
+**Variant DTO** (admin):
 - Base fields: `ID`, `ProductID`, `Price`, `Stock`, `Sold`
+- Localization: `Name`, `NameJa`, `Description`, `DescriptionJa`
 - Attributes: `Attributes` (JSON) — validated against product's `attribute_names`
 - Image: `Avatar`
 - Discount fields: `DiscountPercent`, `DiscountStartAt`, `DiscountEndAt`
 - Computed: `SalePrice` (effective price, variant discount overrides product)
 - Status: `Status` (1=active, 2=inactive)
+- Method: `ToLocalized(lang string) *LocalizedProductVariantDTO`
 
-**Tag DTO:**
-- Base fields: `ID`, `Name`, `Slug`
+**LocalizedProductVariantDTO** (public):
+- Single localized `Name` and `Description` fields
+- All other fields identical to VariantDTO
+
+**Tag DTO** (admin):
+- Base fields: `ID`, `Name`, `NameJa`, `Slug`
 - Time-window: `StartAt`, `EndAt` (optional)
+- Method: `ToLocalized(lang string) *LocalizedTagDTO`
+
+**LocalizedTagDTO** (public):
+- Single localized `Name` field
+- Slug and time-window fields included
 
 ---
 
@@ -446,8 +511,8 @@ Request/response types for API contracts.
 ### Products (Public)
 | Method | Endpoint | Auth | Role | Notes |
 |--------|----------|------|------|-------|
-| GET | `/api/v1/products` | None | - | List products with optional tag filtering (query: `?tags=slug1,slug2` [multiple], `?tag=slug` [single, backward compat], `?category_id=`, `?page=`, `?limit=`). Tag filters use intersection (product must match ALL tags). Time-window validation applied per tag. |
-| GET | `/api/v1/products/:id` | None | - | Get product details with variants & tags |
+| GET | `/api/v1/products` | None | - | List products with optional tag filtering (query: `?tags=slug1,slug2` [multiple], `?tag=slug` [single, backward compat], `?category_id=`, `?page=`, `?limit=`). Tag filters use intersection (product must match ALL tags). Time-window validation applied per tag. **Localized response:** Returns single `name`/`description` field based on Accept-Language header. |
+| GET | `/api/v1/products/:id` | None | - | Get product details with variants & tags. **Localized response:** Single localized name/description per product and nested tags. |
 
 ### Products (Admin)
 | Method | Endpoint | Auth | Role | Notes |

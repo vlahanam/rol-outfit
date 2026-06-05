@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { ArrowLeft, ShoppingBag, Loader2, MapPin, Check, X, ImageIcon } from "lucide-react";
-import { Footer } from "@/components/Footer";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { userAddresses } from "@/lib/api-resources";
 import { isLoggedIn } from "@/lib/auth";
 import { useCart } from "@/context/cart-context";
+import { PaymentQRModal } from "@/components/checkout/payment-qr-modal";
 import type { ApiResponse, Cart, CartItem, Product, Order, UserAddress } from "@/types/api";
 
 interface RichCartItem extends CartItem {
@@ -20,6 +20,7 @@ export default function CheckoutPage() {
   const t = useTranslations("CheckoutPage");
   const tCommon = useTranslations("Common");
   const router = useRouter();
+  const locale = useLocale();
   const { clearCart } = useCart();
   const [cartItems, setCartItems] = useState<RichCartItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +30,8 @@ export default function CheckoutPage() {
   const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(null);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [note, setNote] = useState("");
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     if (!isLoggedIn()) {
@@ -38,7 +41,7 @@ export default function CheckoutPage() {
     const fetchData = async () => {
       try {
         const [cartRes, addressRes] = await Promise.all([
-          api.get<ApiResponse<Cart>>("/cart"),
+          api.get<ApiResponse<Cart>>("/cart", locale),
           userAddresses.list().catch(() => ({ data: [] })),
         ]);
 
@@ -52,7 +55,8 @@ export default function CheckoutPage() {
           items.map(async (item) => {
             try {
               const pRes = await api.get<ApiResponse<Product>>(
-                `/products/${item.product_id}`
+                `/products/${item.product_id}`,
+                locale,
               );
               return {
                 ...item,
@@ -83,7 +87,7 @@ export default function CheckoutPage() {
       }
     };
     fetchData();
-  }, [router]);
+  }, [router, locale]);
 
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price_at_add * item.quantity,
@@ -107,10 +111,26 @@ export default function CheckoutPage() {
         note: note || undefined,
       });
       clearCart();
-      router.push(`/checkout/success?orderId=${res.data.id}`);
+      setCreatedOrder(res.data);
+      setShowQRModal(true);
+      setSubmitting(false);
     } catch {
       setError(tCommon("errorLoading"));
       setSubmitting(false);
+    }
+  };
+
+  const handlePaymentTransferred = () => {
+    setShowQRModal(false);
+    if (createdOrder) {
+      router.push(`/checkout/success?orderId=${createdOrder.id}`);
+    }
+  };
+
+  const handleCloseQRModal = () => {
+    setShowQRModal(false);
+    if (createdOrder) {
+      router.push(`/checkout/success?orderId=${createdOrder.id}`);
     }
   };
 
@@ -121,14 +141,14 @@ export default function CheckoutPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <p className="text-gray-500">{tCommon("loading")}</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       <div className="max-w-7xl mx-auto px-4 py-8">
         <Link
           href="/cart"
@@ -338,7 +358,17 @@ export default function CheckoutPage() {
         </div>
       )}
 
-      <Footer />
-    </div>
+      {createdOrder && (
+        <PaymentQRModal
+          isOpen={showQRModal}
+          orderId={createdOrder.id}
+          orderCode={createdOrder.order_code ?? ""}
+          userName={selectedAddress?.recipient_name ?? ""}
+          totalPrice={createdOrder.total_price}
+          onTransferred={handlePaymentTransferred}
+          onClose={handleCloseQRModal}
+        />
+      )}
+    </>
   );
 }

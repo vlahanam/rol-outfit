@@ -200,9 +200,6 @@ func (s *userService) UpdateMe(ctx context.Context, id string, req *requests.Upd
 	if req.Phone != nil {
 		fields["phone"] = *req.Phone
 	}
-	if req.Avatar != nil {
-		fields["avatar"] = *req.Avatar
-	}
 
 	if len(fields) == 0 {
 		return nil

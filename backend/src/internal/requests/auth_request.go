@@ -33,8 +33,7 @@ type LoginRequest struct {
 func (r RegisterRequest) Validate() error {
 	return validation.ValidateStruct(&r,
 		validation.Field(&r.FullName,
-			validation.Required.Error("validation.full_name.required"),
-			validation.Length(2, 255).Error("validation.full_name.length"),
+			validation.Length(0, 255).Error("validation.full_name.length"),
 		),
 		validation.Field(&r.Email,
 			validation.Required.Error("validation.email.required"),
@@ -50,7 +49,6 @@ func (r RegisterRequest) Validate() error {
 			validation.Length(8, 100).Error("validation.password.length"),
 		),
 		validation.Field(&r.Phone,
-			validation.Required.Error("validation.phone.required"),
 			validation.Length(0, 20).Error("validation.phone.length"),
 		),
 	)

@@ -2,14 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { ArrowLeft, Loader2, Package, ImageIcon } from "lucide-react";
-import { Footer } from "@/components/Footer";
 import { useTranslations, useLocale } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { isLoggedIn } from "@/lib/auth";
 import { OrderStatusBadge } from "@/components/orders/order-status-badge";
+import { PaymentQRSection } from "@/components/orders/payment-qr-section";
 import type { ApiResponse, Order, Product } from "@/types/api";
+
+const ORDER_STATUS_AWAITING_PAYMENT = 7;
+const ORDER_STATUS_PAYMENT_SUBMITTED = 8;
 
 interface RichOrderItem {
   id: string;
@@ -40,14 +43,15 @@ export default function OrderDetailPage() {
     }
     const fetchOrder = async () => {
       try {
-        const res = await api.get<ApiResponse<Order>>(`/orders/${id}`);
+        const res = await api.get<ApiResponse<Order>>(`/orders/${id}`, locale);
         setOrder(res.data);
         const orderItems = res.data.items ?? [];
         const rich = await Promise.all(
           orderItems.map(async (item) => {
             try {
               const pRes = await api.get<ApiResponse<Product>>(
-                `/products/${item.product_id}`
+                `/products/${item.product_id}`,
+                locale,
               );
               return {
                 ...item,
@@ -71,7 +75,7 @@ export default function OrderDetailPage() {
       }
     };
     fetchOrder();
-  }, [router, id, tCommon]);
+  }, [router, id, tCommon, locale]);
 
   const handleCancel = async () => {
     if (!confirm(t("cancelConfirm"))) return;
@@ -90,7 +94,7 @@ export default function OrderDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <p className="text-gray-500">{tCommon("loading")}</p>
       </div>
     );
@@ -98,27 +102,23 @@ export default function OrderDetailPage() {
 
   if (error || !order) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="bg-white rounded-lg p-12 text-center">
-            <Package className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-            <p className="text-gray-600 mb-6">{error || tCommon("errorLoading")}</p>
-            <Link
-              href="/orders"
-              className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              {tCommon("backToHome")}
-            </Link>
-          </div>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="bg-white rounded-lg p-12 text-center">
+          <Package className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+          <p className="text-gray-600 mb-6">{error || tCommon("errorLoading")}</p>
+          <Link
+            href="/orders"
+            className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            {tCommon("backToHome")}
+          </Link>
         </div>
-        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8">
         <Link
           href="/orders"
           className="flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-6 transition-colors"
@@ -222,7 +222,25 @@ export default function OrderDetailPage() {
               </div>
             </div>
 
-            {order.status === 1 && (
+            {order.status === ORDER_STATUS_AWAITING_PAYMENT && (
+              <PaymentQRSection
+                orderId={order.id}
+                orderCode={order.order_code ?? ""}
+                userName={order.shipping_address.split(",")[0] || ""}
+                totalPrice={order.total_price}
+                onTransferred={() => router.refresh()}
+              />
+            )}
+
+            {order.status === ORDER_STATUS_PAYMENT_SUBMITTED && (
+              <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-4">
+                <p className="text-cyan-700 text-center text-sm">
+                  {t("waitingForVerification")}
+                </p>
+              </div>
+            )}
+
+            {(order.status === 1 || order.status === ORDER_STATUS_AWAITING_PAYMENT) && (
               <button
                 onClick={handleCancel}
                 disabled={cancelling}
@@ -241,8 +259,5 @@ export default function OrderDetailPage() {
           </div>
         </div>
       </div>
-
-      <Footer />
-    </div>
   );
 }

@@ -204,6 +204,40 @@ func CancelOrder(db *gorm.DB) fiber.Handler {
 	}
 }
 
+// MarkOrderTransferred PUT /api/v1/orders/:id/mark-transferred
+func MarkOrderTransferred(db *gorm.DB) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+		userID, err := userIDFromLocals(ctx)
+		if err != nil {
+			return ctx.Status(fiber.StatusUnauthorized).JSON(common.ErrUnauthorized)
+		}
+		orderID := ctx.Params("id")
+
+		svc := newOrderService(db)
+		if err := svc.MarkAsTransferred(ctx.Context(), userID, orderID); err != nil {
+			if errors.Is(err, services.ErrOrderNotFound) {
+				return ctx.Status(fiber.StatusNotFound).JSON(
+					common.ErrNotFound.WithReason(i18n.T(lang, "error.order_not_found")),
+				)
+			}
+			if errors.Is(err, services.ErrOrderNotOwned) {
+				return ctx.Status(fiber.StatusForbidden).JSON(
+					common.ErrForbidden.WithReason(i18n.T(lang, "error.order_not_owned")),
+				)
+			}
+			if errors.Is(err, services.ErrNotAwaitingPayment) {
+				return ctx.Status(fiber.StatusConflict).JSON(
+					common.ErrConflict.WithReason(i18n.T(lang, "error.not_awaiting_payment")),
+				)
+			}
+			slog.Error("MarkOrderTransferred failed", "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+		return ctx.JSON(common.ResponseData(fiber.Map{"message": "Order marked as transferred"}))
+	}
+}
+
 // ListAllOrders GET /api/v1/admin/orders?status=&page=&limit= [admin]
 func ListAllOrders(db *gorm.DB) fiber.Handler {
 	return func(ctx fiber.Ctx) error {

@@ -13,6 +13,8 @@ const STATUS_STYLES: Record<number, string> = {
   4: "bg-green-100 text-green-700",
   5: "bg-green-100 text-green-700",
   6: "bg-red-100 text-red-700",
+  7: "bg-orange-100 text-orange-700",
+  8: "bg-cyan-100 text-cyan-700",
 };
 
 const STATUS_KEYS: Record<number, string> = {
@@ -22,6 +24,8 @@ const STATUS_KEYS: Record<number, string> = {
   4: "delivered",
   5: "paid",
   6: "cancelled",
+  7: "awaitingPayment",
+  8: "paymentSubmitted",
 };
 
 export function OrderStatusBadge({ status }: Props) {

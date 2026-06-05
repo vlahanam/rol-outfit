@@ -113,9 +113,10 @@ func ListWidgets(db *gorm.DB) fiber.Handler {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
 
-		result := make([]*dto.WidgetDTO, 0, len(widgets))
+		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+		result := make([]*dto.LocalizedWidgetDTO, 0, len(widgets))
 		for _, w := range widgets {
-			result = append(result, dto.ToWidgetDTO(w))
+			result = append(result, dto.ToWidgetDTO(w).ToLocalized(lang))
 		}
 		p.Total = total
 		return ctx.JSON(common.SuccessResponse(result, p, nil))
@@ -147,7 +148,7 @@ func GetWidget(db *gorm.DB) fiber.Handler {
 			slog.Error("GetWidget failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
-		return ctx.JSON(common.ResponseData(dto.ToWidgetDTO(w)))
+		return ctx.JSON(common.ResponseData(dto.ToWidgetDTO(w).ToLocalized(lang)))
 	}
 }
 

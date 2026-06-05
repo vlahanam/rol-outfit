@@ -1,18 +1,16 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Camera, Save, Eye, EyeOff, Loader2 } from "lucide-react";
-import { Footer } from "@/components/Footer";
+import { useState, useEffect } from "react";
+import { ArrowLeft, Save, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { isLoggedIn } from "@/lib/auth";
-import { userProfile, uploads } from "@/lib/api-resources";
+import { userProfile } from "@/lib/api-resources";
 import type { User } from "@/types/api";
 
 export default function ProfilePage() {
   const t = useTranslations("ProfilePage");
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,25 +49,6 @@ export default function ProfilePage() {
     fetchUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
-
-  const handleAvatarClick = () => fileInputRef.current?.click();
-
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setSaving(true);
-      const avatarUrl = await uploads.upload(file);
-      await userProfile.update({ avatar: avatarUrl });
-      setUser((prev) => (prev ? { ...prev, avatar: avatarUrl } : null));
-      setInfoSuccess(t("avatarUpdated"));
-    } catch {
-      setInfoError(t("avatarFailed"));
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleUpdateInfo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,43 +112,6 @@ export default function ProfilePage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <h1 className="text-2xl font-bold">{t("title")}</h1>
-        </div>
-
-        {/* Avatar Section */}
-        <div className="flex items-center gap-6 mb-8 p-6 bg-white rounded-lg shadow">
-          <div className="relative">
-            <div
-              className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={handleAvatarClick}
-            >
-              {user?.avatar ? (
-                <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-3xl text-gray-400 font-medium">
-                  {user?.full_name?.[0]?.toUpperCase()}
-                </span>
-              )}
-            </div>
-            <button
-              type="button"
-              className="absolute bottom-0 right-0 p-2 bg-blue-500 rounded-full text-white hover:bg-blue-600 transition-colors"
-              onClick={handleAvatarClick}
-              disabled={saving}
-            >
-              <Camera className="w-4 h-4" />
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAvatarChange}
-            />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold">{user?.full_name}</h2>
-            <p className="text-gray-500">{user?.email}</p>
-          </div>
         </div>
 
         {/* Personal Info Section */}
@@ -308,7 +250,6 @@ export default function ProfilePage() {
           </form>
         </div>
       </div>
-      <Footer />
     </>
   );
 }

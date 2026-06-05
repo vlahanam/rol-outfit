@@ -1,5 +1,4 @@
 import { ProductItem } from "@/components/ProductItem";
-import { Footer } from "@/components/Footer";
 import { BannerSlider } from "@/components/storefront/banner-slider";
 import { CollectionSlider } from "@/components/storefront/collection-slider";
 import { fetchWidgets, fetchNewProductWidget } from "@/lib/api-server";
@@ -179,8 +178,6 @@ export default async function HomePage() {
           />
         )}
       </main>
-
-      <Footer />
     </>
   );
 }

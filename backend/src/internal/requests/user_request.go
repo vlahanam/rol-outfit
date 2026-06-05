@@ -117,7 +117,6 @@ func (r UpdateUserRequest) Validate() error {
 type UpdateMeRequest struct {
 	FullName *string `json:"full_name"`
 	Phone    *string `json:"phone"`
-	Avatar   *string `json:"avatar"`
 }
 
 func (r UpdateMeRequest) Validate() error {
@@ -131,13 +130,6 @@ func (r UpdateMeRequest) Validate() error {
 	if r.Phone != nil {
 		if err := validation.Validate(*r.Phone,
 			validation.Length(0, 20).Error("validation.phone.length"),
-		); err != nil {
-			return err
-		}
-	}
-	if r.Avatar != nil {
-		if err := validation.Validate(*r.Avatar,
-			validation.Length(0, 500).Error("validation.avatar.length"),
 		); err != nil {
 			return err
 		}

@@ -4,6 +4,28 @@ All notable changes to the rol-outfit project are documented here. Format follow
 
 ## [Unreleased]
 
+### Fixed
+- **Multilingual Display Bug Fix** (2026-06-06)
+  - Backend: DTOs now include `ToLocalized(lang string)` methods that accept language codes ("vi", "ja", "en")
+  - Backend: `LocalizedProductDTO`, `LocalizedCategoryDTO`, `LocalizedTagDTO` structs created for public API responses
+  - Backend: Public endpoints (`GET /api/v1/products`, `GET /api/v1/products/:id`, `GET /api/v1/categories`) extract language from `Accept-Language` header via `i18n.LangFromHeader()`
+  - Backend: Public endpoints use `ToLocalized(lang)` on DTOs before response marshalling
+  - Backend: Admin endpoints continue returning full DTOs with both `name` and `name_ja` fields (unchanged)
+  - Frontend: `api-client.ts` and `api-resources.ts` now accept optional `locale` parameter for dynamic language switching
+  - Frontend: Locale-to-backend-language mapping: "vn" → "vi", "jp" → "ja", fallback to "vi"
+  - API Contract Change: Public responses now have single localized `name`/`description` fields instead of both VI and JA fields
+  - **Breaking Change**: Frontend must pass Accept-Language header or locale parameter for correct localized content
+
+### Removed
+- **User Avatar Feature** (2026-06-06)
+  - Backend: Removed `avatar` field from User model (migration 000027)
+  - Backend: Removed `POST /api/v1/users/me/avatar` endpoint
+  - Backend: Removed avatar from UserDTO and UpdateMeRequest
+  - Backend: OAuth login no longer sets user avatar from provider
+  - Frontend: Removed avatar upload UI from profile page
+  - Frontend: Profile page now shows user initials only
+  - **Breaking Change**: User API responses no longer include `avatar` field
+
 ### Added
 - **Admin Japanese i18n Input** (2026-05-31)
   - Backend: Migrations 000023-000024 add _ja columns to products, product_variants, categories, tags, widgets tables

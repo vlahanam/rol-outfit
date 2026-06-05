@@ -392,6 +392,8 @@ func TestUpdateShippingInfo_AllStatuses(t *testing.T) {
 		{models.ORDER_STATUS_DELIVERED, false},
 		{models.ORDER_STATUS_PAID, false},
 		{models.ORDER_STATUS_CANCELLED, false},
+		{models.ORDER_STATUS_AWAITING_PAYMENT, false},
+		{models.ORDER_STATUS_PAYMENT_SUBMITTED, false},
 	}
 
 	newAddress := "New Address"
@@ -503,6 +505,240 @@ func TestCancelOrder_NonPendingOrder(t *testing.T) {
 		ID:     orderID,
 		UserID: userID,
 		Status: models.ORDER_STATUS_CONFIRMED,
+	}
+
+	mockOrderRepo := new(MockOrderRepository)
+	mockOrderItemRepo := new(MockOrderItemRepository)
+	mockCartRepo := new(MockCartRepository)
+	mockCartItemRepo := new(MockCartItemRepository)
+
+	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
+
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+
+	// Execute
+	err := svc.CancelOrder(ctx, userID, orderID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Equal(t, ErrCannotCancel, err)
+	mockOrderRepo.AssertNotCalled(t, "UpdateOrder")
+}
+
+// Test MarkAsTransferred - Success: Mark awaiting payment order as transferred
+func TestMarkAsTransferred_Success(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New().String()
+	orderID := uuid.New().String()
+
+	order := &models.Order{
+		ID:     orderID,
+		UserID: userID,
+		Status: models.ORDER_STATUS_AWAITING_PAYMENT,
+	}
+
+	mockOrderRepo := new(MockOrderRepository)
+	mockOrderItemRepo := new(MockOrderItemRepository)
+	mockCartRepo := new(MockCartRepository)
+	mockCartItemRepo := new(MockCartItemRepository)
+
+	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
+	mockOrderRepo.On("UpdateOrder", ctx, orderID, map[string]interface{}{"status": models.ORDER_STATUS_PAYMENT_SUBMITTED}).Return(nil)
+
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+
+	// Execute
+	err := svc.MarkAsTransferred(ctx, userID, orderID)
+
+	// Assert
+	assert.NoError(t, err)
+	mockOrderRepo.AssertExpectations(t)
+}
+
+// Test MarkAsTransferred - Fail: Order not found
+func TestMarkAsTransferred_OrderNotFound(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New().String()
+	orderID := uuid.New().String()
+
+	mockOrderRepo := new(MockOrderRepository)
+	mockOrderItemRepo := new(MockOrderItemRepository)
+	mockCartRepo := new(MockCartRepository)
+	mockCartItemRepo := new(MockCartItemRepository)
+
+	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(nil, nil)
+
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+
+	// Execute
+	err := svc.MarkAsTransferred(ctx, userID, orderID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Equal(t, ErrOrderNotFound, err)
+	mockOrderRepo.AssertNotCalled(t, "UpdateOrder")
+}
+
+// Test MarkAsTransferred - Fail: Order not owned by user
+func TestMarkAsTransferred_OrderNotOwned(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New().String()
+	otherUserID := uuid.New().String()
+	orderID := uuid.New().String()
+
+	order := &models.Order{
+		ID:     orderID,
+		UserID: otherUserID,
+		Status: models.ORDER_STATUS_AWAITING_PAYMENT,
+	}
+
+	mockOrderRepo := new(MockOrderRepository)
+	mockOrderItemRepo := new(MockOrderItemRepository)
+	mockCartRepo := new(MockCartRepository)
+	mockCartItemRepo := new(MockCartItemRepository)
+
+	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
+
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+
+	// Execute
+	err := svc.MarkAsTransferred(ctx, userID, orderID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Equal(t, ErrOrderNotOwned, err)
+	mockOrderRepo.AssertNotCalled(t, "UpdateOrder")
+}
+
+// Test MarkAsTransferred - Fail: Order not awaiting payment
+func TestMarkAsTransferred_NotAwaitingPayment(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New().String()
+	orderID := uuid.New().String()
+
+	order := &models.Order{
+		ID:     orderID,
+		UserID: userID,
+		Status: models.ORDER_STATUS_CONFIRMED,
+	}
+
+	mockOrderRepo := new(MockOrderRepository)
+	mockOrderItemRepo := new(MockOrderItemRepository)
+	mockCartRepo := new(MockCartRepository)
+	mockCartItemRepo := new(MockCartItemRepository)
+
+	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
+
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+
+	// Execute
+	err := svc.MarkAsTransferred(ctx, userID, orderID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Equal(t, ErrNotAwaitingPayment, err)
+	mockOrderRepo.AssertNotCalled(t, "UpdateOrder")
+}
+
+// Test MarkAsTransferred - Idempotent: Already submitted payment
+func TestMarkAsTransferred_AlreadySubmitted(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New().String()
+	orderID := uuid.New().String()
+
+	order := &models.Order{
+		ID:     orderID,
+		UserID: userID,
+		Status: models.ORDER_STATUS_PAYMENT_SUBMITTED,
+	}
+
+	mockOrderRepo := new(MockOrderRepository)
+	mockOrderItemRepo := new(MockOrderItemRepository)
+	mockCartRepo := new(MockCartRepository)
+	mockCartItemRepo := new(MockCartItemRepository)
+
+	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
+
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+
+	// Execute
+	err := svc.MarkAsTransferred(ctx, userID, orderID)
+
+	// Assert - Should succeed without updating (idempotent)
+	assert.NoError(t, err)
+	mockOrderRepo.AssertNotCalled(t, "UpdateOrder")
+}
+
+// Test MarkAsTransferred - Fail: Delivered order cannot be marked transferred
+func TestMarkAsTransferred_DeliveredOrder(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New().String()
+	orderID := uuid.New().String()
+
+	order := &models.Order{
+		ID:     orderID,
+		UserID: userID,
+		Status: models.ORDER_STATUS_DELIVERED,
+	}
+
+	mockOrderRepo := new(MockOrderRepository)
+	mockOrderItemRepo := new(MockOrderItemRepository)
+	mockCartRepo := new(MockCartRepository)
+	mockCartItemRepo := new(MockCartItemRepository)
+
+	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
+
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+
+	// Execute
+	err := svc.MarkAsTransferred(ctx, userID, orderID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Equal(t, ErrNotAwaitingPayment, err)
+	mockOrderRepo.AssertNotCalled(t, "UpdateOrder")
+}
+
+// Test CancelOrder - Allows cancellation of awaiting payment orders
+func TestCancelOrder_AwaitingPayment(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New().String()
+	orderID := uuid.New().String()
+
+	order := &models.Order{
+		ID:     orderID,
+		UserID: userID,
+		Status: models.ORDER_STATUS_AWAITING_PAYMENT,
+	}
+
+	mockOrderRepo := new(MockOrderRepository)
+	mockOrderItemRepo := new(MockOrderItemRepository)
+	mockCartRepo := new(MockCartRepository)
+	mockCartItemRepo := new(MockCartItemRepository)
+
+	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
+	mockOrderRepo.On("UpdateOrder", ctx, orderID, map[string]interface{}{"status": models.ORDER_STATUS_CANCELLED}).Return(nil)
+
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+
+	// Execute
+	err := svc.CancelOrder(ctx, userID, orderID)
+
+	// Assert
+	assert.NoError(t, err)
+	mockOrderRepo.AssertExpectations(t)
+}
+
+// Test CancelOrder - Blocks cancellation of payment submitted orders
+func TestCancelOrder_PaymentSubmitted(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New().String()
+	orderID := uuid.New().String()
+
+	order := &models.Order{
+		ID:     orderID,
+		UserID: userID,
+		Status: models.ORDER_STATUS_PAYMENT_SUBMITTED,
 	}
 
 	mockOrderRepo := new(MockOrderRepository)

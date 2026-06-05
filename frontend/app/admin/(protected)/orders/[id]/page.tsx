@@ -23,6 +23,8 @@ const STATUS_OPTIONS = [
   { value: 4, label: 'Đã giao' },
   { value: 5, label: 'Đã thanh toán' },
   { value: 6, label: 'Đã hủy' },
+  { value: 7, label: 'Chờ chuyển khoản' },
+  { value: 8, label: 'Đã báo chuyển khoản' },
 ];
 
 const statusColors: Record<number, string> = {
@@ -32,7 +34,12 @@ const statusColors: Record<number, string> = {
   4: 'bg-green-100 text-green-700',
   5: 'bg-green-100 text-green-700',
   6: 'bg-red-100 text-red-700',
+  7: 'bg-orange-100 text-orange-700',
+  8: 'bg-cyan-100 text-cyan-700',
 };
+
+const ORDER_STATUS_PAYMENT_SUBMITTED = 8;
+const ORDER_STATUS_CONFIRMED = 2;
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -206,14 +213,23 @@ export default function OrderDetailPage() {
           <div className="bg-white rounded-lg shadow-sm p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Thanh Toán</h2>
             <div className="space-y-2 text-sm">
-              <div><span className="text-gray-500">Phương thức:</span> <span className="ml-2">Thanh toán khi nhận hàng</span></div>
+              <div><span className="text-gray-500">Phương thức:</span> <span className="ml-2">Chuyển khoản ngân hàng</span></div>
               <div>
                 <span className="text-gray-500">Trạng thái:</span>
-                <span className={`ml-2 px-2 py-0.5 text-xs font-medium rounded-full ${order.status === 5 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                  {order.status === 5 ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                <span className={`ml-2 px-2 py-0.5 text-xs font-medium rounded-full ${order.status === 5 ? 'bg-green-100 text-green-700' : order.status === ORDER_STATUS_PAYMENT_SUBMITTED ? 'bg-cyan-100 text-cyan-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                  {order.status === 5 ? 'Đã thanh toán' : order.status === ORDER_STATUS_PAYMENT_SUBMITTED ? 'Đã báo chuyển khoản' : 'Chưa thanh toán'}
                 </span>
               </div>
             </div>
+            {order.status === ORDER_STATUS_PAYMENT_SUBMITTED && (
+              <button
+                onClick={() => handleStatusChange(ORDER_STATUS_CONFIRMED)}
+                disabled={updating}
+                className="mt-4 w-full bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Xác nhận thanh toán'}
+              </button>
+            )}
           </div>
         </div>
       </div>

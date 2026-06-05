@@ -89,6 +89,7 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	orders.Get("/", controllers.ListOrders(db))
 	orders.Get("/:id", controllers.GetOrder(db))
 	orders.Put("/:id/shipping", controllers.UpdateOrderShipping(db))
+	orders.Put("/:id/mark-transferred", controllers.MarkOrderTransferred(db))
 	orders.Delete("/:id", controllers.CancelOrder(db))
 
 	// Addresses (user auth required)

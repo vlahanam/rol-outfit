@@ -49,9 +49,10 @@ func ListProducts(db *gorm.DB) fiber.Handler {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
 
-		result := make([]*dto.ProductDTO, 0, len(products))
+		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+		result := make([]*dto.LocalizedProductDTO, 0, len(products))
 		for _, p := range products {
-			result = append(result, dto.ToProductDTO(p))
+			result = append(result, dto.ToProductDTO(p).ToLocalized(lang))
 		}
 		p.Total = total
 		return ctx.JSON(common.SuccessResponse(result, p, nil))
@@ -90,7 +91,7 @@ func GetProduct(db *gorm.DB) fiber.Handler {
 			slog.Error("GetProduct tags failed", "error", err)
 			tags = nil
 		}
-		return ctx.JSON(common.ResponseData(dto.ToProductDetailDTO(p, tags)))
+		return ctx.JSON(common.ResponseData(dto.ToProductDetailDTO(p, tags).ToLocalized(lang)))
 	}
 }
 

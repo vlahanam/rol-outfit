@@ -295,7 +295,7 @@ export const userProfile = {
   get(): Promise<{ data: User }> {
     return request<{ data: User }>("/users/me");
   },
-  update(body: { full_name?: string; phone?: string; avatar?: string }): Promise<void> {
+  update(body: { full_name?: string; phone?: string }): Promise<void> {
     return request<void>("/users/me", {
       method: "PUT",
       body: JSON.stringify(body),

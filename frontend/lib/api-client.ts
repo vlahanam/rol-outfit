@@ -3,6 +3,16 @@ import { getRefreshToken, setTokens, clearAuth } from "@/lib/auth";
 
 export const BASE = "/api/v1";
 
+const localeToLang: Record<string, string> = {
+  vn: "vi",
+  jp: "ja",
+};
+
+export function getLangFromLocale(locale?: string): string {
+  if (!locale) return "vi";
+  return localeToLang[locale] ?? "vi";
+}
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -59,8 +69,12 @@ export function handleAuthFailure(): void {
   }
 }
 
-export async function request<T>(path: string, options?: RequestInit): Promise<T> {
+export async function request<T>(
+  path: string,
+  options?: RequestInit & { locale?: string }
+): Promise<T> {
   const token = getToken();
+  const lang = getLangFromLocale(options?.locale);
 
   // Guard: non-JSON body types (FormData, Blob, ArrayBuffer) cannot be re-sent on retry.
   // Route those through fetch() directly (see uploads.upload for the pattern).
@@ -83,7 +97,7 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
   const buildHeaders = (accessToken: string | null): Record<string, string> => {
     const h: Record<string, string> = {
       "Content-Type": "application/json",
-      "Accept-Language": "vi",
+      "Accept-Language": lang,
       ...(options?.headers as Record<string, string>),
     };
     if (accessToken) h["Authorization"] = `Bearer ${accessToken}`;

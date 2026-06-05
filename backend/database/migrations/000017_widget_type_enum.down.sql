@@ -1,4 +1,0 @@
-ALTER TABLE widgets
-    ALTER COLUMN type TYPE VARCHAR(50) USING type::VARCHAR;
-
-DROP TYPE widget_type;

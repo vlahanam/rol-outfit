@@ -3,13 +3,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { ShoppingCart, Minus, Plus, ArrowLeft } from "lucide-react";
-import { Footer } from "@/components/Footer";
 import { ImageGallery } from "@/components/product/image-gallery";
 import { TagBadges } from "@/components/product/tag-badges";
 import { DiscountCountdown } from "@/components/product/discount-countdown";
 import { VariantPicker } from "@/components/product/variant-picker";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import { api, ApiError } from "@/lib/api";
 import { isLoggedIn } from "@/lib/auth";
 import { useCart } from "@/context/cart-context";
@@ -42,6 +42,7 @@ function resolveVariant(
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const locale = useLocale();
   const [product, setProduct] = useState<Product | null>(null);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [selected, setSelected] = useState<Record<string, string>>({});
@@ -57,8 +58,8 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (!id) return;
     Promise.all([
-      api.get<ApiResponse<Product>>(`/products/${id}`),
-      api.get<ApiResponse<ProductVariant[]>>(`/products/${id}/variants`),
+      api.get<ApiResponse<Product>>(`/products/${id}`, locale),
+      api.get<ApiResponse<ProductVariant[]>>(`/products/${id}/variants`, locale),
     ])
       .then(([pr, vr]) => {
         setProduct(pr.data);
@@ -68,7 +69,7 @@ export default function ProductDetailPage() {
         if (err instanceof ApiError && err.status === 404) setNotFound(true);
       })
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, locale]);
 
   const images = useMemo(
     () => buildImages(product, variants),
@@ -137,14 +138,14 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <p className="text-gray-500">Đang tải...</p>
       </div>
     );
   }
   if (notFound || !product) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+      <div className="flex flex-col items-center justify-center gap-4 py-20">
         <p className="text-gray-600">Không tìm thấy sản phẩm</p>
         <Link href="/shop" className="text-blue-600 hover:underline">
           Về cửa hàng
@@ -154,7 +155,7 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="bg-white flex flex-col">
       <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
         <Link
           href="/shop"
@@ -291,7 +292,6 @@ export default function ProductDetailPage() {
           </div>
         )}
       </div>
-      <Footer />
     </div>
   );
 }

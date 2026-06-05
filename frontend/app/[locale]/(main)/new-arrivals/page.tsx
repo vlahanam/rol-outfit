@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { ProductItem } from "@/components/ProductItem";
-import { Footer } from "@/components/Footer";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
@@ -41,8 +40,7 @@ export default function NewArrivalsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8">
         <Link
           href="/"
           className="flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-6 transition-colors"
@@ -123,8 +121,5 @@ export default function NewArrivalsPage() {
           </div>
         )}
       </div>
-
-      <Footer />
-    </div>
   );
 }

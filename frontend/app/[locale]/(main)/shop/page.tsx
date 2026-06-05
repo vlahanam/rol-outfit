@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { ProductItem } from "@/components/ProductItem";
-import { Footer } from "@/components/Footer";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import type { ApiResponse, Product, Category } from "@/types/api";
@@ -21,6 +20,7 @@ export default function ShopPage() {
   const t = useTranslations("ShopPage");
   const tCommon = useTranslations("Common");
   const router = useRouter();
+  const locale = useLocale();
   const [selectedCategory, setSelectedCategory] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [products, setProducts] = useState<Product[]>([]);
@@ -31,8 +31,8 @@ export default function ShopPage() {
     const fetchData = async () => {
       try {
         const [prodRes, catRes] = await Promise.all([
-          api.get<ApiResponse<Product[]>>("/products?limit=50"),
-          api.get<ApiResponse<Category[]>>("/categories?limit=50"),
+          api.get<ApiResponse<Product[]>>("/products?limit=50", locale),
+          api.get<ApiResponse<Category[]>>("/categories?limit=50", locale),
         ]);
         setProducts(prodRes.data ?? []);
         setCategories(catRes.data ?? []);
@@ -43,7 +43,7 @@ export default function ShopPage() {
       }
     };
     fetchData();
-  }, []);
+  }, [locale]);
 
   const filtered = products
     .filter((p) => !selectedCategory || p.category_id === selectedCategory)
@@ -56,8 +56,7 @@ export default function ShopPage() {
     });
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8">
         <Link
           href="/"
           className="flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-6 transition-colors"
@@ -157,8 +156,5 @@ export default function ShopPage() {
           </div>
         )}
       </div>
-
-      <Footer />
-    </div>
   );
 }

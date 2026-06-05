@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { ArrowLeft, Package, ChevronRight } from "lucide-react";
-import { Footer } from "@/components/Footer";
 import { useTranslations, useLocale } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
@@ -29,7 +28,8 @@ export default function OrdersPage() {
       setLoading(true);
       try {
         const res = await api.get<ApiResponse<Order[]>>(
-          `/orders?page=${page}&limit=10`
+          `/orders?page=${page}&limit=10`,
+          locale,
         );
         setOrders(res.data ?? []);
         setPaging(res.paging ?? null);
@@ -40,13 +40,12 @@ export default function OrdersPage() {
       }
     };
     fetchOrders();
-  }, [router, page]);
+  }, [router, page, locale]);
 
   const totalPages = paging ? Math.ceil(paging.total / paging.limit) : 1;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8">
         <Link
           href="/"
           className="flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-6 transition-colors"
@@ -129,8 +128,5 @@ export default function OrdersPage() {
           </div>
         )}
       </div>
-
-      <Footer />
-    </div>
   );
 }

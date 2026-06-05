@@ -266,7 +266,8 @@
     "cancelOrder": "注文をキャンセル",
     "cancelConfirm": "この注文をキャンセルしますか？",
     "cancelled": "注文がキャンセルされました",
-    "cancelFailed": "注文をキャンセルできませんでした"
+    "cancelFailed": "注文をキャンセルできませんでした",
+    "waitingForVerification": "支払い確認待ち"
   },
   "OrderStatus": {
     "pending": "処理待ち",
@@ -274,6 +275,18 @@
     "shipped": "発送済み",
     "delivered": "配達済み",
     "paid": "支払い済み",
-    "cancelled": "キャンセル"
+    "cancelled": "キャンセル",
+    "awaitingPayment": "支払い待ち",
+    "paymentSubmitted": "支払い報告済み"
+  },
+  "Payment": {
+    "title": "ご注文のお支払い",
+    "transferContent": "振込内容",
+    "alreadyTransferred": "振込済み",
+    "close": "閉じる",
+    "paymentInfo": "お支払い情報",
+    "markAsTransferred": "振込済みにする",
+    "waitingForVerification": "支払い確認待ち",
+    "verifyPayment": "支払いを確認"
   }
 }

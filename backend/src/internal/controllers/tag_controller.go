@@ -31,9 +31,10 @@ func ListTags(db *gorm.DB) fiber.Handler {
 			slog.Error("ListTags failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
-		result := make([]*dto.TagDTO, 0, len(tags))
+		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+		result := make([]*dto.LocalizedTagDTO, 0, len(tags))
 		for _, t := range tags {
-			result = append(result, dto.ToTagDTO(t))
+			result = append(result, dto.ToTagDTO(t).ToLocalized(lang))
 		}
 		p.Total = total
 		return ctx.JSON(common.SuccessResponse(result, p, nil))
@@ -57,7 +58,7 @@ func GetTag(db *gorm.DB) fiber.Handler {
 			slog.Error("GetTag failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
-		return ctx.JSON(common.ResponseData(dto.ToTagDTO(t)))
+		return ctx.JSON(common.ResponseData(dto.ToTagDTO(t).ToLocalized(lang)))
 	}
 }
 

@@ -1,20 +1,34 @@
 import type { Widget, Product, Tag, NewProductMetadata, NewProductSettings } from "@/types/api";
+import { getLocale } from "next-intl/server";
 
 const API_BASE = process.env.API_URL ? `${process.env.API_URL}/api/v1` : "http://backend:8080/api/v1";
+
+const localeToLang: Record<string, string> = {
+  vn: "vi",
+  jp: "ja",
+};
+
+function getLangFromLocale(locale: string): string {
+  return localeToLang[locale] ?? "vi";
+}
 
 interface FetchOptions {
   revalidate?: number;
   tags?: string[];
+  locale?: string;
 }
 
 export async function fetchFromAPI<T>(
   path: string,
   options: FetchOptions = {}
 ): Promise<T | null> {
-  const { revalidate = 60, tags } = options;
+  const { revalidate = 60, tags, locale } = options;
+  const currentLocale = locale ?? await getLocale();
+  const lang = getLangFromLocale(currentLocale);
 
   try {
     const res = await fetch(`${API_BASE}${path}`, {
+      headers: { "Accept-Language": lang },
       next: { revalidate, tags },
     });
 
