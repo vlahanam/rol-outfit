@@ -17,7 +17,7 @@ type ProductRepository interface {
 	FindProductByIDNoFilter(ctx context.Context, id string) (*models.Product, error)
 	FindProductByIDAdmin(ctx context.Context, id string) (*models.ProductWithVariants, error)
 	FindProductBySlug(ctx context.Context, slug string) (*models.Product, error)
-	ListProducts(ctx context.Context, categoryID, search string, tagSlugs []string, offset, limit int) ([]*models.Product, int64, error)
+	ListProducts(ctx context.Context, categoryID, search string, tagSlugs []string, sortMode string, offset, limit int) ([]*models.Product, int64, error)
 	UpdateProduct(ctx context.Context, id string, fields map[string]interface{}) error
 	SoftDeleteProduct(ctx context.Context, id string) error
 	ListAdminProductsWithVariants(ctx context.Context, categoryID, search string, offset, limit int) ([]*models.ProductWithVariants, int64, error)
@@ -58,9 +58,10 @@ func (r *postgreStorage) FindProductBySlug(ctx context.Context, slug string) (*m
 	return &p, nil
 }
 
-func (r *postgreStorage) ListProducts(ctx context.Context, categoryID, search string, tagSlugs []string, offset, limit int) ([]*models.Product, int64, error) {
+func (r *postgreStorage) ListProducts(ctx context.Context, categoryID, search string, tagSlugs []string, sortMode string, offset, limit int) ([]*models.Product, int64, error) {
 	var products []*models.Product
 	var total int64
+	now := time.Now()
 
 	db := r.db.WithContext(ctx).Model(&models.Product{}).
 		Where("products.deleted_at IS NULL AND products.status = ?", models.PRODUCT_STATUS_ACTIVE)
@@ -72,8 +73,12 @@ func (r *postgreStorage) ListProducts(ctx context.Context, categoryID, search st
 		db = db.Where("products.name ILIKE ?", "%"+search+"%")
 	}
 
-	if len(tagSlugs) > 0 {
-		now := time.Now()
+	if sortMode == "new_arrivals" && len(tagSlugs) > 0 {
+		db = db.
+			Joins("LEFT JOIN product_tags ON product_tags.product_id = products.id").
+			Joins("LEFT JOIN tags ON tags.id = product_tags.tag_id AND tags.slug IN ? AND (tags.start_at IS NULL OR tags.start_at <= ?) AND (tags.end_at IS NULL OR tags.end_at >= ?)", tagSlugs, now, now).
+			Group("products.id")
+	} else if len(tagSlugs) > 0 {
 		db = db.
 			Joins("JOIN product_tags ON product_tags.product_id = products.id").
 			Joins("JOIN tags ON tags.id = product_tags.tag_id").
@@ -85,7 +90,22 @@ func (r *postgreStorage) ListProducts(ctx context.Context, categoryID, search st
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to count products: %w", err)
 	}
-	if err := db.Offset(offset).Limit(limit).Order("products.created_at DESC").Find(&products).Error; err != nil {
+
+	orderClause := "products.created_at DESC"
+	if sortMode == "new_arrivals" && len(tagSlugs) > 0 {
+		orderClause = `CASE
+			WHEN COUNT(tags.id) > 0 AND products.discount_percent > 0
+				AND (products.discount_start_at IS NULL OR products.discount_start_at <= NOW())
+				AND (products.discount_end_at IS NULL OR products.discount_end_at >= NOW()) THEN 0
+			WHEN COUNT(tags.id) > 0 THEN 1
+			WHEN products.discount_percent > 0
+				AND (products.discount_start_at IS NULL OR products.discount_start_at <= NOW())
+				AND (products.discount_end_at IS NULL OR products.discount_end_at >= NOW()) THEN 2
+			ELSE 3
+		END, products.created_at DESC`
+	}
+
+	if err := db.Offset(offset).Limit(limit).Order(orderClause).Find(&products).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to list products: %w", err)
 	}
 

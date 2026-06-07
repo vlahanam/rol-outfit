@@ -53,23 +53,29 @@ export async function fetchWidgets(type?: string): Promise<Widget[]> {
   return type ? widgets.filter((w) => w.type === type) : widgets;
 }
 
-export async function fetchProductsByTags(tagIds: string[], limit = 10): Promise<Product[]> {
-  if (tagIds.length === 0) return [];
+export async function fetchProductsByTags(
+  tagIds: string[],
+  limit = 10,
+  sort?: string
+): Promise<Product[]> {
+  if (tagIds.length === 0 && !sort) return [];
 
-  const tags = await fetchFromAPI<Tag[]>("/admin/tags?limit=100", { revalidate: 300 });
+  const tags = await fetchFromAPI<Tag[]>("/tags?limit=100", { revalidate: 300 });
   if (!tags) return [];
 
   const slugs = tagIds
     .map((id) => tags.find((t) => t.id === id)?.slug)
     .filter(Boolean);
 
-  if (slugs.length === 0) return [];
+  let url = `/products?limit=${limit}`;
+  if (slugs.length > 0) {
+    url += `&tags=${slugs.join(",")}`;
+  }
+  if (sort) {
+    url += `&sort=${sort}`;
+  }
 
-  const products = await fetchFromAPI<Product[]>(
-    `/products?tags=${slugs.join(",")}&limit=${limit}`,
-    { revalidate: 60, tags: ["products"] }
-  );
-
+  const products = await fetchFromAPI<Product[]>(url, { revalidate: 60, tags: ["products"] });
   return products ?? [];
 }
 
@@ -88,7 +94,7 @@ export async function fetchNewProductWidget(): Promise<{
   const tagIds = meta?.tag_ids ?? [];
   const limit = settings?.quantity ?? 10;
 
-  const products = await fetchProductsByTags(tagIds, limit);
+  const products = await fetchProductsByTags(tagIds, limit, "new_arrivals");
 
   return { widget, products };
 }

@@ -19,7 +19,7 @@ export function TagBadges({ tags }: Props) {
       {tags.map((tag, i) => (
         <span
           key={tag.id}
-          className={`inline-block text-xs px-3 py-1 rounded-full font-medium ${BADGE_COLORS[i % BADGE_COLORS.length]}`}
+          className={`inline-block text-sm px-3 py-1.5 rounded-full font-medium ${BADGE_COLORS[i % BADGE_COLORS.length]}`}
         >
           {tag.name}
         </span>

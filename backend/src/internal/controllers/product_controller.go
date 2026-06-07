@@ -16,7 +16,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// ListProducts GET /api/v1/products?category_id=&search=&tags=&tag=&page=&limit=
+// ListProducts GET /api/v1/products?category_id=&search=&tags=&tag=&sort=&page=&limit=
 func ListProducts(db *gorm.DB) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		var p common.Paging
@@ -26,6 +26,7 @@ func ListProducts(db *gorm.DB) fiber.Handler {
 		p.Process()
 		categoryID := ctx.Query("category_id")
 		search := ctx.Query("search")
+		sortMode := ctx.Query("sort")
 		offset := (p.Page - 1) * p.Limit
 
 		var tagSlugs []string
@@ -43,7 +44,7 @@ func ListProducts(db *gorm.DB) fiber.Handler {
 		repo := repositories.NewPostgreSQLStorage(db)
 		svc := services.NewProductService(repo)
 
-		products, total, err := svc.List(ctx.Context(), categoryID, search, tagSlugs, offset, p.Limit)
+		products, total, err := svc.List(ctx.Context(), categoryID, search, tagSlugs, sortMode, offset, p.Limit)
 		if err != nil {
 			slog.Error("ListProducts failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)

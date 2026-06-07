@@ -1,11 +1,9 @@
-import { ProductItem } from "@/components/ProductItem";
 import { BannerSlider } from "@/components/storefront/banner-slider";
 import { CollectionSlider } from "@/components/storefront/collection-slider";
+import { NewArrivalsGrid } from "@/components/storefront/new-arrivals-grid";
 import { fetchWidgets, fetchNewProductWidget } from "@/lib/api-server";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import type { BannerSliderMetadata, BannerSliderSettings, CollectionGridMetadata, CollectionGridSettings, CollectionItem, TrendHotMetadata, TrendHotSettings, NewProductSettings } from "@/types/api";
+import type { BannerSliderMetadata, BannerSliderSettings, CollectionGridMetadata, CollectionGridSettings, CollectionItem, TrendHotMetadata, TrendHotSettings } from "@/types/api";
 
 export default async function HomePage() {
   const t = await getTranslations("HomePage");
@@ -35,18 +33,6 @@ export default async function HomePage() {
   const trendHotCardHeight = trendHotSettings?.cardHeight ?? 400;
 
   const { widget: newProductWidget, products: newProducts } = await fetchNewProductWidget();
-  const newProductSettings = newProductWidget?.settings as NewProductSettings | null;
-  const newProductColumns = newProductSettings?.columns ?? 5;
-
-  const getGridClass = (cols: number) => {
-    const map: Record<number, string> = {
-      2: "grid-cols-2",
-      3: "grid-cols-2 sm:grid-cols-3",
-      4: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4",
-      5: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5",
-    };
-    return map[cols] ?? map[5];
-  };
 
   return (
     <>
@@ -65,109 +51,11 @@ export default async function HomePage() {
           />
         )}
 
-        {newProducts.length > 0 ? (
-          <section className="mb-12">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-3xl font-bold text-gray-900">
-                {newProductWidget?.name ?? t("newArrivals")}
-              </h2>
-              <div className="flex gap-2">
-                <button className="p-2 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors">
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button className="p-2 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors">
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            <div className={`grid gap-6 ${getGridClass(newProductColumns)}`}>
-              {newProducts.map((p) => (
-                <Link key={p.id} href={`/product/${p.slug}`}>
-                  <ProductItem
-                    name={p.name}
-                    price={`${p.sale_price.toLocaleString()}d`}
-                    originalPrice={p.discount_percent > 0 ? `${p.default_price.toLocaleString()}d` : undefined}
-                    discountPercent={p.discount_percent > 0 ? p.discount_percent : undefined}
-                    image={p.avatar || "/placeholder-product.svg"}
-                    tags={p.tags}
-                    maxTags={2}
-                  />
-                </Link>
-              ))}
-            </div>
-          </section>
-        ) : (
-          <section className="mb-12">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-3xl font-bold text-gray-900">
-                {t("newArrivals")}
-              </h2>
-              <div className="flex gap-2">
-                <button className="p-2 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors">
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button className="p-2 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors">
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-              <Link href="/product/1" className="cursor-pointer">
-                <ProductItem
-                  name={t("cottonLogo")}
-                  price="720.000d"
-                  rating={4.5}
-                />
-              </Link>
-              <ProductItem
-                name={t("officeSuit")}
-                price="4.480.000d"
-                rating={5.0}
-              />
-              <ProductItem
-                name={t("crewneck")}
-                price="2.840.000d"
-                rating={4.8}
-              />
-              <ProductItem
-                name={t("leatherBag")}
-                price="8.360.000d"
-                rating={4.7}
-              />
-              <ProductItem
-                name={t("classicShoes")}
-                price="1.780.000d"
-                rating={4.6}
-              />
-              <ProductItem
-                name={t("casualShirt")}
-                price="1.040.000d"
-                rating={4.4}
-              />
-              <ProductItem
-                name={t("winterJacket")}
-                price="3.720.000d"
-                rating={4.9}
-              />
-              <ProductItem
-                name={t("sportsSneakers")}
-                price="1.900.000d"
-                rating={4.7}
-              />
-              <ProductItem
-                name={t("denim")}
-                price="1.560.000d"
-                rating={4.5}
-              />
-              <ProductItem
-                name={t("summerDress")}
-                price="2.240.000d"
-                rating={4.8}
-              />
-            </div>
-          </section>
+        {newProducts.length > 0 && (
+          <NewArrivalsGrid
+            title={newProductWidget?.name ?? t("newArrivals")}
+            products={newProducts}
+          />
         )}
 
         {trendHotItems.length > 0 && (

@@ -57,7 +57,7 @@ export function ProductItem({ name, price, originalPrice, discountPercent, image
             {displayTags.map((tag, i) => (
               <span
                 key={tag.id}
-                className={`text-[10px] px-2 py-0.5 rounded font-medium ${TAG_COLORS[i % TAG_COLORS.length]}`}
+                className={`text-xs px-2.5 py-1 rounded font-medium ${TAG_COLORS[i % TAG_COLORS.length]}`}
               >
                 {tag.name}
               </span>

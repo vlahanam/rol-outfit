@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ArrowLeft } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { ArrowLeft, X } from "lucide-react";
 import { ProductItem } from "@/components/ProductItem";
 import { useTranslations, useLocale } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
-import type { ApiResponse, Product, Category } from "@/types/api";
+import type { ApiResponse, Product, Category, Tag } from "@/types/api";
 
 function formatPrice(value: number): string {
   return value.toLocaleString("vi-VN") + "₫";
@@ -22,32 +22,73 @@ export default function ShopPage() {
   const router = useRouter();
   const locale = useLocale();
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("newest");
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchProducts = useCallback(async (tagSlugs: string[]) => {
+    try {
+      let url = "/products?limit=50";
+      if (tagSlugs.length > 0) {
+        url += `&tags=${tagSlugs.join(",")}`;
+      }
+      const res = await api.get<ApiResponse<Product[]>>(url, locale);
+      setProducts(res.data ?? []);
+    } catch {
+      setProducts([]);
+    }
+  }, [locale]);
+
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchInitialData = async () => {
       try {
-        const [prodRes, catRes] = await Promise.all([
+        const [prodRes, catRes, tagRes] = await Promise.all([
           api.get<ApiResponse<Product[]>>("/products?limit=50", locale),
           api.get<ApiResponse<Category[]>>("/categories?limit=50", locale),
+          api.get<ApiResponse<Tag[]>>("/tags?limit=50", locale),
         ]);
         setProducts(prodRes.data ?? []);
         setCategories(catRes.data ?? []);
+        setTags(tagRes.data ?? []);
       } catch {
         // keep empty lists on error
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+    fetchInitialData();
   }, [locale]);
+
+  const toggleTag = (slug: string) => {
+    setSelectedTags((prev) => {
+      const next = prev.includes(slug)
+        ? prev.filter((s) => s !== slug)
+        : [...prev, slug];
+      fetchProducts(next);
+      return next;
+    });
+  };
+
+  const clearTags = () => {
+    setSelectedTags([]);
+    fetchProducts([]);
+  };
+
+  const isOnSale = (p: Product) =>
+    p.sale_price != null && p.sale_price < p.default_price;
 
   const filtered = products
     .filter((p) => !selectedCategory || p.category_id === selectedCategory)
+    .filter((p) => sortBy !== "on-sale" || isOnSale(p))
     .sort((a, b) => {
+      if (sortBy === "on-sale") {
+        const discA = a.default_price - (a.sale_price ?? a.default_price);
+        const discB = b.default_price - (b.sale_price ?? b.default_price);
+        return discB - discA;
+      }
       if (sortBy === "price-low") return effectivePrice(a) - effectivePrice(b);
       if (sortBy === "price-high") return effectivePrice(b) - effectivePrice(a);
       return (
@@ -70,42 +111,75 @@ export default function ShopPage() {
           <p className="text-gray-600">{t("subtitle")}</p>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="flex-1 flex gap-2 overflow-x-auto pb-2">
-            <button
-              onClick={() => setSelectedCategory("")}
-              className={`px-4 py-2 rounded-full whitespace-nowrap transition-colors ${
-                selectedCategory === ""
-                  ? "bg-blue-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              {t("all")}
-            </button>
-            {categories.map((cat) => (
+        <div className="flex flex-col gap-4 mb-6">
+          {/* Category filter */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 flex gap-2 overflow-x-auto pb-2">
               <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
+                onClick={() => setSelectedCategory("")}
                 className={`px-4 py-2 rounded-full whitespace-nowrap transition-colors ${
-                  selectedCategory === cat.id
+                  selectedCategory === ""
                     ? "bg-blue-600 text-white"
                     : "bg-white text-gray-700 hover:bg-gray-100"
                 }`}
               >
-                {cat.name}
+                {t("all")}
               </button>
-            ))}
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`px-4 py-2 rounded-full whitespace-nowrap transition-colors ${
+                    selectedCategory === cat.id
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="newest">{t("sortNewest")}</option>
+              <option value="price-low">{t("sortPriceLow")}</option>
+              <option value="price-high">{t("sortPriceHigh")}</option>
+              <option value="on-sale">{t("filterOnSale")}</option>
+            </select>
           </div>
 
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="newest">{t("sortNewest")}</option>
-            <option value="price-low">{t("sortPriceLow")}</option>
-            <option value="price-high">{t("sortPriceHigh")}</option>
-          </select>
+          {/* Tag filter */}
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-sm text-gray-500 mr-1">{t("filterByTag")}:</span>
+              {tags.map((tag) => (
+                <button
+                  key={tag.id}
+                  onClick={() => toggleTag(tag.slug)}
+                  className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
+                    selectedTags.includes(tag.slug)
+                      ? "bg-purple-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {tag.name}
+                </button>
+              ))}
+              {selectedTags.length > 0 && (
+                <button
+                  onClick={clearTags}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 hover:text-red-700 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                  {t("clearTags")}
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="mb-4">

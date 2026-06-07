@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Search, Edit, Trash2 } from "lucide-react";
-import Link from "next/link";
+import { Search, Edit } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { DeleteConfirmModal } from "@/components/admin/DeleteConfirmModal";
 import { api, ApiError } from "@/lib/api";
 import type { Tag } from "@/types/api";
 
@@ -27,7 +25,6 @@ export default function ListTagsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     api.adminTags
@@ -36,19 +33,6 @@ export default function ListTagsPage() {
       .catch((err) => setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra"))
       .finally(() => setLoading(false));
   }, []);
-
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    try {
-      await api.adminTags.remove(deleteId);
-      setTags((prev) => prev.filter((t) => t.id !== deleteId));
-      setError(null);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Xóa thất bại");
-    } finally {
-      setDeleteId(null);
-    }
-  };
 
   const filtered = tags.filter((t) => {
     const matchSearch =
@@ -64,18 +48,9 @@ export default function ListTagsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản Lý Thẻ Tag</h1>
-          <p className="text-gray-600 text-sm">Danh sách tất cả thẻ tag</p>
-        </div>
-        <Link
-          href="/admin/tags/add"
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-        >
-          <Plus className="w-4 h-4" />
-          Thêm Thẻ Tag
-        </Link>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Quản Lý Thẻ Tag</h1>
+        <p className="text-gray-600 text-sm">Danh sách tất cả thẻ tag</p>
       </div>
 
       {error && (
@@ -132,22 +107,13 @@ export default function ListTagsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => router.push(`/admin/tags/${tag.id}/edit`)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Chỉnh sửa"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setDeleteId(tag.id)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Xóa"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => router.push(`/admin/tags/${tag.id}/edit`)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Chỉnh sửa"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
                       </td>
                     </tr>
                   );
@@ -163,13 +129,6 @@ export default function ListTagsPage() {
         </div>
       </div>
 
-      <DeleteConfirmModal
-        isOpen={deleteId !== null}
-        title="Xóa Thẻ Tag"
-        message="Bạn có chắc chắn muốn xóa thẻ tag này? Tag sẽ bị xóa khỏi tất cả sản phẩm."
-        onConfirm={handleDelete}
-        onClose={() => setDeleteId(null)}
-      />
     </div>
   );
 }

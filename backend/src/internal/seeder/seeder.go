@@ -12,7 +12,7 @@ type Result struct {
 	Skipped int
 }
 
-// RunAll runs all seeders in dependency order: users -> categories -> products.
+// RunAll runs all seeders in dependency order.
 func RunAll(db *gorm.DB) error {
 	log.Println("=== bắt đầu seed dữ liệu ===")
 
@@ -28,6 +28,12 @@ func RunAll(db *gorm.DB) error {
 	}
 	log.Printf("[categories] tạo mới: %d, bỏ qua: %d", catsRes.Created, catsRes.Skipped)
 
+	tagsRes, err := SeedTags(db)
+	if err != nil {
+		return err
+	}
+	log.Printf("[tags] tạo mới: %d, bỏ qua: %d", tagsRes.Created, tagsRes.Skipped)
+
 	prodsRes, err := SeedProducts(db)
 	if err != nil {
 		return err
@@ -39,6 +45,12 @@ func RunAll(db *gorm.DB) error {
 		return err
 	}
 	log.Printf("[product_variants] tạo mới: %d, bỏ qua: %d", variantsRes.Created, variantsRes.Skipped)
+
+	productTagsRes, err := SeedProductTags(db)
+	if err != nil {
+		return err
+	}
+	log.Printf("[product_tags] tạo mới: %d, bỏ qua: %d", productTagsRes.Created, productTagsRes.Skipped)
 
 	widgetsRes, err := SeedWidgets(db)
 	if err != nil {
