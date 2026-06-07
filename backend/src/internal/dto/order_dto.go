@@ -82,3 +82,23 @@ func ToAdminOrderDTO(o *models.Order, items []*models.OrderItem, user *models.Us
 	}
 	return dto
 }
+
+type OrderStatusHistoryDTO struct {
+	ID         string  `json:"id"`
+	FromStatus *int8   `json:"from_status,omitempty"`
+	ToStatus   int8    `json:"to_status"`
+	ChangedBy  *string `json:"changed_by,omitempty"`
+	Note       string  `json:"note,omitempty"`
+	CreatedAt  string  `json:"created_at"`
+}
+
+func ToOrderStatusHistoryDTO(h *models.OrderStatusHistory) *OrderStatusHistoryDTO {
+	return &OrderStatusHistoryDTO{
+		ID:         h.ID,
+		FromStatus: h.FromStatus,
+		ToStatus:   h.ToStatus,
+		ChangedBy:  h.ChangedBy,
+		Note:       h.Note,
+		CreatedAt:  h.CreatedAt.Format(time.RFC3339),
+	}
+}

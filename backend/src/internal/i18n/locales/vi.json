@@ -57,6 +57,9 @@
   "validation.order_status.required": "Trạng thái đơn hàng không được để trống",
   "validation.order_status.invalid": "Trạng thái đơn hàng không hợp lệ (phải từ 1 đến 8)",
   "error.not_awaiting_payment": "Đơn hàng không ở trạng thái chờ chuyển khoản",
+  "error.invalid_transition": "Chuyển trạng thái không hợp lệ",
+  "error.cannot_request_refund": "Chỉ có thể yêu cầu hoàn tiền cho đơn hàng đã hoàn thành",
+  "error.not_refund_request": "Đơn hàng không ở trạng thái chờ duyệt hoàn tiền",
 
   "error.user_not_found": "Người dùng không tồn tại",
   "error.user_email_taken": "Email này đã được sử dụng bởi tài khoản khác",

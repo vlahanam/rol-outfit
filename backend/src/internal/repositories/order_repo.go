@@ -31,6 +31,12 @@ type OrderCodeRepository interface {
 	GenerateOrderCode(ctx context.Context) (string, error)
 }
 
+// OrderStatusHistoryRepository defines DB operations for order status history.
+type OrderStatusHistoryRepository interface {
+	CreateStatusHistory(ctx context.Context, history *models.OrderStatusHistory) error
+	ListStatusHistory(ctx context.Context, orderID string) ([]*models.OrderStatusHistory, error)
+}
+
 func (r *postgreStorage) CreateOrder(ctx context.Context, order *models.Order) error {
 	if err := r.db.WithContext(ctx).Create(order).Error; err != nil {
 		return fmt.Errorf("failed to create order: %w", err)
@@ -142,4 +148,23 @@ func (r *postgreStorage) GenerateOrderCode(ctx context.Context) (string, error) 
 	}
 
 	return fmt.Sprintf("ROL-%s-%04d", dateKey, seq.LastSequence), nil
+}
+
+func (r *postgreStorage) CreateStatusHistory(ctx context.Context, history *models.OrderStatusHistory) error {
+	if err := r.db.WithContext(ctx).Create(history).Error; err != nil {
+		return fmt.Errorf("failed to create status history: %w", err)
+	}
+	return nil
+}
+
+func (r *postgreStorage) ListStatusHistory(ctx context.Context, orderID string) ([]*models.OrderStatusHistory, error) {
+	var history []*models.OrderStatusHistory
+	err := r.db.WithContext(ctx).
+		Where("order_id = ?", orderID).
+		Order("created_at ASC").
+		Find(&history).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to list status history: %w", err)
+	}
+	return history, nil
 }

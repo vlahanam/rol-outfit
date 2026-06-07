@@ -123,11 +123,20 @@ High-level project phases and milestones. For detailed implementation plans, see
 - [x] Admin order detail page with real API integration
 - [x] Order code system — human-readable codes (`ROL-YYMMDD-XXXX`) with atomic sequence generation
 - [x] Header auth state (user dropdown when logged in)
+- [x] Order status redesign (June 8, 2026)
+  - [x] Backend: 8-status order lifecycle (AWAITING_PAYMENT → PAYMENT_SUBMITTED → CONFIRMED → SHIPPING → COMPLETED or REFUND_REQUESTED → REFUNDED)
+  - [x] Backend: State machine validation with transition rules
+  - [x] Backend: Order status history table for audit trail (migration 000002)
+  - [x] Backend: Refund workflow endpoints (request, approve, reject)
+  - [x] Backend: Order history endpoint for timeline visualization
+  - [x] Frontend: OrderStatusBadge with 8 status colors
+  - [x] Frontend: OrderStatusTimeline component showing historical transitions
+  - [x] Frontend: Refund button on completed orders
 - [ ] Authentication UI (login, registration) — public pages
 - [ ] Product catalog and search — public pages
 - [ ] Shopping cart UI — public pages
 
-**Completeness:** 84%
+**Completeness:** 88%
 
 ---
 

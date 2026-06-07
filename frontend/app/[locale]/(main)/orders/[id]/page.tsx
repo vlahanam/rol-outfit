@@ -9,10 +9,15 @@ import { api } from "@/lib/api";
 import { isLoggedIn } from "@/lib/auth";
 import { OrderStatusBadge } from "@/components/orders/order-status-badge";
 import { PaymentQRSection } from "@/components/orders/payment-qr-section";
+import { OrderStatusTimeline } from "@/components/orders/order-status-timeline";
+import { RefundRequestButton } from "@/components/orders/refund-request-button";
 import type { ApiResponse, Order, Product } from "@/types/api";
 
-const ORDER_STATUS_AWAITING_PAYMENT = 7;
-const ORDER_STATUS_PAYMENT_SUBMITTED = 8;
+const ORDER_STATUS_AWAITING_PAYMENT = 1;
+const ORDER_STATUS_PAYMENT_SUBMITTED = 2;
+const ORDER_STATUS_CONFIRMED = 3;
+const ORDER_STATUS_COMPLETED = 5;
+const ORDER_STATUS_REFUND_REQUESTED = 7;
 
 interface RichOrderItem {
   id: string;
@@ -240,7 +245,22 @@ export default function OrderDetailPage() {
               </div>
             )}
 
-            {(order.status === 1 || order.status === ORDER_STATUS_AWAITING_PAYMENT) && (
+            {order.status === ORDER_STATUS_COMPLETED && (
+              <RefundRequestButton
+                orderId={order.id}
+                onSuccess={() => router.refresh()}
+              />
+            )}
+
+            {order.status === ORDER_STATUS_REFUND_REQUESTED && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-yellow-700 text-center text-sm">
+                  {t("refundPending")}
+                </p>
+              </div>
+            )}
+
+            {order.status <= ORDER_STATUS_CONFIRMED && (
               <button
                 onClick={handleCancel}
                 disabled={cancelling}
@@ -256,6 +276,8 @@ export default function OrderDetailPage() {
                 )}
               </button>
             )}
+
+            <OrderStatusTimeline orderId={order.id} />
           </div>
         </div>
       </div>

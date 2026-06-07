@@ -13,24 +13,30 @@ import (
 )
 
 var (
-	ErrOrderNotFound = errors.New("order not found")
-	ErrOrderNotOwned = errors.New("order does not belong to user")
-	ErrCartEmpty     = errors.New("cart is empty")
-	ErrCannotCancel  = errors.New("order cannot be cancelled in current status")
+	ErrOrderNotFound       = errors.New("order not found")
+	ErrOrderNotOwned       = errors.New("order does not belong to user")
+	ErrCartEmpty           = errors.New("cart is empty")
+	ErrCannotCancel        = errors.New("order cannot be cancelled in current status")
+	ErrCannotUpdateShipping = errors.New("cannot update shipping info for non-pending order")
+	ErrNotAwaitingPayment  = errors.New("order is not awaiting payment")
+	ErrInvalidTransition   = errors.New("invalid status transition")
+	ErrCannotRequestRefund = errors.New("can only request refund for completed orders")
+	ErrNotRefundRequest    = errors.New("order is not pending refund approval")
 )
-
-var ErrCannotUpdateShipping = errors.New("cannot update shipping info for non-pending order")
-var ErrNotAwaitingPayment = errors.New("order is not awaiting payment")
 
 type OrderService interface {
 	CreateFromCart(ctx context.Context, userID string, req *requests.CreateOrderRequest) (*models.Order, []*models.OrderItem, error)
 	GetOrder(ctx context.Context, userID, orderID string, isAdmin bool) (*models.Order, []*models.OrderItem, error)
 	ListUserOrders(ctx context.Context, userID string, offset, limit int) ([]*models.Order, int64, error)
 	ListAllOrders(ctx context.Context, status int8, offset, limit int) ([]*models.Order, int64, error)
-	UpdateStatus(ctx context.Context, orderID string, status int8) error
+	UpdateStatus(ctx context.Context, orderID string, newStatus int8, changedBy string, note string) error
 	UpdateShippingInfo(ctx context.Context, userID, orderID string, req *requests.UpdateOrderShippingRequest) error
-	CancelOrder(ctx context.Context, userID, orderID string) error
+	CancelOrder(ctx context.Context, userID, orderID string, isAdmin bool) error
 	MarkAsTransferred(ctx context.Context, userID, orderID string) error
+	RequestRefund(ctx context.Context, userID, orderID string, reason string) error
+	ApproveRefund(ctx context.Context, orderID string, adminID string) error
+	RejectRefund(ctx context.Context, orderID string, adminID string, reason string) error
+	GetOrderHistory(ctx context.Context, orderID string) ([]*models.OrderStatusHistory, error)
 }
 
 type orderService struct {
@@ -39,6 +45,7 @@ type orderService struct {
 	orderItemRepo repositories.OrderItemRepository
 	cartRepo      repositories.CartRepository
 	cartItemRepo  repositories.CartItemRepository
+	historyRepo   repositories.OrderStatusHistoryRepository
 }
 
 func NewOrderService(
@@ -47,6 +54,7 @@ func NewOrderService(
 	orderItemRepo repositories.OrderItemRepository,
 	cartRepo repositories.CartRepository,
 	cartItemRepo repositories.CartItemRepository,
+	historyRepo repositories.OrderStatusHistoryRepository,
 ) OrderService {
 	return &orderService{
 		db:            db,
@@ -54,6 +62,7 @@ func NewOrderService(
 		orderItemRepo: orderItemRepo,
 		cartRepo:      cartRepo,
 		cartItemRepo:  cartItemRepo,
+		historyRepo:   historyRepo,
 	}
 }
 
@@ -152,15 +161,38 @@ func (s *orderService) ListAllOrders(ctx context.Context, status int8, offset, l
 	return s.orderRepo.ListAllOrders(ctx, status, offset, limit)
 }
 
-func (s *orderService) UpdateStatus(ctx context.Context, orderID string, status int8) error {
-	order, err := s.orderRepo.FindOrderByID(ctx, orderID)
-	if err != nil {
-		return fmt.Errorf("failed to find order: %w", err)
-	}
-	if order == nil {
-		return ErrOrderNotFound
-	}
-	return s.orderRepo.UpdateOrder(ctx, orderID, map[string]interface{}{"status": status})
+func (s *orderService) UpdateStatus(ctx context.Context, orderID string, newStatus int8, changedBy string, note string) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		txRepo := repositories.NewPostgreSQLStorage(tx)
+
+		order, err := txRepo.FindOrderByID(ctx, orderID)
+		if err != nil {
+			return fmt.Errorf("failed to find order: %w", err)
+		}
+		if order == nil {
+			return ErrOrderNotFound
+		}
+
+		if !models.IsValidTransition(order.Status, newStatus) {
+			return ErrInvalidTransition
+		}
+
+		history := &models.OrderStatusHistory{
+			ID:         uuid.New().String(),
+			OrderID:    orderID,
+			FromStatus: &order.Status,
+			ToStatus:   newStatus,
+			Note:       note,
+		}
+		if changedBy != "" {
+			history.ChangedBy = &changedBy
+		}
+		if err := txRepo.CreateStatusHistory(ctx, history); err != nil {
+			return err
+		}
+
+		return txRepo.UpdateOrder(ctx, orderID, map[string]interface{}{"status": newStatus})
+	})
 }
 
 func (s *orderService) UpdateShippingInfo(ctx context.Context, userID, orderID string, req *requests.UpdateOrderShippingRequest) error {
@@ -174,7 +206,7 @@ func (s *orderService) UpdateShippingInfo(ctx context.Context, userID, orderID s
 	if order.UserID != userID {
 		return ErrOrderNotOwned
 	}
-	if order.Status != models.ORDER_STATUS_PENDING {
+	if order.Status != models.ORDER_STATUS_AWAITING_PAYMENT {
 		return ErrCannotUpdateShipping
 	}
 
@@ -195,7 +227,7 @@ func (s *orderService) UpdateShippingInfo(ctx context.Context, userID, orderID s
 	return s.orderRepo.UpdateOrder(ctx, orderID, fields)
 }
 
-func (s *orderService) CancelOrder(ctx context.Context, userID, orderID string) error {
+func (s *orderService) CancelOrder(ctx context.Context, userID, orderID string, isAdmin bool) error {
 	order, err := s.orderRepo.FindOrderByID(ctx, orderID)
 	if err != nil {
 		return fmt.Errorf("failed to find order: %w", err)
@@ -203,13 +235,15 @@ func (s *orderService) CancelOrder(ctx context.Context, userID, orderID string) 
 	if order == nil {
 		return ErrOrderNotFound
 	}
-	if order.UserID != userID {
+	if !isAdmin && order.UserID != userID {
 		return ErrOrderNotOwned
 	}
-	if order.Status != models.ORDER_STATUS_PENDING && order.Status != models.ORDER_STATUS_AWAITING_PAYMENT {
+	if order.Status > models.ORDER_STATUS_CONFIRMED {
 		return ErrCannotCancel
 	}
-	return s.orderRepo.UpdateOrder(ctx, orderID, map[string]interface{}{"status": models.ORDER_STATUS_CANCELLED})
+
+	changedBy := userID
+	return s.UpdateStatus(ctx, orderID, models.ORDER_STATUS_CANCELLED, changedBy, "Order cancelled")
 }
 
 func (s *orderService) MarkAsTransferred(ctx context.Context, userID, orderID string) error {
@@ -229,5 +263,54 @@ func (s *orderService) MarkAsTransferred(ctx context.Context, userID, orderID st
 	if order.Status != models.ORDER_STATUS_AWAITING_PAYMENT {
 		return ErrNotAwaitingPayment
 	}
-	return s.orderRepo.UpdateOrder(ctx, orderID, map[string]interface{}{"status": models.ORDER_STATUS_PAYMENT_SUBMITTED})
+	return s.UpdateStatus(ctx, orderID, models.ORDER_STATUS_PAYMENT_SUBMITTED, userID, "Payment transfer submitted")
+}
+
+func (s *orderService) RequestRefund(ctx context.Context, userID, orderID string, reason string) error {
+	order, err := s.orderRepo.FindOrderByID(ctx, orderID)
+	if err != nil {
+		return fmt.Errorf("failed to find order: %w", err)
+	}
+	if order == nil {
+		return ErrOrderNotFound
+	}
+	if order.UserID != userID {
+		return ErrOrderNotOwned
+	}
+	if order.Status != models.ORDER_STATUS_COMPLETED {
+		return ErrCannotRequestRefund
+	}
+	return s.UpdateStatus(ctx, orderID, models.ORDER_STATUS_REFUND_REQUESTED, userID, reason)
+}
+
+func (s *orderService) ApproveRefund(ctx context.Context, orderID string, adminID string) error {
+	order, err := s.orderRepo.FindOrderByID(ctx, orderID)
+	if err != nil {
+		return fmt.Errorf("failed to find order: %w", err)
+	}
+	if order == nil {
+		return ErrOrderNotFound
+	}
+	if order.Status != models.ORDER_STATUS_REFUND_REQUESTED {
+		return ErrNotRefundRequest
+	}
+	return s.UpdateStatus(ctx, orderID, models.ORDER_STATUS_REFUNDED, adminID, "Refund approved")
+}
+
+func (s *orderService) RejectRefund(ctx context.Context, orderID string, adminID string, reason string) error {
+	order, err := s.orderRepo.FindOrderByID(ctx, orderID)
+	if err != nil {
+		return fmt.Errorf("failed to find order: %w", err)
+	}
+	if order == nil {
+		return ErrOrderNotFound
+	}
+	if order.Status != models.ORDER_STATUS_REFUND_REQUESTED {
+		return ErrNotRefundRequest
+	}
+	return s.UpdateStatus(ctx, orderID, models.ORDER_STATUS_COMPLETED, adminID, "Refund rejected: "+reason)
+}
+
+func (s *orderService) GetOrderHistory(ctx context.Context, orderID string) ([]*models.OrderStatusHistory, error) {
+	return s.historyRepo.ListStatusHistory(ctx, orderID)
 }

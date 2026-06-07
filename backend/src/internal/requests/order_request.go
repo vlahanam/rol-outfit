@@ -21,7 +21,8 @@ func (r CreateOrderRequest) Validate() error {
 }
 
 type UpdateOrderStatusRequest struct {
-	Status int8 `json:"status"`
+	Status int8   `json:"status"`
+	Note   string `json:"note"`
 }
 
 func (r UpdateOrderStatusRequest) Validate() error {
@@ -29,7 +30,30 @@ func (r UpdateOrderStatusRequest) Validate() error {
 		validation.Field(&r.Status,
 			validation.Required.Error("validation.order_status.required"),
 			validation.Min(int8(1)).Error("validation.order_status.invalid"),
-			validation.Max(int8(6)).Error("validation.order_status.invalid"),
+			validation.Max(int8(8)).Error("validation.order_status.invalid"),
+		),
+	)
+}
+
+type RefundRequest struct {
+	Reason string `json:"reason"`
+}
+
+func (r RefundRequest) Validate() error {
+	return validation.ValidateStruct(&r,
+		validation.Field(&r.Reason, validation.Length(0, 500)),
+	)
+}
+
+type RejectRefundRequest struct {
+	Reason string `json:"reason"`
+}
+
+func (r RejectRefundRequest) Validate() error {
+	return validation.ValidateStruct(&r,
+		validation.Field(&r.Reason,
+			validation.Required.Error("validation.reason.required"),
+			validation.Length(1, 500),
 		),
 	)
 }

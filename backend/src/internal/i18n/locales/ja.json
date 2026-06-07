@@ -57,6 +57,9 @@
   "validation.order_status.required": "注文ステータスは必須です",
   "validation.order_status.invalid": "注文ステータスは1から8の間で入力してください",
   "error.not_awaiting_payment": "注文は支払い待ち状態ではありません",
+  "error.invalid_transition": "無効なステータス変更です",
+  "error.cannot_request_refund": "完了した注文のみ返金申請できます",
+  "error.not_refund_request": "注文は返金承認待ち状態ではありません",
 
   "error.user_not_found": "ユーザーが見つかりません",
   "error.user_email_taken": "このメールアドレスはすでに別のアカウントで使用されています",

@@ -423,6 +423,72 @@ Accept-Language: ja
 
 ---
 
+### Order Status System
+
+**Purpose:** Comprehensive order lifecycle management with state validation, audit trail, and refund workflow.
+
+**Order Statuses** (int8, values 1-8):
+
+| Value | Status | Vietnamese Label | Description |
+|-------|--------|------------------|-------------|
+| 1 | AWAITING_PAYMENT | Chờ chuyển khoản | Initial state after checkout |
+| 2 | PAYMENT_SUBMITTED | Đã báo CK | User reported payment transfer |
+| 3 | CONFIRMED | Xác nhận thành công | Admin confirmed payment received |
+| 4 | SHIPPING | Đang giao | Order dispatched and in transit |
+| 5 | COMPLETED | Hoàn thành | Order delivered to customer |
+| 6 | CANCELLED | Đã hủy | Order cancelled (terminal) |
+| 7 | REFUND_REQUESTED | Yêu cầu hoàn tiền | Customer requested refund on completed order |
+| 8 | REFUNDED | Đã hoàn tiền | Admin approved refund (terminal) |
+
+**Valid State Transitions:**
+
+Defined in `models/order.go` via `ValidOrderTransitions` map:
+
+```
+AWAITING_PAYMENT     → [PAYMENT_SUBMITTED, CANCELLED]
+PAYMENT_SUBMITTED    → [CONFIRMED, AWAITING_PAYMENT, CANCELLED]
+CONFIRMED            → [SHIPPING, CANCELLED]
+SHIPPING             → [COMPLETED]
+COMPLETED            → [REFUND_REQUESTED]
+REFUND_REQUESTED     → [REFUNDED, COMPLETED]
+CANCELLED            → (terminal, no transitions)
+REFUNDED             → (terminal, no transitions)
+```
+
+Transitions validated via `IsValidTransition(from, to int8) bool` function.
+
+**Order Status Audit Trail** (`order_status_history` table):
+
+- `ID` (UUID, PK) — History record identifier
+- `OrderID` (UUID, FK) — Associated order
+- `FromStatus` (int8, nullable) — Previous status (null for initial creation)
+- `ToStatus` (int8, NOT NULL) — New status after transition
+- `ChangedBy` (UUID, nullable) — User/admin who triggered transition
+- `Note` (TEXT) — Reason or context for transition
+- `CreatedAt` (TIMESTAMP) — When transition occurred
+
+**API Endpoints:**
+
+**User-facing:**
+- `PUT /api/v1/orders/:id/mark-transferred` — Mark order as payment transferred (→ PAYMENT_SUBMITTED)
+- `POST /api/v1/orders/:id/refund` — Request refund on completed order (→ REFUND_REQUESTED)
+- `GET /api/v1/orders/:id/history` — Fetch order status history timeline
+
+**Admin-only:**
+- `PUT /api/v1/admin/orders/:id/status` — Update order status with transition validation
+- `PUT /api/v1/admin/orders/:id/approve-refund` — Approve refund (→ REFUNDED)
+- `PUT /api/v1/admin/orders/:id/reject-refund` — Reject refund (→ COMPLETED)
+
+**Frontend Components:**
+
+- `OrderStatusBadge` — Status display with color coding (8 status-specific colors)
+- `OrderStatusTimeline` — Visual timeline of status history with timestamps and notes
+
+**Migration:**
+- `000002_order_status_history.up.sql` — Creates `order_status_history` table and updates `orders.status` column comment
+
+---
+
 ### Refresh Token Architecture
 
 **Purpose:** Stateful refresh token rotation with theft detection and multi-tab synchronization.

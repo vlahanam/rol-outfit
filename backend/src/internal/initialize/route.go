@@ -91,6 +91,8 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	orders.Put("/:id/shipping", controllers.UpdateOrderShipping(db))
 	orders.Put("/:id/mark-transferred", controllers.MarkOrderTransferred(db))
 	orders.Delete("/:id", controllers.CancelOrder(db))
+	orders.Post("/:id/refund", controllers.RequestRefund(db))
+	orders.Get("/:id/history", controllers.GetOrderHistory(db, false))
 
 	// Addresses (user auth required)
 	addresses := v1.Group("/addresses", middleware.JWTAuth(jwtSecret))
@@ -108,6 +110,9 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	adminOrders.Get("/", controllers.ListAllOrders(db))
 	adminOrders.Get("/:id", controllers.GetAdminOrder(db))
 	adminOrders.Put("/:id/status", controllers.UpdateOrderStatus(db))
+	adminOrders.Put("/:id/approve-refund", controllers.ApproveRefund(db))
+	adminOrders.Put("/:id/reject-refund", controllers.RejectRefund(db))
+	adminOrders.Get("/:id/history", controllers.GetOrderHistory(db, true))
 
 	// Admin carts
 	adminCarts := v1.Group("/admin/carts",

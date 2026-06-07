@@ -4,6 +4,35 @@ All notable changes to the rol-outfit project are documented here. Format follow
 
 ## [Unreleased]
 
+### Added
+- **Order Status Redesign** (2026-06-08)
+  - Backend: Redesigned order status system from 3 statuses to 8 comprehensive states (1-8)
+    - AWAITING_PAYMENT (1) → PAYMENT_SUBMITTED (2) → CONFIRMED (3) → SHIPPING (4) → COMPLETED (5)
+    - CANCELLED (6) and REFUND_REQUESTED (7) → REFUNDED (8) for alternative flows
+  - Backend: State machine validation via `ValidOrderTransitions` map in `models/order.go`
+  - Backend: `IsValidTransition(from, to int8)` function enforces valid state transitions
+  - Backend: New `order_status_history` table (migration 000002) for audit trail
+    - Captures from_status, to_status, changed_by (user/admin), note, and created_at timestamp
+  - Backend: New service methods for order workflow:
+    - `MarkAsTransferred()` — User marks order as payment transferred
+    - `RequestRefund()` — User requests refund on completed order
+    - `ApproveRefund()` — Admin approves refund request
+    - `RejectRefund()` — Admin rejects refund request with reason
+    - `GetOrderHistory()` — Retrieve audit trail for order
+  - Backend: New API endpoints:
+    - `PUT /api/v1/orders/:id/mark-transferred` — Transition AWAITING_PAYMENT → PAYMENT_SUBMITTED
+    - `POST /api/v1/orders/:id/refund` — Request refund on completed order
+    - `GET /api/v1/orders/:id/history` — Fetch order status history timeline
+    - `PUT /api/v1/admin/orders/:id/approve-refund` — Admin approve refund
+    - `PUT /api/v1/admin/orders/:id/reject-refund` — Admin reject refund
+  - Backend: Status values persist as int8 (1-8) instead of string; backward compatible for admins
+  - Frontend: `OrderStatusBadge` component with 8 status-specific color styles
+  - Frontend: `OrderStatusTimeline` component displays historical transitions with timestamps and notes
+  - Frontend: i18n keys for 8 status labels + "history" key in OrderStatus namespace
+  - Frontend: Refund button visible on completed orders in order detail page
+  - **Breaking Change**: API now uses int8 status values (1-8) instead of string values; update all clients
+  - **Breaking Change**: Order responses now include `order_code` (human-readable format: ROL-YYMMDD-XXXX)
+
 ### Fixed
 - **Multilingual Display Bug Fix** (2026-06-06)
   - Backend: DTOs now include `ToLocalized(lang string)` methods that accept language codes ("vi", "ja", "en")
