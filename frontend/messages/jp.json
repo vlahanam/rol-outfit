@@ -245,7 +245,9 @@
     "thankYou": "ご注文を承りました",
     "orderNumber": "注文番号",
     "viewOrders": "注文を確認",
-    "continueShopping": "ショッピングを続ける"
+    "continueShopping": "ショッピングを続ける",
+    "paymentReminder": "お支払い待ち",
+    "paymentReminderDesc": "ご注文を確定するため、提供された情報に従ってお振込みください。お支払い確認後、注文処理を開始いたします。"
   },
   "OrdersPage": {
     "title": "注文履歴",

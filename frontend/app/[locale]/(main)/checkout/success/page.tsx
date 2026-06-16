@@ -1,18 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle, Package, ShoppingBag } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { CheckCircle, Package, ShoppingBag, AlertTriangle } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { isLoggedIn } from "@/lib/auth";
+import { api } from "@/lib/api";
+import type { ApiResponse, Order } from "@/types/api";
+
+const ORDER_STATUS_AWAITING_PAYMENT = 1;
 
 export default function CheckoutSuccessPage() {
   const t = useTranslations("CheckoutSuccessPage");
   const router = useRouter();
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
   const [mounted, setMounted] = useState(false);
+  const [isAwaitingPayment, setIsAwaitingPayment] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -22,8 +28,21 @@ export default function CheckoutSuccessPage() {
     }
     if (!orderId) {
       router.push("/");
+      return;
     }
-  }, [router, orderId]);
+
+    const fetchOrder = async () => {
+      try {
+        const res = await api.get<ApiResponse<Order>>(`/orders/${orderId}`, locale);
+        if (res.data?.status === ORDER_STATUS_AWAITING_PAYMENT) {
+          setIsAwaitingPayment(true);
+        }
+      } catch {
+        // Order fetch failed, don't show warning
+      }
+    };
+    fetchOrder();
+  }, [router, orderId, locale]);
 
   if (!mounted || !orderId) {
     return null;
@@ -40,6 +59,16 @@ export default function CheckoutSuccessPage() {
             {t("title")}
           </h1>
           <p className="text-gray-600 mb-6">{t("thankYou")}</p>
+
+          {isAwaitingPayment && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 flex items-start gap-3 text-left">
+              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-amber-800">{t("paymentReminder")}</p>
+                <p className="text-sm text-amber-700 mt-1">{t("paymentReminderDesc")}</p>
+              </div>
+            </div>
+          )}
 
           <div className="bg-gray-50 rounded-lg p-4 mb-8">
             <p className="text-sm text-gray-500 mb-1">{t("orderNumber")}</p>

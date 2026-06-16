@@ -245,7 +245,9 @@
     "thankYou": "Cảm ơn bạn đã đặt hàng",
     "orderNumber": "Mã đơn hàng",
     "viewOrders": "Xem đơn hàng",
-    "continueShopping": "Tiếp tục mua sắm"
+    "continueShopping": "Tiếp tục mua sắm",
+    "paymentReminder": "Đơn hàng đang chờ thanh toán",
+    "paymentReminderDesc": "Vui lòng chuyển khoản theo thông tin đã cung cấp để xác nhận đơn hàng. Đơn hàng sẽ được xử lý sau khi chúng tôi nhận được thanh toán."
   },
   "OrdersPage": {
     "title": "Đơn hàng của tôi",
