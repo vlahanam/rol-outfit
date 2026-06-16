@@ -1,36 +1,65 @@
-import { Users, Package, ShoppingCart, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Users, Package, ShoppingCart, DollarSign, TrendingUp, Loader2 } from 'lucide-react';
+import { adminDashboard } from '@/lib/api-resources';
+import { OrderStatusBadge } from '@/components/orders/order-status-badge';
+import type { DashboardStats } from '@/types/api';
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat('vi-VN').format(value);
+}
 
 export default function DashboardPage() {
-  const stats = [
-    { icon: DollarSign, label: 'Tổng Doanh Thu', value: '125.000.000₫', change: '+12.5%', isPositive: true, bgColor: 'bg-green-50', iconColor: 'text-green-600' },
-    { icon: ShoppingCart, label: 'Đơn Hàng', value: '1,234', change: '+8.2%', isPositive: true, bgColor: 'bg-blue-50', iconColor: 'text-blue-600' },
-    { icon: Users, label: 'Người Dùng', value: '8,567', change: '+3.1%', isPositive: true, bgColor: 'bg-purple-50', iconColor: 'text-purple-600' },
-    { icon: Package, label: 'Sản Phẩm', value: '456', change: '-2.4%', isPositive: false, bgColor: 'bg-orange-50', iconColor: 'text-orange-600' },
-  ];
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const recentOrders = [
-    { id: '#ORD-001', customer: 'Nguyễn Văn A', total: '1.200.000₫', status: 'Đang giao', date: '29/04/2026' },
-    { id: '#ORD-002', customer: 'Trần Thị B', total: '850.000₫', status: 'Hoàn thành', date: '29/04/2026' },
-    { id: '#ORD-003', customer: 'Lê Văn C', total: '2.400.000₫', status: 'Chờ xử lý', date: '28/04/2026' },
-    { id: '#ORD-004', customer: 'Phạm Thị D', total: '680.000₫', status: 'Đang giao', date: '28/04/2026' },
-    { id: '#ORD-005', customer: 'Hoàng Văn E', total: '1.500.000₫', status: 'Hoàn thành', date: '27/04/2026' },
-  ];
-
-  const topProducts = [
-    { name: 'Áo Thun Cotton Premium', sold: 245, revenue: '176.400.000₫' },
-    { name: 'Quần Jeans Denim', sold: 198, revenue: '308.880.000₫' },
-    { name: 'Giày Thể Thao', sold: 167, revenue: '317.300.000₫' },
-    { name: 'Áo Khoác Mùa Đông', sold: 134, revenue: '498.480.000₫' },
-  ];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Hoàn thành': return 'bg-green-100 text-green-700';
-      case 'Đang giao': return 'bg-blue-100 text-blue-700';
-      case 'Chờ xử lý': return 'bg-yellow-100 text-yellow-700';
-      default: return 'bg-gray-100 text-gray-700';
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await adminDashboard.getStats();
+        setStats(res.data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+      } finally {
+        setLoading(false);
+      }
     }
-  };
+    fetchStats();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (error || !stats) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-red-500">{error || 'Failed to load dashboard'}</p>
+      </div>
+    );
+  }
+
+  const statCards = [
+    { icon: DollarSign, label: 'Tổng Doanh Thu', value: formatCurrency(stats.total_revenue), bgColor: 'bg-green-50', iconColor: 'text-green-600' },
+    { icon: ShoppingCart, label: 'Đơn Hàng', value: formatNumber(stats.total_orders), bgColor: 'bg-blue-50', iconColor: 'text-blue-600' },
+    { icon: Users, label: 'Người Dùng', value: formatNumber(stats.total_users), bgColor: 'bg-purple-50', iconColor: 'text-purple-600' },
+    { icon: Package, label: 'Sản Phẩm', value: formatNumber(stats.total_products), bgColor: 'bg-orange-50', iconColor: 'text-orange-600' },
+  ];
 
   return (
     <div className="space-y-6">
@@ -40,16 +69,13 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+        {statCards.map((stat, index) => (
           <div key={index} className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <div className={`p-3 rounded-lg ${stat.bgColor}`}>
                 <stat.icon className={`w-6 h-6 ${stat.iconColor}`} />
               </div>
-              <div className={`flex items-center gap-1 text-sm font-medium ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                {stat.isPositive ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                {stat.change}
-              </div>
+              <TrendingUp className="w-4 h-4 text-green-600" />
             </div>
             <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
             <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
@@ -59,8 +85,11 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow-sm">
-          <div className="p-6 border-b border-gray-200">
+          <div className="p-6 border-b border-gray-200 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Đơn Hàng Gần Đây</h2>
+            <Link href="/admin/orders" className="text-sm text-blue-600 hover:underline">
+              Xem tất cả
+            </Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-max">
@@ -73,39 +102,71 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {recentOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">{order.id}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{order.customer}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{order.total}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(order.status)}`}>
-                        {order.status}
-                      </span>
+                {stats.recent_orders.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                      Chưa có đơn hàng nào
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  stats.recent_orders.map((order) => (
+                    <tr key={order.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                        <Link href={`/admin/orders/${order.id}`} className="text-blue-600 hover:underline">
+                          {order.order_code || order.id.slice(0, 8)}
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{order.customer || 'N/A'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{formatCurrency(order.total_price)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <OrderStatusBadge status={order.status} />
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm">
-          <div className="p-6 border-b border-gray-200">
+          <div className="p-6 border-b border-gray-200 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Sản Phẩm Bán Chạy</h2>
+            <Link href="/admin/products" className="text-sm text-blue-600 hover:underline">
+              Xem tất cả
+            </Link>
           </div>
           <div className="p-6">
-            <div className="space-y-4">
-              {topProducts.map((product, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{product.name}</p>
-                    <p className="text-xs text-gray-500">Đã bán: {product.sold} sản phẩm</p>
+            {stats.top_products.length === 0 ? (
+              <p className="text-center text-gray-500 py-4">Chưa có dữ liệu bán hàng</p>
+            ) : (
+              <div className="space-y-4">
+                {stats.top_products.map((product) => (
+                  <div key={product.id} className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                      {product.avatar ? (
+                        <img
+                          src={product.avatar}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Package className="w-6 h-6 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Link href={`/admin/products/${product.id}`} className="text-sm font-medium text-gray-900 hover:text-blue-600 truncate block">
+                        {product.name}
+                      </Link>
+                      <p className="text-xs text-gray-500">Đã bán: {formatNumber(product.sold)} sản phẩm</p>
+                    </div>
+                    <p className="text-sm font-semibold text-blue-600 flex-shrink-0">{formatCurrency(product.revenue)}</p>
                   </div>
-                  <p className="text-sm font-semibold text-blue-600">{product.revenue}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

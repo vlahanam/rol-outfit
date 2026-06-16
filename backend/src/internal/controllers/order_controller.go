@@ -180,8 +180,17 @@ func CancelOrder(db *gorm.DB) fiber.Handler {
 		}
 		orderID := ctx.Params("id")
 
+		var req requests.CancelOrderRequest
+		if len(ctx.Body()) > 0 {
+			if err := ctx.Bind().JSON(&req); err != nil {
+				return ctx.Status(fiber.StatusBadRequest).JSON(
+					common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_payload")),
+				)
+			}
+		}
+
 		svc := newOrderService(db)
-		if err := svc.CancelOrder(ctx.Context(), userID, orderID, false); err != nil {
+		if err := svc.CancelOrder(ctx.Context(), userID, orderID, req.Reason, false); err != nil {
 			if errors.Is(err, services.ErrOrderNotFound) {
 				return ctx.Status(fiber.StatusNotFound).JSON(
 					common.ErrNotFound.WithReason(i18n.T(lang, "error.order_not_found")),
@@ -195,6 +204,11 @@ func CancelOrder(db *gorm.DB) fiber.Handler {
 			if errors.Is(err, services.ErrCannotCancel) {
 				return ctx.Status(fiber.StatusConflict).JSON(
 					common.ErrConflict.WithReason(i18n.T(lang, "error.cannot_cancel")),
+				)
+			}
+			if errors.Is(err, services.ErrReasonRequired) {
+				return ctx.Status(fiber.StatusBadRequest).JSON(
+					common.ErrBadRequest.WithReason(i18n.T(lang, "error.reason_required")),
 				)
 			}
 			slog.Error("CancelOrder failed", "error", err)
@@ -493,5 +507,31 @@ func RejectRefund(db *gorm.DB) fiber.Handler {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
 		return ctx.SendStatus(fiber.StatusNoContent)
+	}
+}
+
+// AdminRefundCancelledOrder PUT /api/v1/admin/orders/:id/refund-cancelled
+func AdminRefundCancelledOrder(db *gorm.DB) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+		adminID, _ := userIDFromLocals(ctx)
+		orderID := ctx.Params("id")
+
+		svc := newOrderService(db)
+		if err := svc.RefundCancelledOrder(ctx.Context(), orderID, adminID); err != nil {
+			if errors.Is(err, services.ErrOrderNotFound) {
+				return ctx.Status(fiber.StatusNotFound).JSON(
+					common.ErrNotFound.WithReason(i18n.T(lang, "error.order_not_found")),
+				)
+			}
+			if errors.Is(err, services.ErrInvalidTransition) {
+				return ctx.Status(fiber.StatusConflict).JSON(
+					common.ErrConflict.WithReason(i18n.T(lang, "error.invalid_status_transition")),
+				)
+			}
+			slog.Error("AdminRefundCancelledOrder failed", "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+		return ctx.JSON(fiber.Map{"message": "Order refunded successfully"})
 	}
 }

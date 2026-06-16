@@ -15,6 +15,8 @@ type ProductVariantRepository interface {
 	ListVariants(ctx context.Context, productID string, offset, limit int) ([]*models.ProductVariant, int64, error)
 	UpdateVariant(ctx context.Context, id string, fields map[string]interface{}) error
 	DeleteVariant(ctx context.Context, id string) error
+	DeductStock(ctx context.Context, variantID string, quantity int) error
+	RestoreStock(ctx context.Context, variantID string, quantity int) error
 }
 
 func (r *postgreStorage) CreateVariant(ctx context.Context, v *models.ProductVariant) error {
@@ -73,6 +75,37 @@ func (r *postgreStorage) DeleteVariant(ctx context.Context, id string) error {
 	}
 	if result.RowsAffected == 0 {
 		return fmt.Errorf("variant not found")
+	}
+	return nil
+}
+
+func (r *postgreStorage) DeductStock(ctx context.Context, variantID string, quantity int) error {
+	result := r.db.WithContext(ctx).
+		Model(&models.ProductVariant{}).
+		Where("id = ? AND stock >= ?", variantID, quantity).
+		Updates(map[string]interface{}{
+			"stock": gorm.Expr("stock - ?", quantity),
+			"sold":  gorm.Expr("sold + ?", quantity),
+		})
+	if result.Error != nil {
+		return fmt.Errorf("failed to deduct stock: %w", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("insufficient stock or variant not found")
+	}
+	return nil
+}
+
+func (r *postgreStorage) RestoreStock(ctx context.Context, variantID string, quantity int) error {
+	result := r.db.WithContext(ctx).
+		Model(&models.ProductVariant{}).
+		Where("id = ?", variantID).
+		Updates(map[string]interface{}{
+			"stock": gorm.Expr("stock + ?", quantity),
+			"sold":  gorm.Expr("CASE WHEN sold - ? < 0 THEN 0 ELSE sold - ? END", quantity, quantity),
+		})
+	if result.Error != nil {
+		return fmt.Errorf("failed to restore stock: %w", result.Error)
 	}
 	return nil
 }

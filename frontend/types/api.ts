@@ -66,6 +66,7 @@ export interface Product {
   name_ja?: string;
   slug: string;
   default_price: number;
+  shipping_cost: number;
   description: string;
   description_ja?: string;
   status: number;
@@ -176,6 +177,7 @@ export interface Order {
   shipping_address: string;
   phone: string;
   total_price: number;
+  shipping_cost: number;
   status: number;
   note?: string;
   items?: OrderItem[];
@@ -220,6 +222,7 @@ export interface CreateProductPayload {
   name: string;
   name_ja?: string;
   default_price: number;
+  shipping_cost: number;
   description?: string;
   description_ja?: string;
   avatar: string;
@@ -234,6 +237,7 @@ export interface UpdateProductPayload {
   name?: string;
   name_ja?: string;
   default_price?: number;
+  shipping_cost?: number;
   description?: string;
   description_ja?: string;
   avatar?: string;
@@ -412,4 +416,37 @@ export interface ApiErrorBody {
   error: string;
   reason?: string;
   details?: Record<string, string>;
+}
+
+// Dashboard
+export interface DashboardStats {
+  total_revenue: number;
+  total_orders: number;
+  total_users: number;
+  total_products: number;
+  recent_orders: RecentOrder[];
+  top_products: TopProduct[];
+  orders_by_status: OrderStatusCount[];
+}
+
+export interface RecentOrder {
+  id: string;
+  order_code: string;
+  customer: string;
+  total_price: number;
+  status: number;
+  created_at: string;
+}
+
+export interface TopProduct {
+  id: string;
+  name: string;
+  avatar: string;
+  sold: number;
+  revenue: number;
+}
+
+export interface OrderStatusCount {
+  status: number;
+  count: number;
 }

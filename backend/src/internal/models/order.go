@@ -21,8 +21,9 @@ var ValidOrderTransitions = map[int8][]int8{
 	ORDER_STATUS_AWAITING_PAYMENT:  {ORDER_STATUS_PAYMENT_SUBMITTED, ORDER_STATUS_CANCELLED},
 	ORDER_STATUS_PAYMENT_SUBMITTED: {ORDER_STATUS_CONFIRMED, ORDER_STATUS_AWAITING_PAYMENT, ORDER_STATUS_CANCELLED},
 	ORDER_STATUS_CONFIRMED:         {ORDER_STATUS_SHIPPING, ORDER_STATUS_CANCELLED},
-	ORDER_STATUS_SHIPPING:          {ORDER_STATUS_COMPLETED},
+	ORDER_STATUS_SHIPPING:          {ORDER_STATUS_COMPLETED, ORDER_STATUS_CANCELLED},
 	ORDER_STATUS_COMPLETED:         {ORDER_STATUS_REFUND_REQUESTED},
+	ORDER_STATUS_CANCELLED:         {ORDER_STATUS_REFUNDED},
 	ORDER_STATUS_REFUND_REQUESTED:  {ORDER_STATUS_REFUNDED, ORDER_STATUS_COMPLETED},
 }
 
@@ -45,6 +46,7 @@ type Order struct {
 	ShippingAddress string         `gorm:"column:shipping_address"`
 	Phone           string         `gorm:"column:phone"`
 	TotalPrice      float64        `gorm:"column:total_price;type:numeric(12,2)"`
+	ShippingCost    float64        `gorm:"column:shipping_cost;type:numeric(12,2);default:0"`
 	Status          int8           `gorm:"column:status"`
 	Note            string         `gorm:"column:note"`
 	OrderCode       *string        `gorm:"column:order_code;type:varchar(16)"`

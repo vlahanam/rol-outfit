@@ -18,6 +18,7 @@ type CreateProductRequest struct {
 	Name            string     `json:"name"`
 	NameJa          string     `json:"name_ja"`
 	DefaultPrice    float64    `json:"default_price"`
+	ShippingCost    float64    `json:"shipping_cost"`
 	Description     string     `json:"description"`
 	DescriptionJa   string     `json:"description_ja"`
 	Avatar          string     `json:"avatar"`
@@ -39,6 +40,9 @@ func (r CreateProductRequest) Validate() error {
 		validation.Field(&r.DefaultPrice,
 			validation.Min(float64(0)).Error("validation.price.invalid"),
 		),
+		validation.Field(&r.ShippingCost,
+			validation.Min(float64(0)).Error("validation.shipping_cost.invalid"),
+		),
 		validation.Field(&r.Avatar,
 			validation.Required.Error("validation.avatar.required"),
 		),
@@ -57,6 +61,7 @@ type UpdateProductRequest struct {
 	Name            *string    `json:"name"`
 	NameJa          *string    `json:"name_ja"`
 	DefaultPrice    *float64   `json:"default_price"`
+	ShippingCost    *float64   `json:"shipping_cost"`
 	Description     *string    `json:"description"`
 	DescriptionJa   *string    `json:"description_ja"`
 	Avatar          *string    `json:"avatar"`
@@ -78,6 +83,13 @@ func (r UpdateProductRequest) Validate() error {
 	if r.DefaultPrice != nil {
 		if err := validation.Validate(r.DefaultPrice,
 			validation.Min(float64(0)).Error("validation.price.invalid"),
+		); err != nil {
+			return err
+		}
+	}
+	if r.ShippingCost != nil {
+		if err := validation.Validate(r.ShippingCost,
+			validation.Min(float64(0)).Error("validation.shipping_cost.invalid"),
 		); err != nil {
 			return err
 		}

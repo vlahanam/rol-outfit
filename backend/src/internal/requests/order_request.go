@@ -64,6 +64,10 @@ type UpdateOrderShippingRequest struct {
 	Note            *string `json:"note"`
 }
 
+type CancelOrderRequest struct {
+	Reason string `json:"reason"`
+}
+
 func (r UpdateOrderShippingRequest) Validate() error {
 	if r.Phone != nil {
 		if err := validation.Validate(*r.Phone,

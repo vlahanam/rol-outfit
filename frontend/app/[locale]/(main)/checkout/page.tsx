@@ -14,6 +14,7 @@ import type { ApiResponse, Cart, CartItem, Product, Order, UserAddress } from "@
 interface RichCartItem extends CartItem {
   productName: string;
   productImage?: string;
+  shippingCost: number;
 }
 
 export default function CheckoutPage() {
@@ -62,12 +63,14 @@ export default function CheckoutPage() {
                 ...item,
                 productName: pRes.data.name,
                 productImage: pRes.data.avatar,
+                shippingCost: pRes.data.shipping_cost ?? 0,
               };
             } catch {
               return {
                 ...item,
                 productName: item.product_id,
                 productImage: undefined,
+                shippingCost: 0,
               };
             }
           })
@@ -93,7 +96,10 @@ export default function CheckoutPage() {
     (sum, item) => sum + item.price_at_add * item.quantity,
     0
   );
-  const shipping = subtotal >= 500000 ? 0 : 30000;
+  const shipping = cartItems.reduce(
+    (sum, item) => sum + item.shippingCost * item.quantity,
+    0
+  );
   const total = subtotal + shipping;
 
   const handleSubmit = async (e: React.FormEvent) => {

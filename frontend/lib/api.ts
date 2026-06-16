@@ -56,8 +56,12 @@ export const api = {
       locale,
     });
   },
-  delete<T>(path: string, locale?: string): Promise<T> {
-    return request<T>(path, { method: "DELETE", locale });
+  delete<T>(path: string, options?: { data?: unknown; locale?: string }): Promise<T> {
+    return request<T>(path, {
+      method: "DELETE",
+      body: options?.data != null ? JSON.stringify(options.data) : undefined,
+      locale: options?.locale,
+    });
   },
 
   auth: {

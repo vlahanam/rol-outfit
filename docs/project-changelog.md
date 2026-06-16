@@ -5,6 +5,29 @@ All notable changes to the rol-outfit project are documented here. Format follow
 ## [Unreleased]
 
 ### Added
+- **Order Cancel & Refund Flow Enhancement** (2026-06-16)
+  - Backend: `CancelOrder` now accepts optional `reason` parameter
+  - Backend: Status 2 (PAYMENT_SUBMITTED) and 3 (CONFIRMED) require cancellation reason; status 1 does not
+  - Backend: New error `ErrReasonRequired` for missing reason validation
+  - Backend: Admin can refund cancelled orders (transition 6→8) via new endpoint
+  - Backend: `PUT /api/v1/admin/orders/:id/refund-cancelled` — Admin refund cancelled order
+  - Backend: `RefundCancelledOrder()` service method added
+  - Backend: i18n messages `error.reason_required`, `error.invalid_status_transition` added (vi, ja)
+  - Frontend: New `CancelOrderModal` component with conditional reason textarea
+  - Frontend: Order detail page uses modal instead of `confirm()` for cancel action
+  - Frontend: Admin order detail page shows "Hoàn tiền đơn đã hủy" button for cancelled orders
+  - Frontend: `api.delete()` now supports sending request body for reason parameter
+  - Frontend: i18n translations for cancel modal (cancelReasonPrompt, reasonRequired, confirmCancel, etc.)
+
+- **Logo & Favicon Integration** (2026-06-16)
+  - Frontend: Logo image displayed in Header component using Next.js Image
+  - Frontend: Favicon and apple-touch-icon for browser tabs and iOS home screen
+  - Frontend: PWA icon set (192x192, 512x512) with maskable support for adaptive icons
+  - Frontend: `site.webmanifest` for Progressive Web App support with start_url, display mode, and theme colors
+  - Frontend: Updated `layout.tsx` metadata with icon and manifest references
+  - UX: Improved visual branding on all platforms and devices
+
+### Added
 - **Order Status Redesign** (2026-06-08)
   - Backend: Redesigned order status system from 3 statuses to 8 comprehensive states (1-8)
     - AWAITING_PAYMENT (1) → PAYMENT_SUBMITTED (2) → CONFIRMED (3) → SHIPPING (4) → COMPLETED (5)

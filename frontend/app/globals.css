@@ -24,3 +24,8 @@ body {
 .cart-bounce {
   animation: cart-bounce 0.45s ease;
 }
+
+[data-sonner-toaster] {
+  z-index: 50 !important;
+  top: 80px !important;
+}

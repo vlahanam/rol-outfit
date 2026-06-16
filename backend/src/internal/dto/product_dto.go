@@ -14,6 +14,7 @@ type ProductDTO struct {
 	NameJa          string    `json:"name_ja,omitempty"`
 	Slug            string    `json:"slug"`
 	DefaultPrice    float64   `json:"default_price"`
+	ShippingCost    float64   `json:"shipping_cost"`
 	Description     string    `json:"description"`
 	DescriptionJa   string    `json:"description_ja,omitempty"`
 	Status          int8      `json:"status"`
@@ -47,6 +48,7 @@ func ToProductDTO(p *models.Product) *ProductDTO {
 		NameJa:          p.NameJa,
 		Slug:            p.Slug,
 		DefaultPrice:    p.DefaultPrice,
+		ShippingCost:    p.ShippingCost,
 		Description:     p.Description,
 		DescriptionJa:   p.DescriptionJa,
 		Status:          p.Status,
@@ -63,22 +65,23 @@ func ToProductDTO(p *models.Product) *ProductDTO {
 }
 
 type LocalizedProductDTO struct {
-	ID              string              `json:"id"`
-	CategoryID      string              `json:"category_id"`
-	Name            string              `json:"name"`
-	Slug            string              `json:"slug"`
-	DefaultPrice    float64             `json:"default_price"`
-	Description     string              `json:"description"`
-	Status          int8                `json:"status"`
-	AttributeNames  []string            `json:"attribute_names"`
-	Avatar          string              `json:"avatar,omitempty"`
-	DiscountPercent float64             `json:"discount_percent"`
-	DiscountStartAt string              `json:"discount_start_at,omitempty"`
-	DiscountEndAt   string              `json:"discount_end_at,omitempty"`
-	SalePrice       float64             `json:"sale_price"`
-	Tags            []*LocalizedTagDTO  `json:"tags,omitempty"`
-	CreatedAt       string              `json:"created_at"`
-	UpdatedAt       string              `json:"updated_at"`
+	ID              string             `json:"id"`
+	CategoryID      string             `json:"category_id"`
+	Name            string             `json:"name"`
+	Slug            string             `json:"slug"`
+	DefaultPrice    float64            `json:"default_price"`
+	ShippingCost    float64            `json:"shipping_cost"`
+	Description     string             `json:"description"`
+	Status          int8               `json:"status"`
+	AttributeNames  []string           `json:"attribute_names"`
+	Avatar          string             `json:"avatar,omitempty"`
+	DiscountPercent float64            `json:"discount_percent"`
+	DiscountStartAt string             `json:"discount_start_at,omitempty"`
+	DiscountEndAt   string             `json:"discount_end_at,omitempty"`
+	SalePrice       float64            `json:"sale_price"`
+	Tags            []*LocalizedTagDTO `json:"tags,omitempty"`
+	CreatedAt       string             `json:"created_at"`
+	UpdatedAt       string             `json:"updated_at"`
 }
 
 func (p *ProductDTO) ToLocalized(lang string) *LocalizedProductDTO {
@@ -95,6 +98,7 @@ func (p *ProductDTO) ToLocalized(lang string) *LocalizedProductDTO {
 		Name:            utils.GetLocalizedString(p.Name, p.NameJa, lang),
 		Slug:            p.Slug,
 		DefaultPrice:    p.DefaultPrice,
+		ShippingCost:    p.ShippingCost,
 		Description:     utils.GetLocalizedString(p.Description, p.DescriptionJa, lang),
 		Status:          p.Status,
 		AttributeNames:  p.AttributeNames,
@@ -117,6 +121,7 @@ type ProductWithVariantsDTO struct {
 	NameJa          string               `json:"name_ja,omitempty"`
 	Slug            string               `json:"slug"`
 	DefaultPrice    float64              `json:"default_price"`
+	ShippingCost    float64              `json:"shipping_cost"`
 	Description     string               `json:"description"`
 	DescriptionJa   string               `json:"description_ja,omitempty"`
 	Status          int8                 `json:"status"`
@@ -156,6 +161,7 @@ func ToProductWithVariantsDTO(p *models.ProductWithVariants) *ProductWithVariant
 		NameJa:          p.NameJa,
 		Slug:            p.Slug,
 		DefaultPrice:    p.DefaultPrice,
+		ShippingCost:    p.ShippingCost,
 		Description:     p.Description,
 		DescriptionJa:   p.DescriptionJa,
 		Status:          p.Status,

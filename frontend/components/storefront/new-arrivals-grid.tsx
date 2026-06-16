@@ -120,7 +120,7 @@ export function NewArrivalsGrid({ title, products, autoScrollInterval = 5000 }: 
                 {row.map((p, idx) => (
                   <Link
                     key={`${p.id}-${idx}`}
-                    href={`/product/${p.slug}`}
+                    href={`/product/${p.id}`}
                     className="flex-shrink-0"
                     style={{ width: itemWidth > 0 ? `${itemWidth}px` : `calc(${itemWidthPercent}% - ${gapAdjust}px)` }}
                   >

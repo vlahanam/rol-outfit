@@ -49,6 +49,11 @@ export default function ListProductPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [stockFilter, setStockFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteVariant, setDeleteVariant] = useState<{
@@ -78,12 +83,35 @@ export default function ListProductPage() {
   const categoryName = (id: string) =>
     categories.find((c) => c.id === id)?.name ?? "—";
 
-  const filtered = products.filter((p) => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    const matchCategory =
-      categoryFilter === "" || p.category_id === categoryFilter;
-    return matchSearch && matchCategory;
-  });
+  const filtered = products
+    .filter((p) => {
+      const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
+      const matchCategory = categoryFilter === "" || p.category_id === categoryFilter;
+      const matchStock =
+        stockFilter === "" ||
+        (stockFilter === "in-stock" && p.total_stock > 20) ||
+        (stockFilter === "low-stock" && p.total_stock > 0 && p.total_stock <= 20) ||
+        (stockFilter === "out-of-stock" && p.total_stock === 0);
+      const matchStatus =
+        statusFilter === "" ||
+        (statusFilter === "active" && p.status === 1) ||
+        (statusFilter === "hidden" && p.status === 2);
+      const matchPriceMin = priceMin === "" || p.default_price >= Number(priceMin);
+      const matchPriceMax = priceMax === "" || p.default_price <= Number(priceMax);
+      return matchSearch && matchCategory && matchStock && matchStatus && matchPriceMin && matchPriceMax;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "name-asc": return a.name.localeCompare(b.name);
+        case "name-desc": return b.name.localeCompare(a.name);
+        case "price-asc": return a.default_price - b.default_price;
+        case "price-desc": return b.default_price - a.default_price;
+        case "stock-asc": return a.total_stock - b.total_stock;
+        case "stock-desc": return b.total_stock - a.total_stock;
+        case "oldest": return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        default: return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
 
   const toggleExpand = (id: string) => {
     setExpandedIds((prev) => {
@@ -149,29 +177,91 @@ export default function ListProductPage() {
 
       <div className="bg-white rounded-lg shadow-sm">
         {/* Filters */}
-        <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm kiếm sản phẩm..."
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+        <div className="p-4 border-b border-gray-200 space-y-4">
+          {/* Row 1: Search + Category + Stock + Status */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Tìm kiếm sản phẩm..."
+                className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Tất cả danh mục</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={stockFilter}
+              onChange={(e) => setStockFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Tất cả tồn kho</option>
+              <option value="in-stock">Còn hàng</option>
+              <option value="low-stock">Sắp hết</option>
+              <option value="out-of-stock">Hết hàng</option>
+            </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Tất cả trạng thái</option>
+              <option value="active">Hiển thị</option>
+              <option value="hidden">Ẩn</option>
+            </select>
           </div>
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Tất cả danh mục</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
+          {/* Row 2: Price range + Sort */}
+          <div className="flex flex-col sm:flex-row gap-3 items-end">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500 whitespace-nowrap">Giá:</span>
+              <input
+                type="number"
+                value={priceMin}
+                onChange={(e) => setPriceMin(e.target.value)}
+                placeholder="Từ"
+                min="0"
+                className="w-28 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <span className="text-gray-400">—</span>
+              <input
+                type="number"
+                value={priceMax}
+                onChange={(e) => setPriceMax(e.target.value)}
+                placeholder="Đến"
+                min="0"
+                className="w-28 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="newest">Mới nhất</option>
+              <option value="oldest">Cũ nhất</option>
+              <option value="name-asc">Tên A-Z</option>
+              <option value="name-desc">Tên Z-A</option>
+              <option value="price-asc">Giá thấp → cao</option>
+              <option value="price-desc">Giá cao → thấp</option>
+              <option value="stock-asc">Tồn kho ít → nhiều</option>
+              <option value="stock-desc">Tồn kho nhiều → ít</option>
+            </select>
+            <span className="text-sm text-gray-500">
+              {filtered.length} sản phẩm
+            </span>
+          </div>
         </div>
 
         {loading ? (
@@ -193,6 +283,9 @@ export default function ListProductPage() {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
                     Giá
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
+                    Phí Ship
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
                     Tồn Kho
@@ -287,6 +380,9 @@ export default function ListProductPage() {
                         <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
                           {product.default_price.toLocaleString("vi-VN")}₫
                         </td>
+                        <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
+                          {(product.shipping_cost ?? 0).toLocaleString("vi-VN")}₫
+                        </td>
                         <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
                           {product.total_stock}
                         </td>
@@ -325,7 +421,7 @@ export default function ListProductPage() {
                       {/* Variants row */}
                       {isExpanded && hasVariants && (
                         <tr>
-                          <td colSpan={7} className="p-0 bg-gray-50">
+                          <td colSpan={8} className="p-0 bg-gray-50">
                             <ProductListVariantsTable
                               product={product}
                               onDeleteVariant={(variantId) =>

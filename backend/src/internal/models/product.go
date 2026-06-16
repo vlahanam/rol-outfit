@@ -103,6 +103,7 @@ type Product struct {
 	DiscountPercent float64        `gorm:"column:discount_percent;type:numeric(5,2)"`
 	DiscountStartAt *time.Time     `gorm:"column:discount_start_at"`
 	DiscountEndAt   *time.Time     `gorm:"column:discount_end_at"`
+	ShippingCost    float64        `gorm:"column:shipping_cost;type:numeric(12,2);default:0"`
 	CreatedAt       time.Time      `gorm:"column:created_at"`
 	UpdatedAt       time.Time      `gorm:"column:updated_at"`
 	DeletedAt       gorm.DeletedAt `gorm:"column:deleted_at;index"`

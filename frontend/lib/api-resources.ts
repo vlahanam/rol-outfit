@@ -25,6 +25,7 @@ import type {
   UpdateAddressPayload,
   AdminCartListItem,
   AdminCartDetail,
+  DashboardStats,
 } from "@/types/api";
 import { ApiError, BASE, getToken, request } from "@/lib/api-client";
 
@@ -306,5 +307,11 @@ export const userProfile = {
       method: "PUT",
       body: JSON.stringify(body),
     });
+  },
+};
+
+export const adminDashboard = {
+  getStats(): Promise<{ data: DashboardStats }> {
+    return request<{ data: DashboardStats }>("/admin/dashboard");
   },
 };

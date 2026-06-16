@@ -17,29 +17,48 @@ interface RichOrderItem {
 }
 
 const STATUS_OPTIONS = [
-  { value: 1, label: 'Chờ xử lý' },
-  { value: 2, label: 'Đã xác nhận' },
-  { value: 3, label: 'Đang giao' },
-  { value: 4, label: 'Đã giao' },
-  { value: 5, label: 'Đã thanh toán' },
+  { value: 1, label: 'Chờ chuyển khoản' },
+  { value: 2, label: 'Đã báo chuyển khoản' },
+  { value: 3, label: 'Xác nhận thành công' },
+  { value: 4, label: 'Đang giao hàng' },
+  { value: 5, label: 'Hoàn thành' },
   { value: 6, label: 'Đã hủy' },
-  { value: 7, label: 'Chờ chuyển khoản' },
-  { value: 8, label: 'Đã báo chuyển khoản' },
+  { value: 7, label: 'Yêu cầu hoàn tiền' },
+  { value: 8, label: 'Đã hoàn tiền' },
 ];
+
+const VALID_TRANSITIONS: Record<number, number[]> = {
+  1: [2, 6],      // AWAITING_PAYMENT → PAYMENT_SUBMITTED, CANCELLED
+  2: [3, 1, 6],   // PAYMENT_SUBMITTED → CONFIRMED, AWAITING_PAYMENT, CANCELLED
+  3: [4, 6],      // CONFIRMED → SHIPPING, CANCELLED
+  4: [5, 6],      // SHIPPING → COMPLETED, CANCELLED
+  5: [7],         // COMPLETED → REFUND_REQUESTED
+  6: [8],         // CANCELLED → REFUNDED
+  7: [8, 5],      // REFUND_REQUESTED → REFUNDED, COMPLETED (reject)
+  8: [],          // REFUNDED → terminal
+};
+
+const getValidStatusOptions = (currentStatus: number) => {
+  const validIds = VALID_TRANSITIONS[currentStatus] || [];
+  return STATUS_OPTIONS.filter(s => validIds.includes(s.value));
+};
 
 const statusColors: Record<number, string> = {
   1: 'bg-yellow-100 text-yellow-700',
-  2: 'bg-purple-100 text-purple-700',
-  3: 'bg-blue-100 text-blue-700',
-  4: 'bg-green-100 text-green-700',
+  2: 'bg-cyan-100 text-cyan-700',
+  3: 'bg-purple-100 text-purple-700',
+  4: 'bg-blue-100 text-blue-700',
   5: 'bg-green-100 text-green-700',
   6: 'bg-red-100 text-red-700',
   7: 'bg-orange-100 text-orange-700',
-  8: 'bg-cyan-100 text-cyan-700',
+  8: 'bg-teal-100 text-teal-700',
 };
 
-const ORDER_STATUS_PAYMENT_SUBMITTED = 8;
-const ORDER_STATUS_CONFIRMED = 2;
+const ORDER_STATUS_PAYMENT_SUBMITTED = 2;
+const ORDER_STATUS_CONFIRMED = 3;
+const ORDER_STATUS_COMPLETED = 5;
+const ORDER_STATUS_CANCELLED = 6;
+const ORDER_STATUS_REFUND_REQUESTED = 7;
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -47,7 +66,9 @@ export default function OrderDetailPage() {
   const [items, setItems] = useState<RichOrderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [refunding, setRefunding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -78,15 +99,53 @@ export default function OrderDetailPage() {
   const handleStatusChange = async (newStatus: number) => {
     if (!order) return;
     setUpdating(true);
+    setStatusError(null);
     try {
       const res = await api.put<ApiResponse<Order>>(`/admin/orders/${id}/status`, {
         status: newStatus,
       });
       setOrder(res.data);
-    } catch {
-      alert('Không thể cập nhật trạng thái');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Không thể cập nhật trạng thái';
+      setStatusError(message);
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleRefundCancelled = async () => {
+    if (!order || !confirm('Xác nhận hoàn tiền cho đơn hàng đã hủy?')) return;
+    setRefunding(true);
+    setStatusError(null);
+    try {
+      await api.put(`/admin/orders/${id}/refund-cancelled`);
+      const res = await api.get<ApiResponse<Order>>(`/admin/orders/${id}`);
+      setOrder(res.data);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Hoàn tiền thất bại';
+      setStatusError(message);
+    } finally {
+      setRefunding(false);
+    }
+  };
+
+  const handleRefundAction = async (approve: boolean) => {
+    if (!order) return;
+    const endpoint = approve
+      ? `/admin/orders/${id}/approve-refund`
+      : `/admin/orders/${id}/reject-refund`;
+
+    setRefunding(true);
+    setStatusError(null);
+    try {
+      await api.put(endpoint, approve ? {} : { reason: 'Từ chối bởi admin' });
+      const res = await api.get<ApiResponse<Order>>(`/admin/orders/${id}`);
+      setOrder(res.data);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Thao tác thất bại';
+      setStatusError(message);
+    } finally {
+      setRefunding(false);
     }
   };
 
@@ -111,7 +170,7 @@ export default function OrderDetailPage() {
 
   const statusLabel = STATUS_OPTIONS.find((s) => s.value === order.status)?.label ?? 'Không rõ';
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shippingFee = subtotal >= 500000 ? 0 : 30000;
+  const shippingFee = order.shipping_cost ?? 0;
 
   return (
     <div className="space-y-6">
@@ -139,15 +198,21 @@ export default function OrderDetailPage() {
           <select
             value={order.status}
             onChange={(e) => handleStatusChange(Number(e.target.value))}
-            disabled={updating}
+            disabled={updating || getValidStatusOptions(order.status).length === 0}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           >
-            {STATUS_OPTIONS.map((s) => (
+            <option value={order.status} disabled>
+              {STATUS_OPTIONS.find(s => s.value === order.status)?.label}
+            </option>
+            {getValidStatusOptions(order.status).map((s) => (
               <option key={s.value} value={s.value}>{s.label}</option>
             ))}
           </select>
           {updating && <Loader2 className="w-4 h-4 animate-spin text-blue-600" />}
         </div>
+        {statusError && (
+          <div className="text-red-600 text-sm mt-2">{statusError}</div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -216,8 +281,18 @@ export default function OrderDetailPage() {
               <div><span className="text-gray-500">Phương thức:</span> <span className="ml-2">Chuyển khoản ngân hàng</span></div>
               <div>
                 <span className="text-gray-500">Trạng thái:</span>
-                <span className={`ml-2 px-2 py-0.5 text-xs font-medium rounded-full ${order.status === 5 ? 'bg-green-100 text-green-700' : order.status === ORDER_STATUS_PAYMENT_SUBMITTED ? 'bg-cyan-100 text-cyan-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                  {order.status === 5 ? 'Đã thanh toán' : order.status === ORDER_STATUS_PAYMENT_SUBMITTED ? 'Đã báo chuyển khoản' : 'Chưa thanh toán'}
+                <span className={`ml-2 px-2 py-0.5 text-xs font-medium rounded-full ${
+                  order.status === 8 ? 'bg-teal-100 text-teal-700' :
+                  order.status === 7 ? 'bg-orange-100 text-orange-700' :
+                  order.status >= 3 && order.status <= 5 ? 'bg-green-100 text-green-700' :
+                  order.status === 2 ? 'bg-cyan-100 text-cyan-700' :
+                  'bg-yellow-100 text-yellow-700'
+                }`}>
+                  {order.status === 8 ? 'Đã hoàn tiền' :
+                   order.status === 7 ? 'Chờ hoàn tiền' :
+                   order.status >= 3 && order.status <= 5 ? 'Đã thanh toán' :
+                   order.status === 2 ? 'Đã báo chuyển khoản' :
+                   'Chưa thanh toán'}
                 </span>
               </div>
             </div>
@@ -229,6 +304,36 @@ export default function OrderDetailPage() {
               >
                 {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Xác nhận thanh toán'}
               </button>
+            )}
+            {order.status === ORDER_STATUS_CANCELLED && (
+              <button
+                onClick={handleRefundCancelled}
+                disabled={refunding}
+                className="mt-4 w-full bg-yellow-600 text-white py-2 rounded-lg font-medium hover:bg-yellow-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {refunding ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Hoàn tiền đơn đã hủy'}
+              </button>
+            )}
+            {order.status === ORDER_STATUS_REFUND_REQUESTED && (
+              <div className="mt-4 space-y-2">
+                <p className="text-sm text-orange-700 font-medium">Khách yêu cầu hoàn tiền</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleRefundAction(true)}
+                    disabled={refunding}
+                    className="flex-1 bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+                  >
+                    {refunding ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Xác nhận hoàn tiền'}
+                  </button>
+                  <button
+                    onClick={() => handleRefundAction(false)}
+                    disabled={refunding}
+                    className="flex-1 bg-gray-600 text-white py-2 rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:opacity-50"
+                  >
+                    Từ chối
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>

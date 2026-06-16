@@ -5,6 +5,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "RolOutfit - Thời Trang Cao Cấp",
   description: "Điểm đến hoàn hảo cho thời trang và phong cách sống của bạn.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({

@@ -86,6 +86,7 @@ func (s *productService) Create(ctx context.Context, req *requests.CreateProduct
 		NameJa:          req.NameJa,
 		Slug:            slug,
 		DefaultPrice:    req.DefaultPrice,
+		ShippingCost:    req.ShippingCost,
 		Description:     req.Description,
 		DescriptionJa:   req.DescriptionJa,
 		Avatar:          req.Avatar,
@@ -128,6 +129,9 @@ func (s *productService) Update(ctx context.Context, id string, req *requests.Up
 	}
 	if req.DefaultPrice != nil {
 		fields["default_price"] = *req.DefaultPrice
+	}
+	if req.ShippingCost != nil {
+		fields["shipping_cost"] = *req.ShippingCost
 	}
 	if req.Description != nil {
 		fields["description"] = *req.Description

@@ -50,7 +50,13 @@ export async function fetchWidgets(type?: string): Promise<Widget[]> {
 
   if (!widgets) return [];
 
-  return type ? widgets.filter((w) => w.type === type) : widgets;
+  const filtered = type ? widgets.filter((w) => w.type === type) : widgets;
+  return filtered.sort((a, b) => a.display_order - b.display_order);
+}
+
+export async function fetchAllActiveWidgets(): Promise<Widget[]> {
+  const widgets = await fetchWidgets();
+  return widgets.filter((w) => w.status === 2);
 }
 
 export async function fetchProductsByTags(

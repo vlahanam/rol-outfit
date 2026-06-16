@@ -34,6 +34,7 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
     name_ja: product.name_ja ?? "",
     category_id: product.category_id,
     default_price: String(product.default_price),
+    shipping_cost: String(product.shipping_cost ?? 0),
     description: product.description ?? "",
     description_ja: product.description_ja ?? "",
     status: String(product.status),
@@ -57,6 +58,7 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
         name_ja: form.name_ja || undefined,
         category_id: form.category_id,
         default_price: Number(form.default_price),
+        shipping_cost: Number(form.shipping_cost) || 0,
         description: form.description,
         description_ja: form.description_ja || undefined,
         status: Number(form.status),
@@ -70,6 +72,7 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
         name_ja: form.name_ja || undefined,
         category_id: form.category_id,
         default_price: Number(form.default_price),
+        shipping_cost: Number(form.shipping_cost) || 0,
         description: form.description,
         description_ja: form.description_ja || undefined,
         status: Number(form.status),
@@ -97,6 +100,7 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
       name_ja: product.name_ja ?? "",
       category_id: product.category_id,
       default_price: String(product.default_price),
+      shipping_cost: String(product.shipping_cost ?? 0),
       description: product.description ?? "",
       description_ja: product.description_ja ?? "",
       status: String(product.status),
@@ -229,6 +233,20 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phí vận chuyển (₫)
+            </label>
+            <input
+              value={form.shipping_cost}
+              type="number"
+              min="0"
+              onChange={(e) =>
+                setForm((p) => ({ ...p, shipping_cost: e.target.value }))
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Trạng thái
             </label>
             <select
@@ -305,6 +323,12 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
               <span className="text-gray-500">Giá mặc định:</span>
               <span className="font-medium ml-2">
                 {product.default_price.toLocaleString("vi-VN")}₫
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-500">Phí vận chuyển:</span>
+              <span className="font-medium ml-2">
+                {(product.shipping_cost ?? 0).toLocaleString("vi-VN")}₫
               </span>
             </div>
             <div>

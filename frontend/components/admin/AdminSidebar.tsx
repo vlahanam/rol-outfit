@@ -43,7 +43,11 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       >
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <Link href="/admin/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg"></div>
+            <img
+              src="/images/logo.png"
+              alt="RolOutfit Logo"
+              className="w-8 h-8 rounded-lg object-cover"
+            />
             <div>
               <h1 className="text-lg font-bold text-gray-900">RolOutfit</h1>
               <p className="text-xs text-gray-500">Admin Panel</p>

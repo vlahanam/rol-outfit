@@ -21,6 +21,7 @@ type OrderDTO struct {
 	ShippingAddress string          `json:"shipping_address"`
 	Phone           string          `json:"phone"`
 	TotalPrice      float64         `json:"total_price"`
+	ShippingCost    float64         `json:"shipping_cost"`
 	Status          int8            `json:"status"`
 	Note            string          `json:"note,omitempty"`
 	Items           []*OrderItemDTO `json:"items,omitempty"`
@@ -58,6 +59,7 @@ func ToOrderDTO(o *models.Order, items []*models.OrderItem) *OrderDTO {
 		ShippingAddress: o.ShippingAddress,
 		Phone:           o.Phone,
 		TotalPrice:      o.TotalPrice,
+		ShippingCost:    o.ShippingCost,
 		Status:          o.Status,
 		Note:            o.Note,
 		Items:           dtoItems,

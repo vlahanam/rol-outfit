@@ -112,6 +112,7 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	adminOrders.Put("/:id/status", controllers.UpdateOrderStatus(db))
 	adminOrders.Put("/:id/approve-refund", controllers.ApproveRefund(db))
 	adminOrders.Put("/:id/reject-refund", controllers.RejectRefund(db))
+	adminOrders.Put("/:id/refund-cancelled", controllers.AdminRefundCancelledOrder(db))
 	adminOrders.Get("/:id/history", controllers.GetOrderHistory(db, true))
 
 	// Admin carts
@@ -200,4 +201,11 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	adminUsers.Get("/:id", controllers.GetUser(db))
 	adminUsers.Put("/:id", controllers.UpdateUser(db))
 	adminUsers.Delete("/:id", controllers.DeleteUser(db))
+
+	// Admin dashboard
+	adminDashboard := v1.Group("/admin/dashboard",
+		middleware.JWTAuth(jwtSecret),
+		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
+	)
+	adminDashboard.Get("/", controllers.GetDashboardStats(db))
 }

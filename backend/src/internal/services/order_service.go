@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/vlahanam/rol-outfit/src/internal/models"
@@ -13,15 +14,16 @@ import (
 )
 
 var (
-	ErrOrderNotFound       = errors.New("order not found")
-	ErrOrderNotOwned       = errors.New("order does not belong to user")
-	ErrCartEmpty           = errors.New("cart is empty")
-	ErrCannotCancel        = errors.New("order cannot be cancelled in current status")
+	ErrOrderNotFound        = errors.New("order not found")
+	ErrOrderNotOwned        = errors.New("order does not belong to user")
+	ErrCartEmpty            = errors.New("cart is empty")
+	ErrCannotCancel         = errors.New("order cannot be cancelled in current status")
 	ErrCannotUpdateShipping = errors.New("cannot update shipping info for non-pending order")
-	ErrNotAwaitingPayment  = errors.New("order is not awaiting payment")
-	ErrInvalidTransition   = errors.New("invalid status transition")
-	ErrCannotRequestRefund = errors.New("can only request refund for completed orders")
-	ErrNotRefundRequest    = errors.New("order is not pending refund approval")
+	ErrNotAwaitingPayment   = errors.New("order is not awaiting payment")
+	ErrInvalidTransition    = errors.New("invalid status transition")
+	ErrCannotRequestRefund  = errors.New("can only request refund for completed orders")
+	ErrNotRefundRequest     = errors.New("order is not pending refund approval")
+	ErrReasonRequired       = errors.New("cancellation reason is required")
 )
 
 type OrderService interface {
@@ -31,11 +33,12 @@ type OrderService interface {
 	ListAllOrders(ctx context.Context, status int8, offset, limit int) ([]*models.Order, int64, error)
 	UpdateStatus(ctx context.Context, orderID string, newStatus int8, changedBy string, note string) error
 	UpdateShippingInfo(ctx context.Context, userID, orderID string, req *requests.UpdateOrderShippingRequest) error
-	CancelOrder(ctx context.Context, userID, orderID string, isAdmin bool) error
+	CancelOrder(ctx context.Context, userID, orderID, reason string, isAdmin bool) error
 	MarkAsTransferred(ctx context.Context, userID, orderID string) error
 	RequestRefund(ctx context.Context, userID, orderID string, reason string) error
 	ApproveRefund(ctx context.Context, orderID string, adminID string) error
 	RejectRefund(ctx context.Context, orderID string, adminID string, reason string) error
+	RefundCancelledOrder(ctx context.Context, orderID, adminID string) error
 	GetOrderHistory(ctx context.Context, orderID string) ([]*models.OrderStatusHistory, error)
 }
 
@@ -88,8 +91,13 @@ func (s *orderService) CreateFromCart(ctx context.Context, userID string, req *r
 		}
 
 		var totalPrice float64
+		var totalShipping float64
 		for _, item := range cartItems {
 			totalPrice += item.PriceAtAdd * float64(item.Quantity)
+			product, err := txRepo.FindProductByIDNoFilter(ctx, item.ProductID)
+			if err == nil && product != nil {
+				totalShipping += product.ShippingCost * float64(item.Quantity)
+			}
 		}
 
 		orderCode, err := txRepo.GenerateOrderCode(ctx)
@@ -103,7 +111,8 @@ func (s *orderService) CreateFromCart(ctx context.Context, userID string, req *r
 			UserID:          userID,
 			ShippingAddress: req.ShippingAddress,
 			Phone:           req.Phone,
-			TotalPrice:      totalPrice,
+			TotalPrice:      totalPrice + totalShipping,
+			ShippingCost:    totalShipping,
 			Status:          models.ORDER_STATUS_AWAITING_PAYMENT,
 			Note:            req.Note,
 		}
@@ -177,6 +186,20 @@ func (s *orderService) UpdateStatus(ctx context.Context, orderID string, newStat
 			return ErrInvalidTransition
 		}
 
+		// Stock deduction on CONFIRMED (only if coming from a status before CONFIRMED)
+		if newStatus == models.ORDER_STATUS_CONFIRMED && order.Status < models.ORDER_STATUS_CONFIRMED {
+			if err := s.handleStockDeduction(ctx, txRepo, orderID); err != nil {
+				return err
+			}
+		}
+
+		// Stock restoration on CANCELLED (only if order was CONFIRMED or later)
+		if newStatus == models.ORDER_STATUS_CANCELLED && order.Status >= models.ORDER_STATUS_CONFIRMED {
+			if err := s.handleStockRestoration(ctx, txRepo, orderID); err != nil {
+				return err
+			}
+		}
+
 		history := &models.OrderStatusHistory{
 			ID:         uuid.New().String(),
 			OrderID:    orderID,
@@ -193,6 +216,42 @@ func (s *orderService) UpdateStatus(ctx context.Context, orderID string, newStat
 
 		return txRepo.UpdateOrder(ctx, orderID, map[string]interface{}{"status": newStatus})
 	})
+}
+
+type stockRepo interface {
+	ListOrderItems(ctx context.Context, orderID string) ([]*models.OrderItem, error)
+	DeductStock(ctx context.Context, variantID string, quantity int) error
+	RestoreStock(ctx context.Context, variantID string, quantity int) error
+}
+
+func (s *orderService) handleStockDeduction(ctx context.Context, repo stockRepo, orderID string) error {
+	items, err := repo.ListOrderItems(ctx, orderID)
+	if err != nil {
+		return fmt.Errorf("failed to get order items: %w", err)
+	}
+	for _, item := range items {
+		if item.AttrID != nil && *item.AttrID != "" {
+			if err := repo.DeductStock(ctx, *item.AttrID, item.Quantity); err != nil {
+				return fmt.Errorf("failed to deduct stock for variant %s: %w", *item.AttrID, err)
+			}
+		}
+	}
+	return nil
+}
+
+func (s *orderService) handleStockRestoration(ctx context.Context, repo stockRepo, orderID string) error {
+	items, err := repo.ListOrderItems(ctx, orderID)
+	if err != nil {
+		return fmt.Errorf("failed to get order items: %w", err)
+	}
+	for _, item := range items {
+		if item.AttrID != nil && *item.AttrID != "" {
+			if err := repo.RestoreStock(ctx, *item.AttrID, item.Quantity); err != nil {
+				return fmt.Errorf("failed to restore stock for variant %s: %w", *item.AttrID, err)
+			}
+		}
+	}
+	return nil
 }
 
 func (s *orderService) UpdateShippingInfo(ctx context.Context, userID, orderID string, req *requests.UpdateOrderShippingRequest) error {
@@ -227,7 +286,7 @@ func (s *orderService) UpdateShippingInfo(ctx context.Context, userID, orderID s
 	return s.orderRepo.UpdateOrder(ctx, orderID, fields)
 }
 
-func (s *orderService) CancelOrder(ctx context.Context, userID, orderID string, isAdmin bool) error {
+func (s *orderService) CancelOrder(ctx context.Context, userID, orderID, reason string, isAdmin bool) error {
 	order, err := s.orderRepo.FindOrderByID(ctx, orderID)
 	if err != nil {
 		return fmt.Errorf("failed to find order: %w", err)
@@ -242,8 +301,20 @@ func (s *orderService) CancelOrder(ctx context.Context, userID, orderID string, 
 		return ErrCannotCancel
 	}
 
+	if order.Status == models.ORDER_STATUS_PAYMENT_SUBMITTED ||
+		order.Status == models.ORDER_STATUS_CONFIRMED {
+		if strings.TrimSpace(reason) == "" {
+			return ErrReasonRequired
+		}
+	}
+
+	note := "Order cancelled"
+	if reason != "" {
+		note = reason
+	}
+
 	changedBy := userID
-	return s.UpdateStatus(ctx, orderID, models.ORDER_STATUS_CANCELLED, changedBy, "Order cancelled")
+	return s.UpdateStatus(ctx, orderID, models.ORDER_STATUS_CANCELLED, changedBy, note)
 }
 
 func (s *orderService) MarkAsTransferred(ctx context.Context, userID, orderID string) error {
@@ -309,6 +380,20 @@ func (s *orderService) RejectRefund(ctx context.Context, orderID string, adminID
 		return ErrNotRefundRequest
 	}
 	return s.UpdateStatus(ctx, orderID, models.ORDER_STATUS_COMPLETED, adminID, "Refund rejected: "+reason)
+}
+
+func (s *orderService) RefundCancelledOrder(ctx context.Context, orderID, adminID string) error {
+	order, err := s.orderRepo.FindOrderByID(ctx, orderID)
+	if err != nil {
+		return fmt.Errorf("failed to find order: %w", err)
+	}
+	if order == nil {
+		return ErrOrderNotFound
+	}
+	if order.Status != models.ORDER_STATUS_CANCELLED {
+		return ErrInvalidTransition
+	}
+	return s.UpdateStatus(ctx, orderID, models.ORDER_STATUS_REFUNDED, adminID, "Refunded cancelled order")
 }
 
 func (s *orderService) GetOrderHistory(ctx context.Context, orderID string) ([]*models.OrderStatusHistory, error) {

@@ -164,6 +164,24 @@ func (m *MockCartItemRepository) ClearCart(ctx context.Context, cartID string) e
 	return args.Error(0)
 }
 
+// MockOrderStatusHistoryRepository is a mock implementation of OrderStatusHistoryRepository
+type MockOrderStatusHistoryRepository struct {
+	mock.Mock
+}
+
+func (m *MockOrderStatusHistoryRepository) CreateStatusHistory(ctx context.Context, history *models.OrderStatusHistory) error {
+	args := m.Called(ctx, history)
+	return args.Error(0)
+}
+
+func (m *MockOrderStatusHistoryRepository) ListStatusHistory(ctx context.Context, orderID string) ([]*models.OrderStatusHistory, error) {
+	args := m.Called(ctx, orderID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.OrderStatusHistory), args.Error(1)
+}
+
 // Test UpdateShippingInfo - Success case: Update pending order
 func TestUpdateShippingInfo_Success(t *testing.T) {
 	ctx := context.Background()
@@ -173,7 +191,7 @@ func TestUpdateShippingInfo_Success(t *testing.T) {
 	order := &models.Order{
 		ID:              orderID,
 		UserID:          userID,
-		Status:          models.ORDER_STATUS_PENDING,
+		Status:          models.ORDER_STATUS_AWAITING_PAYMENT,
 		ShippingAddress: "Old Address",
 		Phone:           "1234567890",
 	}
@@ -196,7 +214,8 @@ func TestUpdateShippingInfo_Success(t *testing.T) {
 		return fields["shipping_address"] == newAddress && fields["phone"] == newPhone
 	})).Return(nil)
 
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
 
 	// Execute
 	err := svc.UpdateShippingInfo(ctx, userID, orderID, req)
@@ -230,7 +249,8 @@ func TestUpdateShippingInfo_NonPendingOrder(t *testing.T) {
 
 	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
 
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
 
 	// Execute
 	err := svc.UpdateShippingInfo(ctx, userID, orderID, req)
@@ -259,7 +279,8 @@ func TestUpdateShippingInfo_OrderNotFound(t *testing.T) {
 
 	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(nil, nil)
 
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
 
 	// Execute
 	err := svc.UpdateShippingInfo(ctx, userID, orderID, req)
@@ -279,7 +300,7 @@ func TestUpdateShippingInfo_OrderNotOwned(t *testing.T) {
 	order := &models.Order{
 		ID:     orderID,
 		UserID: otherUserID,
-		Status: models.ORDER_STATUS_PENDING,
+		Status: models.ORDER_STATUS_AWAITING_PAYMENT,
 	}
 
 	newAddress := "New Address"
@@ -294,7 +315,8 @@ func TestUpdateShippingInfo_OrderNotOwned(t *testing.T) {
 
 	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
 
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
 
 	// Execute
 	err := svc.UpdateShippingInfo(ctx, userID, orderID, req)
@@ -313,7 +335,7 @@ func TestUpdateShippingInfo_PartialUpdate_OnlyPhone(t *testing.T) {
 	order := &models.Order{
 		ID:     orderID,
 		UserID: userID,
-		Status: models.ORDER_STATUS_PENDING,
+		Status: models.ORDER_STATUS_AWAITING_PAYMENT,
 	}
 
 	newPhone := "9876543210"
@@ -334,7 +356,8 @@ func TestUpdateShippingInfo_PartialUpdate_OnlyPhone(t *testing.T) {
 		return hasPhone && !hasAddress && !hasNote
 	})).Return(nil)
 
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
 
 	// Execute
 	err := svc.UpdateShippingInfo(ctx, userID, orderID, req)
@@ -353,7 +376,7 @@ func TestUpdateShippingInfo_EmptyRequest(t *testing.T) {
 	order := &models.Order{
 		ID:     orderID,
 		UserID: userID,
-		Status: models.ORDER_STATUS_PENDING,
+		Status: models.ORDER_STATUS_AWAITING_PAYMENT,
 	}
 
 	req := &requests.UpdateOrderShippingRequest{}
@@ -366,7 +389,8 @@ func TestUpdateShippingInfo_EmptyRequest(t *testing.T) {
 	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
 	// UpdateOrder should not be called when no fields are provided
 
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
 
 	// Execute
 	err := svc.UpdateShippingInfo(ctx, userID, orderID, req)
@@ -386,14 +410,12 @@ func TestUpdateShippingInfo_AllStatuses(t *testing.T) {
 		status      int8
 		shouldAllow bool
 	}{
-		{models.ORDER_STATUS_PENDING, true},
+		{models.ORDER_STATUS_AWAITING_PAYMENT, true},
+		{models.ORDER_STATUS_PAYMENT_SUBMITTED, false},
 		{models.ORDER_STATUS_CONFIRMED, false},
 		{models.ORDER_STATUS_SHIPPING, false},
-		{models.ORDER_STATUS_DELIVERED, false},
-		{models.ORDER_STATUS_PAID, false},
+		{models.ORDER_STATUS_COMPLETED, false},
 		{models.ORDER_STATUS_CANCELLED, false},
-		{models.ORDER_STATUS_AWAITING_PAYMENT, false},
-		{models.ORDER_STATUS_PAYMENT_SUBMITTED, false},
 	}
 
 	newAddress := "New Address"
@@ -419,7 +441,8 @@ func TestUpdateShippingInfo_AllStatuses(t *testing.T) {
 				mockOrderRepo.On("UpdateOrder", ctx, orderID, mock.Anything).Return(nil)
 			}
 
-			svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+			mockHistoryRepo := new(MockOrderStatusHistoryRepository)
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
 
 			// Execute
 			err := svc.UpdateShippingInfo(ctx, userID, orderID, req)
@@ -437,97 +460,35 @@ func TestUpdateShippingInfo_AllStatuses(t *testing.T) {
 	}
 }
 
-// Test UpdateStatus
+// Test UpdateStatus - uses real db for transaction support
 func TestUpdateStatus(t *testing.T) {
 	ctx := context.Background()
-	orderID := uuid.New().String()
+	db := setupTestDB(t)
 
+	orderID := uuid.New().String()
 	order := &models.Order{
 		ID:     orderID,
-		Status: models.ORDER_STATUS_PENDING,
+		Status: models.ORDER_STATUS_PAYMENT_SUBMITTED,
 	}
+	db.Create(order)
 
-	mockOrderRepo := new(MockOrderRepository)
-	mockOrderItemRepo := new(MockOrderItemRepository)
-	mockCartRepo := new(MockCartRepository)
-	mockCartItemRepo := new(MockCartItemRepository)
+	repo := &testRepo{db: db}
+	svc := NewOrderService(db, repo, repo, repo, repo, repo)
 
-	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
-	mockOrderRepo.On("UpdateOrder", ctx, orderID, map[string]interface{}{"status": models.ORDER_STATUS_CONFIRMED}).Return(nil)
+	adminID := uuid.New().String()
+	err := svc.UpdateStatus(ctx, orderID, models.ORDER_STATUS_CONFIRMED, adminID, "test note")
 
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
-
-	// Execute
-	err := svc.UpdateStatus(ctx, orderID, models.ORDER_STATUS_CONFIRMED)
-
-	// Assert
 	assert.NoError(t, err)
-	mockOrderRepo.AssertExpectations(t)
+
+	var updated models.Order
+	db.First(&updated, "id = ?", orderID)
+	assert.Equal(t, models.ORDER_STATUS_CONFIRMED, updated.Status)
 }
 
-// Test CancelOrder - Success
+// Test CancelOrder - Success (status 1 - no reason required)
 func TestCancelOrder_Success(t *testing.T) {
 	ctx := context.Background()
-	userID := uuid.New().String()
-	orderID := uuid.New().String()
-
-	order := &models.Order{
-		ID:     orderID,
-		UserID: userID,
-		Status: models.ORDER_STATUS_PENDING,
-	}
-
-	mockOrderRepo := new(MockOrderRepository)
-	mockOrderItemRepo := new(MockOrderItemRepository)
-	mockCartRepo := new(MockCartRepository)
-	mockCartItemRepo := new(MockCartItemRepository)
-
-	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
-	mockOrderRepo.On("UpdateOrder", ctx, orderID, map[string]interface{}{"status": models.ORDER_STATUS_CANCELLED}).Return(nil)
-
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
-
-	// Execute
-	err := svc.CancelOrder(ctx, userID, orderID)
-
-	// Assert
-	assert.NoError(t, err)
-	mockOrderRepo.AssertExpectations(t)
-}
-
-// Test CancelOrder - Fail: Non-pending order
-func TestCancelOrder_NonPendingOrder(t *testing.T) {
-	ctx := context.Background()
-	userID := uuid.New().String()
-	orderID := uuid.New().String()
-
-	order := &models.Order{
-		ID:     orderID,
-		UserID: userID,
-		Status: models.ORDER_STATUS_CONFIRMED,
-	}
-
-	mockOrderRepo := new(MockOrderRepository)
-	mockOrderItemRepo := new(MockOrderItemRepository)
-	mockCartRepo := new(MockCartRepository)
-	mockCartItemRepo := new(MockCartItemRepository)
-
-	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
-
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
-
-	// Execute
-	err := svc.CancelOrder(ctx, userID, orderID)
-
-	// Assert
-	assert.Error(t, err)
-	assert.Equal(t, ErrCannotCancel, err)
-	mockOrderRepo.AssertNotCalled(t, "UpdateOrder")
-}
-
-// Test MarkAsTransferred - Success: Mark awaiting payment order as transferred
-func TestMarkAsTransferred_Success(t *testing.T) {
-	ctx := context.Background()
+	db := setupTestDB(t)
 	userID := uuid.New().String()
 	orderID := uuid.New().String()
 
@@ -536,23 +497,75 @@ func TestMarkAsTransferred_Success(t *testing.T) {
 		UserID: userID,
 		Status: models.ORDER_STATUS_AWAITING_PAYMENT,
 	}
+	db.Create(order)
+
+	repo := &testRepo{db: db}
+	svc := NewOrderService(db, repo, repo, repo, repo, repo)
+
+	err := svc.CancelOrder(ctx, userID, orderID, "", false)
+
+	assert.NoError(t, err)
+
+	var updated models.Order
+	db.First(&updated, "id = ?", orderID)
+	assert.Equal(t, models.ORDER_STATUS_CANCELLED, updated.Status)
+}
+
+// Test CancelOrder - Status 2,3 requires reason
+func TestCancelOrder_RequiresReason(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New().String()
+	orderID := uuid.New().String()
+
+	order := &models.Order{
+		ID:     orderID,
+		UserID: userID,
+		Status: models.ORDER_STATUS_PAYMENT_SUBMITTED,
+	}
 
 	mockOrderRepo := new(MockOrderRepository)
 	mockOrderItemRepo := new(MockOrderItemRepository)
 	mockCartRepo := new(MockCartRepository)
 	mockCartItemRepo := new(MockCartItemRepository)
+	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
 
 	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
-	mockOrderRepo.On("UpdateOrder", ctx, orderID, map[string]interface{}{"status": models.ORDER_STATUS_PAYMENT_SUBMITTED}).Return(nil)
 
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
 
-	// Execute
-	err := svc.MarkAsTransferred(ctx, userID, orderID)
+	// Execute - no reason should fail
+	err := svc.CancelOrder(ctx, userID, orderID, "", false)
 
 	// Assert
+	assert.Error(t, err)
+	assert.Equal(t, ErrReasonRequired, err)
+	mockOrderRepo.AssertNotCalled(t, "UpdateOrder")
+}
+
+// Test MarkAsTransferred - Success: Mark awaiting payment order as transferred
+func TestMarkAsTransferred_Success(t *testing.T) {
+	ctx := context.Background()
+	db := setupTestDB(t)
+	userID := uuid.New().String()
+	orderID := uuid.New().String()
+
+	order := &models.Order{
+		ID:     orderID,
+		UserID: userID,
+		Status: models.ORDER_STATUS_AWAITING_PAYMENT,
+	}
+	db.Create(order)
+
+	repo := &testRepo{db: db}
+	svc := NewOrderService(db, repo, repo, repo, repo, repo)
+
+	err := svc.MarkAsTransferred(ctx, userID, orderID)
+
 	assert.NoError(t, err)
-	mockOrderRepo.AssertExpectations(t)
+
+	var updated models.Order
+	db.First(&updated, "id = ?", orderID)
+	assert.Equal(t, models.ORDER_STATUS_PAYMENT_SUBMITTED, updated.Status)
 }
 
 // Test MarkAsTransferred - Fail: Order not found
@@ -568,7 +581,8 @@ func TestMarkAsTransferred_OrderNotFound(t *testing.T) {
 
 	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(nil, nil)
 
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
 
 	// Execute
 	err := svc.MarkAsTransferred(ctx, userID, orderID)
@@ -599,7 +613,8 @@ func TestMarkAsTransferred_OrderNotOwned(t *testing.T) {
 
 	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
 
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
 
 	// Execute
 	err := svc.MarkAsTransferred(ctx, userID, orderID)
@@ -629,7 +644,8 @@ func TestMarkAsTransferred_NotAwaitingPayment(t *testing.T) {
 
 	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
 
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
 
 	// Execute
 	err := svc.MarkAsTransferred(ctx, userID, orderID)
@@ -659,7 +675,8 @@ func TestMarkAsTransferred_AlreadySubmitted(t *testing.T) {
 
 	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
 
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
 
 	// Execute
 	err := svc.MarkAsTransferred(ctx, userID, orderID)
@@ -678,7 +695,7 @@ func TestMarkAsTransferred_DeliveredOrder(t *testing.T) {
 	order := &models.Order{
 		ID:     orderID,
 		UserID: userID,
-		Status: models.ORDER_STATUS_DELIVERED,
+		Status: models.ORDER_STATUS_COMPLETED,
 	}
 
 	mockOrderRepo := new(MockOrderRepository)
@@ -688,7 +705,8 @@ func TestMarkAsTransferred_DeliveredOrder(t *testing.T) {
 
 	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
 
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
 
 	// Execute
 	err := svc.MarkAsTransferred(ctx, userID, orderID)
@@ -699,39 +717,10 @@ func TestMarkAsTransferred_DeliveredOrder(t *testing.T) {
 	mockOrderRepo.AssertNotCalled(t, "UpdateOrder")
 }
 
-// Test CancelOrder - Allows cancellation of awaiting payment orders
-func TestCancelOrder_AwaitingPayment(t *testing.T) {
+// Test CancelOrder - Status 2 with reason succeeds
+func TestCancelOrder_WithReason(t *testing.T) {
 	ctx := context.Background()
-	userID := uuid.New().String()
-	orderID := uuid.New().String()
-
-	order := &models.Order{
-		ID:     orderID,
-		UserID: userID,
-		Status: models.ORDER_STATUS_AWAITING_PAYMENT,
-	}
-
-	mockOrderRepo := new(MockOrderRepository)
-	mockOrderItemRepo := new(MockOrderItemRepository)
-	mockCartRepo := new(MockCartRepository)
-	mockCartItemRepo := new(MockCartItemRepository)
-
-	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
-	mockOrderRepo.On("UpdateOrder", ctx, orderID, map[string]interface{}{"status": models.ORDER_STATUS_CANCELLED}).Return(nil)
-
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
-
-	// Execute
-	err := svc.CancelOrder(ctx, userID, orderID)
-
-	// Assert
-	assert.NoError(t, err)
-	mockOrderRepo.AssertExpectations(t)
-}
-
-// Test CancelOrder - Blocks cancellation of payment submitted orders
-func TestCancelOrder_PaymentSubmitted(t *testing.T) {
-	ctx := context.Background()
+	db := setupTestDB(t)
 	userID := uuid.New().String()
 	orderID := uuid.New().String()
 
@@ -740,21 +729,218 @@ func TestCancelOrder_PaymentSubmitted(t *testing.T) {
 		UserID: userID,
 		Status: models.ORDER_STATUS_PAYMENT_SUBMITTED,
 	}
+	db.Create(order)
+
+	repo := &testRepo{db: db}
+	svc := NewOrderService(db, repo, repo, repo, repo, repo)
+
+	err := svc.CancelOrder(ctx, userID, orderID, "Changed my mind", false)
+
+	assert.NoError(t, err)
+
+	var updated models.Order
+	db.First(&updated, "id = ?", orderID)
+	assert.Equal(t, models.ORDER_STATUS_CANCELLED, updated.Status)
+}
+
+// Test CancelOrder - Blocks cancellation of shipping orders (user)
+func TestCancelOrder_ShippingOrder(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New().String()
+	orderID := uuid.New().String()
+
+	order := &models.Order{
+		ID:     orderID,
+		UserID: userID,
+		Status: models.ORDER_STATUS_SHIPPING,
+	}
 
 	mockOrderRepo := new(MockOrderRepository)
 	mockOrderItemRepo := new(MockOrderItemRepository)
 	mockCartRepo := new(MockCartRepository)
 	mockCartItemRepo := new(MockCartItemRepository)
+	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
 
 	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
 
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo)
+	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
 
-	// Execute
-	err := svc.CancelOrder(ctx, userID, orderID)
+	// Execute - user cannot cancel shipping order
+	err := svc.CancelOrder(ctx, userID, orderID, "reason", false)
 
-	// Assert
 	assert.Error(t, err)
 	assert.Equal(t, ErrCannotCancel, err)
 	mockOrderRepo.AssertNotCalled(t, "UpdateOrder")
+}
+
+// Test UpdateStatus - SHIPPING to CANCELLED (admin can cancel shipping order)
+func TestUpdateStatus_ShippingToCancelled(t *testing.T) {
+	ctx := context.Background()
+	db := setupTestDB(t)
+	orderID := uuid.New().String()
+	variantID := uuid.New().String()
+
+	order := &models.Order{
+		ID:     orderID,
+		Status: models.ORDER_STATUS_SHIPPING,
+	}
+	db.Create(order)
+
+	variant := &models.ProductVariant{
+		ID:    variantID,
+		Stock: 5,
+		Sold:  10,
+	}
+	db.Create(variant)
+
+	orderItem := &models.OrderItem{
+		ID:       uuid.New().String(),
+		OrderID:  orderID,
+		AttrID:   &variantID,
+		Quantity: 2,
+	}
+	db.Create(orderItem)
+
+	repo := &testRepo{db: db}
+	svc := NewOrderService(db, repo, repo, repo, repo, repo)
+
+	adminID := uuid.New().String()
+	err := svc.UpdateStatus(ctx, orderID, models.ORDER_STATUS_CANCELLED, adminID, "delivery failed")
+
+	assert.NoError(t, err)
+
+	var updated models.Order
+	db.First(&updated, "id = ?", orderID)
+	assert.Equal(t, models.ORDER_STATUS_CANCELLED, updated.Status)
+
+	var updatedVariant models.ProductVariant
+	db.First(&updatedVariant, "id = ?", variantID)
+	assert.Equal(t, 7, updatedVariant.Stock)
+	assert.Equal(t, 8, updatedVariant.Sold)
+}
+
+// Test UpdateStatus - CONFIRMED deducts stock
+func TestUpdateStatus_ConfirmedDeductsStock(t *testing.T) {
+	ctx := context.Background()
+	db := setupTestDB(t)
+	orderID := uuid.New().String()
+	variantID := uuid.New().String()
+
+	order := &models.Order{
+		ID:     orderID,
+		Status: models.ORDER_STATUS_PAYMENT_SUBMITTED,
+	}
+	db.Create(order)
+
+	variant := &models.ProductVariant{
+		ID:    variantID,
+		Stock: 10,
+		Sold:  5,
+	}
+	db.Create(variant)
+
+	orderItem := &models.OrderItem{
+		ID:       uuid.New().String(),
+		OrderID:  orderID,
+		AttrID:   &variantID,
+		Quantity: 3,
+	}
+	db.Create(orderItem)
+
+	repo := &testRepo{db: db}
+	svc := NewOrderService(db, repo, repo, repo, repo, repo)
+
+	adminID := uuid.New().String()
+	err := svc.UpdateStatus(ctx, orderID, models.ORDER_STATUS_CONFIRMED, adminID, "payment verified")
+
+	assert.NoError(t, err)
+
+	var updatedVariant models.ProductVariant
+	db.First(&updatedVariant, "id = ?", variantID)
+	assert.Equal(t, 7, updatedVariant.Stock)
+	assert.Equal(t, 8, updatedVariant.Sold)
+}
+
+// Test UpdateStatus - CANCELLED restores stock (from CONFIRMED)
+func TestUpdateStatus_CancelledRestoresStock(t *testing.T) {
+	ctx := context.Background()
+	db := setupTestDB(t)
+	orderID := uuid.New().String()
+	variantID := uuid.New().String()
+
+	order := &models.Order{
+		ID:     orderID,
+		Status: models.ORDER_STATUS_CONFIRMED,
+	}
+	db.Create(order)
+
+	variant := &models.ProductVariant{
+		ID:    variantID,
+		Stock: 5,
+		Sold:  10,
+	}
+	db.Create(variant)
+
+	orderItem := &models.OrderItem{
+		ID:       uuid.New().String(),
+		OrderID:  orderID,
+		AttrID:   &variantID,
+		Quantity: 2,
+	}
+	db.Create(orderItem)
+
+	repo := &testRepo{db: db}
+	svc := NewOrderService(db, repo, repo, repo, repo, repo)
+
+	adminID := uuid.New().String()
+	err := svc.UpdateStatus(ctx, orderID, models.ORDER_STATUS_CANCELLED, adminID, "customer requested")
+
+	assert.NoError(t, err)
+
+	var updatedVariant models.ProductVariant
+	db.First(&updatedVariant, "id = ?", variantID)
+	assert.Equal(t, 7, updatedVariant.Stock)
+	assert.Equal(t, 8, updatedVariant.Sold)
+}
+
+// Test UpdateStatus - CANCELLED before CONFIRMED does not change stock
+func TestUpdateStatus_CancelledBeforeConfirmed_NoStockChange(t *testing.T) {
+	ctx := context.Background()
+	db := setupTestDB(t)
+	orderID := uuid.New().String()
+	variantID := uuid.New().String()
+
+	order := &models.Order{
+		ID:     orderID,
+		Status: models.ORDER_STATUS_PAYMENT_SUBMITTED,
+	}
+	db.Create(order)
+
+	variant := &models.ProductVariant{
+		ID:    variantID,
+		Stock: 10,
+		Sold:  5,
+	}
+	db.Create(variant)
+
+	orderItem := &models.OrderItem{
+		ID:       uuid.New().String(),
+		OrderID:  orderID,
+		AttrID:   &variantID,
+		Quantity: 2,
+	}
+	db.Create(orderItem)
+
+	repo := &testRepo{db: db}
+	svc := NewOrderService(db, repo, repo, repo, repo, repo)
+
+	adminID := uuid.New().String()
+	err := svc.UpdateStatus(ctx, orderID, models.ORDER_STATUS_CANCELLED, adminID, "cancelled before confirm")
+
+	assert.NoError(t, err)
+
+	var updatedVariant models.ProductVariant
+	db.First(&updatedVariant, "id = ?", variantID)
+	assert.Equal(t, 10, updatedVariant.Stock)
+	assert.Equal(t, 5, updatedVariant.Sold)
 }

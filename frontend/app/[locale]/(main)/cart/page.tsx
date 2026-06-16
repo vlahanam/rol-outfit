@@ -13,6 +13,7 @@ interface RichCartItem extends CartItem {
   productName: string;
   productImage?: string;
   variantName?: string;
+  shippingCost: number;
 }
 
 export default function CartPage() {
@@ -60,12 +61,14 @@ export default function CartPage() {
                 productName: pRes.data.name,
                 productImage: pRes.data.avatar,
                 variantName,
+                shippingCost: pRes.data.shipping_cost ?? 0,
               };
             } catch {
               return {
                 ...item,
                 productName: item.product_id,
                 productImage: undefined,
+                shippingCost: 0,
               };
             }
           }),
@@ -112,7 +115,10 @@ export default function CartPage() {
     (sum, item) => sum + item.price_at_add * item.quantity,
     0,
   );
-  const shipping = subtotal >= 500000 ? 0 : 30000;
+  const shipping = cartItems.reduce(
+    (sum, item) => sum + item.shippingCost * item.quantity,
+    0,
+  );
   const total = subtotal + shipping;
 
   return (

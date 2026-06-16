@@ -60,6 +60,8 @@
   "error.invalid_transition": "Chuyển trạng thái không hợp lệ",
   "error.cannot_request_refund": "Chỉ có thể yêu cầu hoàn tiền cho đơn hàng đã hoàn thành",
   "error.not_refund_request": "Đơn hàng không ở trạng thái chờ duyệt hoàn tiền",
+  "error.reason_required": "Vui lòng nhập lý do hủy đơn",
+  "error.invalid_status_transition": "Chuyển trạng thái không hợp lệ",
 
   "error.user_not_found": "Người dùng không tồn tại",
   "error.user_email_taken": "Email này đã được sử dụng bởi tài khoản khác",

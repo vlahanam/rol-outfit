@@ -11,6 +11,7 @@ import { OrderStatusBadge } from "@/components/orders/order-status-badge";
 import { PaymentQRSection } from "@/components/orders/payment-qr-section";
 import { OrderStatusTimeline } from "@/components/orders/order-status-timeline";
 import { RefundRequestButton } from "@/components/orders/refund-request-button";
+import { CancelOrderModal } from "@/components/orders/cancel-order-modal";
 import type { ApiResponse, Order, Product } from "@/types/api";
 
 const ORDER_STATUS_AWAITING_PAYMENT = 1;
@@ -39,6 +40,7 @@ export default function OrderDetailPage() {
   const [items, setItems] = useState<RichOrderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -82,20 +84,21 @@ export default function OrderDetailPage() {
     fetchOrder();
   }, [router, id, tCommon, locale]);
 
-  const handleCancel = async () => {
-    if (!confirm(t("cancelConfirm"))) return;
+  const handleCancel = async (reason: string) => {
     setCancelling(true);
+    setError(null);
     try {
-      await api.delete(`/orders/${id}`);
+      await api.delete(`/orders/${id}`, { data: { reason }, locale });
       router.push("/orders");
-    } catch {
-      alert(t("cancelFailed"));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : t("cancelFailed");
+      setError(message);
       setCancelling(false);
     }
   };
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = subtotal >= 500000 ? 0 : 30000;
+  const shipping = order?.shipping_cost ?? 0;
 
   if (loading) {
     return (
@@ -260,9 +263,15 @@ export default function OrderDetailPage() {
               </div>
             )}
 
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <p className="text-red-700 text-center text-sm">{error}</p>
+              </div>
+            )}
+
             {order.status <= ORDER_STATUS_CONFIRMED && (
               <button
-                onClick={handleCancel}
+                onClick={() => setShowCancelModal(true)}
                 disabled={cancelling}
                 className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
@@ -278,6 +287,14 @@ export default function OrderDetailPage() {
             )}
 
             <OrderStatusTimeline orderId={order.id} />
+
+            <CancelOrderModal
+              isOpen={showCancelModal}
+              onClose={() => setShowCancelModal(false)}
+              onConfirm={handleCancel}
+              orderStatus={order.status}
+              isLoading={cancelling}
+            />
           </div>
         </div>
       </div>

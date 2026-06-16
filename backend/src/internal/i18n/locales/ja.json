@@ -60,6 +60,8 @@
   "error.invalid_transition": "無効なステータス変更です",
   "error.cannot_request_refund": "完了した注文のみ返金申請できます",
   "error.not_refund_request": "注文は返金承認待ち状態ではありません",
+  "error.reason_required": "キャンセル理由を入力してください",
+  "error.invalid_status_transition": "無効なステータス変更です",
 
   "error.user_not_found": "ユーザーが見つかりません",
   "error.user_email_taken": "このメールアドレスはすでに別のアカウントで使用されています",
