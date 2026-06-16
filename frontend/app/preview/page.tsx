@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CollectionSlider } from "@/components/storefront/collection-slider";
 import type { CollectionItem } from "@/types/api";
@@ -13,7 +13,7 @@ interface PreviewData {
   };
 }
 
-export default function PreviewPage() {
+function PreviewContent() {
   const searchParams = useSearchParams();
   const widgetType = searchParams.get("widget");
   const [data, setData] = useState<PreviewData | null>(null);
@@ -57,5 +57,19 @@ export default function PreviewPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <p className="text-red-500 text-sm">Unknown widget type: {widgetType}</p>
     </div>
+  );
+}
+
+export default function PreviewPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <p className="text-gray-500 text-sm">Loading...</p>
+        </div>
+      }
+    >
+      <PreviewContent />
+    </Suspense>
   );
 }
