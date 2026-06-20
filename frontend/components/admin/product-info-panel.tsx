@@ -8,8 +8,10 @@ import { ImageUploader } from "@/components/admin/image-uploader";
 import { TiptapEditor } from "@/components/admin/tiptap-editor";
 import { LanguageTabsForm } from "@/components/admin/language-tabs-form";
 import type { AdminProduct, Category } from "@/types/api";
+import { formatPrice, getCurrencyLabel } from "@/lib/format";
 
 const STATUS_LABEL: Record<number, string> = { 1: "Hiển thị", 2: "Ẩn" };
+const PRODUCT_TYPE_LABEL: Record<number, string> = { 1: "Hàng Nhật Bản", 2: "Hàng Việt Nam" };
 
 function toDatetimeLocal(iso: string | null): string {
   if (!iso) return "";
@@ -38,6 +40,7 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
     description: product.description ?? "",
     description_ja: product.description_ja ?? "",
     status: String(product.status),
+    product_type: String(product.product_type ?? 2),
     avatar: product.avatar ?? "",
     discount_percent: String(product.discount_percent ?? 0),
     discount_start_at: toDatetimeLocal(product.discount_start_at ?? null),
@@ -62,6 +65,7 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
         description: form.description,
         description_ja: form.description_ja || undefined,
         status: Number(form.status),
+        product_type: Number(form.product_type) || 2,
         avatar: form.avatar || undefined,
         discount_percent: Number(form.discount_percent) || 0,
         discount_start_at: fromDatetimeLocal(form.discount_start_at),
@@ -76,6 +80,7 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
         description: form.description,
         description_ja: form.description_ja || undefined,
         status: Number(form.status),
+        product_type: Number(form.product_type) || 2,
         avatar: form.avatar || undefined,
         discount_percent: Number(form.discount_percent) || 0,
         discount_start_at: fromDatetimeLocal(form.discount_start_at),
@@ -104,6 +109,7 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
       description: product.description ?? "",
       description_ja: product.description_ja ?? "",
       status: String(product.status),
+      product_type: String(product.product_type ?? 2),
       avatar: product.avatar ?? "",
       discount_percent: String(product.discount_percent ?? 0),
       discount_start_at: toDatetimeLocal(product.discount_start_at ?? null),
@@ -219,7 +225,7 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Giá mặc định (₫)
+              Giá mặc định ({getCurrencyLabel(Number(form.product_type))})
             </label>
             <input
               value={form.default_price}
@@ -233,7 +239,7 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phí vận chuyển (₫)
+              Phí vận chuyển ({getCurrencyLabel(Number(form.product_type))})
             </label>
             <input
               value={form.shipping_cost}
@@ -258,6 +264,21 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
             >
               <option value="1">Hiển thị</option>
               <option value="2">Ẩn</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Loại sản phẩm
+            </label>
+            <select
+              value={form.product_type}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, product_type: e.target.value }))
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="1">Hàng Nhật Bản</option>
+              <option value="2">Hàng Việt Nam</option>
             </select>
           </div>
           <div className="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
@@ -322,13 +343,13 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
             <div>
               <span className="text-gray-500">Giá mặc định:</span>
               <span className="font-medium ml-2">
-                {product.default_price.toLocaleString("vi-VN")}₫
+                {formatPrice(product.default_price, product.product_type)}
               </span>
             </div>
             <div>
               <span className="text-gray-500">Phí vận chuyển:</span>
               <span className="font-medium ml-2">
-                {(product.shipping_cost ?? 0).toLocaleString("vi-VN")}₫
+                {formatPrice(product.shipping_cost ?? 0, product.product_type)}
               </span>
             </div>
             <div>
@@ -343,13 +364,25 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
                 {STATUS_LABEL[product.status] ?? product.status}
               </span>
             </div>
+            <div>
+              <span className="text-gray-500">Loại sản phẩm:</span>
+              <span
+                className={`ml-2 px-2 py-0.5 text-xs font-medium rounded-full ${
+                  product.product_type === 1
+                    ? "bg-red-100 text-red-700"
+                    : "bg-blue-100 text-blue-700"
+                }`}
+              >
+                {PRODUCT_TYPE_LABEL[product.product_type] ?? "Hàng Việt Nam"}
+              </span>
+            </div>
             {product.discount_percent > 0 && (
               <div className="md:col-span-2">
                 <span className="text-gray-500">Giảm giá:</span>
                 <span className="ml-2 font-medium text-red-600">{product.discount_percent}%</span>
                 {product.sale_price < product.default_price && (
                   <span className="ml-2 text-gray-500 text-xs">
-                    → {product.sale_price.toLocaleString("vi-VN")}₫
+                    → {formatPrice(product.sale_price, product.product_type)}
                   </span>
                 )}
                 {(product.discount_start_at || product.discount_end_at) && (

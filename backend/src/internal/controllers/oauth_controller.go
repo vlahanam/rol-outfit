@@ -28,14 +28,6 @@ func OAuthGoogleCallback(oauthSvc services.OAuthService) fiber.Handler {
 	return oauthCallback(oauthSvc, models.OAuthProviderGoogle)
 }
 
-func OAuthFacebook(oauthSvc services.OAuthService) fiber.Handler {
-	return oauthInitiate(oauthSvc, models.OAuthProviderFacebook)
-}
-
-func OAuthFacebookCallback(oauthSvc services.OAuthService) fiber.Handler {
-	return oauthCallback(oauthSvc, models.OAuthProviderFacebook)
-}
-
 func oauthInitiate(oauthSvc services.OAuthService, provider string) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		redirectURI := c.Query("redirect_uri", "")
@@ -183,7 +175,7 @@ func UnlinkOAuthProvider(oauthSvc services.OAuthService) fiber.Handler {
 		userID := c.Locals("userID").(string)
 		provider := c.Params("provider")
 
-		if provider != models.OAuthProviderGoogle && provider != models.OAuthProviderFacebook {
+		if provider != models.OAuthProviderGoogle {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": "invalid_provider",
 			})

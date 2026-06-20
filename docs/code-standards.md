@@ -89,10 +89,10 @@ go mod tidy
 - **Decimal** — `github.com/shopspring/decimal`
 
 ### Widget System Notes
-- **Widget Types** (6 total): HERO_BANNER, CATEGORY_CAROUSEL, PRODUCT_GRID, NEW_ARRIVALS, LIST_IMAGE, COLLECTION_GRID
+- **Widget Types** (4 total): banner-slider, collection-grid, new-product, trend-hot
 - **Database Migrations** (25 total): Foundation tables (001-009) → Features (010-025)
 - **Fixed Widgets**: 4 seeded widgets via migration 000016 (Banner Slider, Collection, New Arrivals, Trend Hot)
-- **Metadata**: JSONB column on widgets table (migration 000015) stores type-specific configs
+- **Metadata**: JSONB column on widgets table (migration 000015) stores type-specific configs (slides, tags, category filters)
 
 ## Layer-Specific Guidelines
 

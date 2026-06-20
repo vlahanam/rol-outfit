@@ -70,6 +70,7 @@ export interface Product {
   description: string;
   description_ja?: string;
   status: number;
+  product_type: number;
   attribute_names: string[];
   data?: unknown;
   avatar?: string;
@@ -227,6 +228,7 @@ export interface CreateProductPayload {
   description_ja?: string;
   avatar: string;
   attribute_names: string[];
+  product_type?: number;
   discount_percent?: number;
   discount_start_at?: string | null;
   discount_end_at?: string | null;
@@ -242,6 +244,7 @@ export interface UpdateProductPayload {
   description_ja?: string;
   avatar?: string;
   status?: number;
+  product_type?: number;
   attribute_names?: string[];
   discount_percent?: number;
   discount_start_at?: string | null;
@@ -394,6 +397,8 @@ export interface UserAddress {
   recipient_name: string;
   phone: string;
   address: string;
+  latitude: number | null;
+  longitude: number | null;
   is_default: boolean;
   created_at: string;
   updated_at: string;
@@ -403,12 +408,16 @@ export interface CreateAddressPayload {
   recipient_name: string;
   phone: string;
   address: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface UpdateAddressPayload {
   recipient_name?: string;
   phone?: string;
   address?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 // Error response from backend

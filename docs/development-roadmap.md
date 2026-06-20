@@ -72,71 +72,25 @@ High-level project phases and milestones. For detailed implementation plans, see
 **Status:** ⏳ In Progress | **Target:** May–June 2026
 
 - [x] Next.js frontend setup with TailwindCSS and next-intl
-- [x] Admin dashboard — User CRUD (list, create, edit, delete)
-- [x] Admin dashboard — Product CRUD with variants (add, edit, delete products + variant management)
-- [x] Admin dashboard — Product & variant image upload UI with reusable ImageUploader component
-- [x] Admin dashboard — Category CRUD with slug generation
-- [x] Product variant list view with images and edit capability
-- [x] Variant edit form with all fields (avatar, attributes, price, stock, status, discount)
-- [x] Admin dashboard — Tag CRUD (list, create, edit, delete) with time-window activation
-  - [x] Backend: Tags table with start_at/end_at time windows
-  - [x] Backend: Product-tag assignment with max-3 tags per product
-  - [x] Frontend: Tags management pages (list, create, edit) with datetime pickers
-  - [x] Frontend: Product tag assignment panel on product edit page
-- [x] User product detail page enhancement
-  - [x] Variant picker (color/size) with availability awareness
-  - [x] Active tag badges display with filtering
-  - [x] Multi-image gallery (product + variant images)
-  - [x] Dynamic price updates on variant selection
-  - [x] Sale badge and strikethrough price display
-- [x] Admin cart viewing UI
+- [x] Admin dashboard — Full CRUD for users, products, categories, tags
+- [x] Product variants with image upload, attributes, pricing, discounts
 - [x] Tiptap rich text editor for product descriptions
-- [x] Admin widgets management UI
-  - [x] Backend: Admin-only widget endpoints (list, get) with no status filter
-  - [x] Frontend: Widgets list page with read-only view of 4 fixed widgets
-  - [x] Frontend: Widget edit form with all configuration options
-  - [x] Widget type preview panel with live preview and metadata
-    - [x] Backend: `metadata` JSONB column on widgets table (migration 000015)
-    - [x] Backend: Widget model, DTO, requests, service updated with Metadata field
-    - [x] Frontend: WidgetMetadataForm component for type-specific content editing
-    - [x] Frontend: WidgetTypePreview component with live preview panels
-    - [x] Frontend: 5 widget types now have type-specific content forms (container, chart, table, stat, text, image)
-    - [x] Frontend: Image upload reuses existing ImageUploader component
-  - [x] Widget management simplification (May 20, 2026)
-    - [x] Backend: Migration 000016 seeds 4 fixed widgets (Banner Slider, Bộ Sưu Tập Đặc Biệt, Hàng Mới Về, Xu Hướng Hot)
-    - [x] Frontend: Removed add/delete/reorder functionality from widgets list page
-    - [x] Frontend: Widgets management now edit-only (no creation or deletion)
-  - [x] Banner slider editor (May 20, 2026)
-    - [x] Frontend: BannerSlide type with image, label, title, description, CTA fields
-    - [x] Frontend: BannerSliderEditor component with multi-slide management and image upload
-    - [x] Frontend: BannerSliderPreview component with live preview and slide navigation
-    - [x] Frontend: Widget edit page wired with banner-slider-specific UI
-  - [x] New-product widget editor (May 25, 2026)
-    - [x] Backend: Multi-tag product filtering (tags query param) in ListProducts controller
-    - [x] Frontend: NewProductEditor component for tag-based product selection
-    - [x] Frontend: NewProductPreview component with live preview
-    - [x] Frontend: Placeholder asset for missing product images
-    - [x] API: Support flexible tag combinations (multiple tags via comma-separated query string)
-- [x] New arrivals page with tag-based filtering — products tagged "NEW" fetched via real API with sort controls
+- [x] Admin widgets management (edit-only, 4 fixed widget types)
+  - [x] banner-slider editor with multi-slide management
+  - [x] new-product editor with tag-based filtering
+  - [x] collection-grid and trend-hot editors
+- [x] User product detail page with variant picker, image gallery, tag badges
+- [x] Order management (history, detail, cancel, refund workflow)
+  - [x] 8-status order lifecycle with state machine validation
+  - [x] Order status history audit trail
+  - [x] CancelOrderModal, OrderStatusBadge, OrderStatusTimeline components
 - [x] Checkout flow (shipping form, order creation, success page)
-- [x] User order pages (history list, detail view, cancel capability)
-- [x] Admin order detail page with real API integration
-- [x] Order code system — human-readable codes (`ROL-YYMMDD-XXXX`) with atomic sequence generation
-- [x] Header auth state (user dropdown when logged in)
-- [x] Order status redesign (June 8, 2026)
-  - [x] Backend: 8-status order lifecycle (AWAITING_PAYMENT → PAYMENT_SUBMITTED → CONFIRMED → SHIPPING → COMPLETED or REFUND_REQUESTED → REFUNDED)
-  - [x] Backend: State machine validation with transition rules
-  - [x] Backend: Order status history table for audit trail (migration 000002)
-  - [x] Backend: Refund workflow endpoints (request, approve, reject)
-  - [x] Backend: Order history endpoint for timeline visualization
-  - [x] Frontend: OrderStatusBadge with 8 status colors
-  - [x] Frontend: OrderStatusTimeline component showing historical transitions
-  - [x] Frontend: Refund button on completed orders
-- [ ] Authentication UI (login, registration) — public pages
-- [ ] Product catalog and search — public pages
-- [ ] Shopping cart UI — public pages
+- [x] User profile & address management
+- [x] Order code system (ROL-YYMMDD-XXXX with atomic sequence generation)
+- [x] Multi-tab logout sync via BroadcastChannel
+- [ ] Public storefront pages (login, registration, shop, cart)
 
-**Completeness:** 88%
+**Completeness:** 90%
 
 ---
 
@@ -163,9 +117,10 @@ High-level project phases and milestones. For detailed implementation plans, see
 |--------|---------|--------|
 | API Endpoints | 50+ | 60+ |
 | Test Coverage | TBD | 80%+ |
-| Documentation | ~95% | 100% |
+| Documentation | 98% (6 docs) | 100% |
 | Production Ready | No | Q2 2026 |
 | Database Migrations | 25 | 30+ |
-| Backend LOC | ~10,724 | - |
-| Frontend LOC | ~14,083 | - |
+| Controllers | 14 | - |
+| Services | 14+ | - |
+| Frontend Components | 40+ | - |
 

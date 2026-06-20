@@ -611,63 +611,85 @@ const data = await fetchFromAPI<Product[]>("/products", {
 
 ---
 
-## Widget Editor Components
+## Order Management Components
 
-### New-Product Widget Editor
+### OrderStatusBadge
 
-**Component:** `components/admin/widgets/new-product-editor.tsx`
+**Component:** `components/common/order-status-badge.tsx`
 
-**Purpose:** Admin interface for configuring new-product widget with tag-based product selection.
-
-**Features:**
-- Tag selection form for filtering products
-- Product list with search/filter capability
-- Product selection checkboxes
-- Live preview via companion `NewProductPreview` component
-- Metadata persistence to widget.metadata JSONB
-
-**Data Flow:**
-1. Admin selects tags (e.g., "new", "featured")
-2. Component fetches products filtered by tags via API
-3. Admin selects products to display in widget
-4. Preview updates in real-time
-5. Metadata saved when admin saves widget configuration
+**Purpose:** Display order status with color-coded visual indicators for all 8 order states.
 
 **Props:**
 ```typescript
-interface NewProductEditorProps {
-  widget: Widget;
-  onMetadataChange: (metadata: NewProductMetadata) => void;
-}
-
-interface NewProductMetadata {
-  tags: string[];
-  productIds: string[];
-  displayLimit?: number;  // max products to show
+interface OrderStatusBadgeProps {
+  status: number;  // 1-8 (AWAITING_PAYMENT through REFUNDED)
 }
 ```
 
----
-
-### New-Product Widget Preview
-
-**Component:** `components/admin/widgets/new-product-preview.tsx`
-
-**Purpose:** Live preview panel showing how new-product widget renders on storefront.
-
-**Features:**
-- Displays products selected in editor
-- Shows product cards with image, name, price
-- Responsive grid layout (1-4 columns)
-- Fallback placeholder for missing images
-- Updates in real-time as metadata changes
-
-**Data Integration:**
-- Fetches product details from API using `productIds` from metadata
-- Handles loading and error states
-- Gracefully degrades if products deleted
+**Status Mapping:**
+- Status 1 (AWAITING_PAYMENT) — Red badge
+- Status 2 (PAYMENT_SUBMITTED) — Orange badge
+- Status 3 (CONFIRMED) — Yellow badge
+- Status 4 (SHIPPING) — Blue badge
+- Status 5 (COMPLETED) — Green badge
+- Status 6 (CANCELLED) — Gray badge
+- Status 7 (REFUND_REQUESTED) — Purple badge
+- Status 8 (REFUNDED) — Indigo badge
 
 ---
+
+### OrderStatusTimeline
+
+**Component:** `components/common/order-status-timeline.tsx`
+
+**Purpose:** Visual timeline showing order status transition history with timestamps and notes.
+
+**Props:**
+```typescript
+interface OrderStatusTimelineProps {
+  history: OrderStatusHistory[];  // Array of status history records
+}
+
+interface OrderStatusHistory {
+  id: string;
+  fromStatus: number | null;
+  toStatus: number;
+  changedBy: string | null;
+  note: string;
+  createdAt: string;
+}
+```
+
+**Display:** Vertical timeline with status badges, timestamps, and transition notes from order_status_history table.
+
+---
+
+### CancelOrderModal
+
+**Component:** `components/orders/cancel-order-modal.tsx`
+
+**Purpose:** Modal dialog for user order cancellation with conditional reason input.
+
+**Props:**
+```typescript
+interface CancelOrderModalProps {
+  orderId: string;
+  currentStatus: number;  // Status 1-3 may require reason
+  onConfirm: (reason?: string) => Promise<void>;
+  onCancel: () => void;
+}
+```
+
+**Behavior:**
+- Statuses 2 (PAYMENT_SUBMITTED) and 3 (CONFIRMED) require reason field
+- Status 1 (AWAITING_PAYMENT) optional reason
+- Textarea validation, error messages, loading state during submission
+
+---
+
+## Widget Editors & Metadata Patterns
+
+Widget editors pair with live preview components. Each editor component marshals form input into metadata JSON, while preview components render the storefront view.
 
 ### Widget Type-Specific Metadata Patterns
 
@@ -744,15 +766,13 @@ interface BannerSlide {
 - Type-safe metadata access via TypeScript discriminated unions
 - Backend validates metadata shape at database level (optional constraint)
 
-**Widget Types & Editors (6 Widget Types):**
-| Type | Editor Component | Preview Component | Metadata Storage |
-|------|---------|---------|------------------|
-| HERO_BANNER | BannerSliderEditor | BannerSliderPreview | slides: BannerSlide[] |
-| COLLECTION_GRID | CollectionGridEditor | CollectionGridPreview | categoryId, displayLimit |
-| NEW_ARRIVALS | NewProductEditor | NewProductPreview | tags, productIds, displayLimit |
-| PRODUCT_GRID | ProductGridEditor | ProductGridPreview | categoryId, displayLimit, sortBy |
-| LIST_IMAGE | ListImageEditor | ListImagePreview | images, links |
-| CATEGORY_CAROUSEL | CategoryCarouselEditor | CategoryCarouselPreview | categoryIds, displayLimit |
+**Widget Types & Editors (4 Widget Types):**
+| Type | Editor | Preview | Metadata |
+|------|--------|---------|----------|
+| banner-slider | BannerSliderEditor | BannerSliderPreview | slides: BannerSlide[] |
+| collection-grid | CollectionGridEditor | CollectionGridPreview | categoryId, displayLimit |
+| new-product | NewProductEditor | NewProductPreview | tags, productIds, displayLimit |
+| trend-hot | TrendHotEditor | TrendHotPreview | tags, displayLimit, sortBy |
 
 **Admin Widget Edit Flow:**
 1. Admin navigates to `/admin/widgets/[id]/edit`

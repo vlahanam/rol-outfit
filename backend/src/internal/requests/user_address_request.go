@@ -5,9 +5,11 @@ import (
 )
 
 type CreateAddressRequest struct {
-	RecipientName string `json:"recipient_name"`
-	Phone         string `json:"phone"`
-	Address       string `json:"address"`
+	RecipientName string   `json:"recipient_name"`
+	Phone         string   `json:"phone"`
+	Address       string   `json:"address"`
+	Latitude      *float64 `json:"latitude"`
+	Longitude     *float64 `json:"longitude"`
 }
 
 func (r CreateAddressRequest) Validate() error {
@@ -28,9 +30,11 @@ func (r CreateAddressRequest) Validate() error {
 }
 
 type UpdateAddressRequest struct {
-	RecipientName *string `json:"recipient_name"`
-	Phone         *string `json:"phone"`
-	Address       *string `json:"address"`
+	RecipientName *string  `json:"recipient_name"`
+	Phone         *string  `json:"phone"`
+	Address       *string  `json:"address"`
+	Latitude      *float64 `json:"latitude"`
+	Longitude     *float64 `json:"longitude"`
 }
 
 func (r UpdateAddressRequest) Validate() error {

@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { ImageUploader } from "@/components/admin/image-uploader";
 import type { AdminProduct, ProductVariant } from "@/types/api";
+import { getCurrencyLabel } from "@/lib/format";
 
 export default function EditVariantPage() {
   const router = useRouter();
@@ -142,7 +143,7 @@ export default function EditVariantPage() {
           ))}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Giá (₫)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Giá ({getCurrencyLabel(product?.product_type)})</label>
             <input
               value={price}
               type="number"

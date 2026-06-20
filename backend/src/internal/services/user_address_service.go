@@ -43,6 +43,8 @@ func (s *userAddressService) Create(ctx context.Context, userID string, req *req
 		RecipientName: req.RecipientName,
 		Phone:         req.Phone,
 		Address:       req.Address,
+		Latitude:      req.Latitude,
+		Longitude:     req.Longitude,
 	}
 
 	if err := s.repo.CreateAddressAtomic(ctx, address); err != nil {
@@ -68,6 +70,12 @@ func (s *userAddressService) Update(ctx context.Context, userID, addressID strin
 	}
 	if req.Address != nil {
 		fields["address"] = *req.Address
+	}
+	if req.Latitude != nil {
+		fields["latitude"] = *req.Latitude
+	}
+	if req.Longitude != nil {
+		fields["longitude"] = *req.Longitude
 	}
 
 	if len(fields) == 0 {

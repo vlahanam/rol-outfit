@@ -1,16 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, X } from "lucide-react";
 import { ProductItem } from "@/components/ProductItem";
 import { useTranslations, useLocale } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import type { ApiResponse, Product, Category, Tag } from "@/types/api";
-
-function formatPrice(value: number): string {
-  return value.toLocaleString("vi-VN") + "₫";
-}
+import { formatPrice, PRODUCT_TYPE_JAPANESE, PRODUCT_TYPE_VIETNAMESE } from "@/lib/format";
 
 function effectivePrice(p: Product): number {
   return p.sale_price ?? p.default_price;
@@ -18,9 +16,17 @@ function effectivePrice(p: Product): number {
 
 export default function ShopPage() {
   const t = useTranslations("ShopPage");
+  const tHeader = useTranslations("Header");
   const tCommon = useTranslations("Common");
   const router = useRouter();
   const locale = useLocale();
+  const searchParams = useSearchParams();
+  const typeParam = searchParams.get("type");
+
+  const productTypeFilter = typeParam === "japanese" ? PRODUCT_TYPE_JAPANESE
+    : typeParam === "vietnamese" ? PRODUCT_TYPE_VIETNAMESE
+    : 0;
+
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("newest");
@@ -29,11 +35,14 @@ export default function ShopPage() {
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchProducts = useCallback(async (tagSlugs: string[]) => {
+  const fetchProducts = useCallback(async (tagSlugs: string[], productType: number) => {
     try {
       let url = "/products?limit=50";
       if (tagSlugs.length > 0) {
         url += `&tags=${tagSlugs.join(",")}`;
+      }
+      if (productType > 0) {
+        url += `&product_type=${productType}`;
       }
       const res = await api.get<ApiResponse<Product[]>>(url, locale);
       setProducts(res.data ?? []);
@@ -45,8 +54,12 @@ export default function ShopPage() {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
+        let productUrl = "/products?limit=50";
+        if (productTypeFilter > 0) {
+          productUrl += `&product_type=${productTypeFilter}`;
+        }
         const [prodRes, catRes, tagRes] = await Promise.all([
-          api.get<ApiResponse<Product[]>>("/products?limit=50", locale),
+          api.get<ApiResponse<Product[]>>(productUrl, locale),
           api.get<ApiResponse<Category[]>>("/categories?limit=50", locale),
           api.get<ApiResponse<Tag[]>>("/tags?limit=50", locale),
         ]);
@@ -60,21 +73,21 @@ export default function ShopPage() {
       }
     };
     fetchInitialData();
-  }, [locale]);
+  }, [locale, productTypeFilter]);
 
   const toggleTag = (slug: string) => {
     setSelectedTags((prev) => {
       const next = prev.includes(slug)
         ? prev.filter((s) => s !== slug)
         : [...prev, slug];
-      fetchProducts(next);
+      fetchProducts(next, productTypeFilter);
       return next;
     });
   };
 
   const clearTags = () => {
     setSelectedTags([]);
-    fetchProducts([]);
+    fetchProducts([], productTypeFilter);
   };
 
   const isOnSale = (p: Product) =>
@@ -107,7 +120,13 @@ export default function ShopPage() {
         </Link>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{t("title")}</h1>
+          <h1 className="text-3xl font-bold mb-2">
+            {productTypeFilter === PRODUCT_TYPE_JAPANESE
+              ? tHeader("japaneseProducts")
+              : productTypeFilter === PRODUCT_TYPE_VIETNAMESE
+              ? tHeader("vietnameseProducts")
+              : t("title")}
+          </h1>
           <p className="text-gray-600">{t("subtitle")}</p>
         </div>
 
@@ -204,10 +223,10 @@ export default function ShopPage() {
               >
                 <ProductItem
                   name={product.name}
-                  price={formatPrice(effectivePrice(product))}
+                  price={formatPrice(effectivePrice(product), product.product_type)}
                   originalPrice={
                     product.sale_price < product.default_price
-                      ? formatPrice(product.default_price)
+                      ? formatPrice(product.default_price, product.product_type)
                       : undefined
                   }
                   discountPercent={

@@ -12,6 +12,9 @@ import (
 const (
 	PRODUCT_STATUS_ACTIVE = int8(1)
 	PRODUCT_STATUS_HIDDEN = int8(2)
+
+	PRODUCT_TYPE_JAPANESE   = int8(1)
+	PRODUCT_TYPE_VIETNAMESE = int8(2)
 )
 
 // StringSlice maps a Go []string to a PostgreSQL TEXT[] column.
@@ -98,6 +101,7 @@ type Product struct {
 	Description     string         `gorm:"column:description"`
 	DescriptionJa   string         `gorm:"column:description_ja"`
 	Status          int8           `gorm:"column:status"`
+	ProductType     int8           `gorm:"column:product_type"`
 	AttributeNames  StringSlice    `gorm:"column:attribute_names;type:text[]"`
 	Avatar          string         `gorm:"column:avatar"`
 	DiscountPercent float64        `gorm:"column:discount_percent;type:numeric(5,2)"`

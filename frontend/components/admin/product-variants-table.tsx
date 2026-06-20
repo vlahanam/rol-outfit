@@ -10,6 +10,7 @@ import { createVariantSchema } from "@/lib/validations";
 import { ImageUploader } from "@/components/admin/image-uploader";
 import { DeleteConfirmModal } from "@/components/admin/DeleteConfirmModal";
 import type { AdminProduct, ProductVariant } from "@/types/api";
+import { formatPrice } from "@/lib/format";
 
 function VariantAvatarCell({ src }: { src?: string }) {
   if (!src)
@@ -159,7 +160,7 @@ export function ProductVariantsTable({
                       <VariantAvatarCell src={v.avatar} />
                     </td>
                     <td className="px-4 py-2 font-medium whitespace-nowrap">
-                      {v.price.toLocaleString("vi-VN")}₫
+                      {formatPrice(v.price, product.product_type)}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">{v.stock}</td>
                     <td className="px-4 py-2 text-gray-500 whitespace-nowrap">{v.sold}</td>

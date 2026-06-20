@@ -18,6 +18,7 @@ type ProductDTO struct {
 	Description     string    `json:"description"`
 	DescriptionJa   string    `json:"description_ja,omitempty"`
 	Status          int8      `json:"status"`
+	ProductType     int8      `json:"product_type"`
 	AttributeNames  []string  `json:"attribute_names"`
 	Avatar          string    `json:"avatar,omitempty"`
 	DiscountPercent float64   `json:"discount_percent"`
@@ -52,6 +53,7 @@ func ToProductDTO(p *models.Product) *ProductDTO {
 		Description:     p.Description,
 		DescriptionJa:   p.DescriptionJa,
 		Status:          p.Status,
+		ProductType:     p.ProductType,
 		AttributeNames:  attrNames,
 		Avatar:          p.Avatar,
 		DiscountPercent: p.DiscountPercent,
@@ -73,6 +75,7 @@ type LocalizedProductDTO struct {
 	ShippingCost    float64            `json:"shipping_cost"`
 	Description     string             `json:"description"`
 	Status          int8               `json:"status"`
+	ProductType     int8               `json:"product_type"`
 	AttributeNames  []string           `json:"attribute_names"`
 	Avatar          string             `json:"avatar,omitempty"`
 	DiscountPercent float64            `json:"discount_percent"`
@@ -101,6 +104,7 @@ func (p *ProductDTO) ToLocalized(lang string) *LocalizedProductDTO {
 		ShippingCost:    p.ShippingCost,
 		Description:     utils.GetLocalizedString(p.Description, p.DescriptionJa, lang),
 		Status:          p.Status,
+		ProductType:     p.ProductType,
 		AttributeNames:  p.AttributeNames,
 		Avatar:          p.Avatar,
 		DiscountPercent: p.DiscountPercent,
@@ -125,6 +129,7 @@ type ProductWithVariantsDTO struct {
 	Description     string               `json:"description"`
 	DescriptionJa   string               `json:"description_ja,omitempty"`
 	Status          int8                 `json:"status"`
+	ProductType     int8                 `json:"product_type"`
 	AttributeNames  []string             `json:"attribute_names"`
 	Avatar          string               `json:"avatar,omitempty"`
 	DiscountPercent float64              `json:"discount_percent"`
@@ -165,6 +170,7 @@ func ToProductWithVariantsDTO(p *models.ProductWithVariants) *ProductWithVariant
 		Description:     p.Description,
 		DescriptionJa:   p.DescriptionJa,
 		Status:          p.Status,
+		ProductType:     p.ProductType,
 		AttributeNames:  attrNames,
 		Avatar:          p.Avatar,
 		DiscountPercent: p.DiscountPercent,

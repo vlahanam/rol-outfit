@@ -18,7 +18,7 @@ var (
 )
 
 type ProductService interface {
-	List(ctx context.Context, categoryID, search string, tagSlugs []string, sortMode string, offset, limit int) ([]*models.Product, int64, error)
+	List(ctx context.Context, categoryID, search string, tagSlugs []string, sortMode string, productType int8, offset, limit int) ([]*models.Product, int64, error)
 	AdminList(ctx context.Context, categoryID, search string, offset, limit int) ([]*models.ProductWithVariants, int64, error)
 	GetByID(ctx context.Context, id string) (*models.Product, error)
 	AdminGetByID(ctx context.Context, id string) (*models.ProductWithVariants, error)
@@ -35,8 +35,8 @@ func NewProductService(repo repositories.ProductRepository) ProductService {
 	return &productService{repo: repo}
 }
 
-func (s *productService) List(ctx context.Context, categoryID, search string, tagSlugs []string, sortMode string, offset, limit int) ([]*models.Product, int64, error) {
-	return s.repo.ListProducts(ctx, categoryID, search, tagSlugs, sortMode, offset, limit)
+func (s *productService) List(ctx context.Context, categoryID, search string, tagSlugs []string, sortMode string, productType int8, offset, limit int) ([]*models.Product, int64, error) {
+	return s.repo.ListProducts(ctx, categoryID, search, tagSlugs, sortMode, productType, offset, limit)
 }
 
 func (s *productService) AdminList(ctx context.Context, categoryID, search string, offset, limit int) ([]*models.ProductWithVariants, int64, error) {
@@ -79,6 +79,11 @@ func (s *productService) Create(ctx context.Context, req *requests.CreateProduct
 		return nil, ErrProductSlugTaken
 	}
 
+	productType := req.ProductType
+	if productType == 0 {
+		productType = models.PRODUCT_TYPE_VIETNAMESE
+	}
+
 	p := &models.Product{
 		ID:              uuid.New().String(),
 		CategoryID:      req.CategoryID,
@@ -91,6 +96,7 @@ func (s *productService) Create(ctx context.Context, req *requests.CreateProduct
 		DescriptionJa:   req.DescriptionJa,
 		Avatar:          req.Avatar,
 		Status:          models.PRODUCT_STATUS_ACTIVE,
+		ProductType:     productType,
 		AttributeNames:  models.StringSlice(req.AttributeNames),
 		DiscountPercent: req.DiscountPercent,
 		DiscountStartAt: req.DiscountStartAt,
@@ -144,6 +150,9 @@ func (s *productService) Update(ctx context.Context, id string, req *requests.Up
 	}
 	if req.Status != nil {
 		fields["status"] = *req.Status
+	}
+	if req.ProductType != nil {
+		fields["product_type"] = *req.ProductType
 	}
 	if req.AttributeNames != nil {
 		fields["attribute_names"] = models.StringSlice(req.AttributeNames)

@@ -13,7 +13,6 @@ import (
 
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/facebook"
 	"golang.org/x/oauth2/google"
 
 	"github.com/vlahanam/rol-outfit/src/internal/models"
@@ -44,7 +43,6 @@ type OAuthService interface {
 
 type oauthService struct {
 	googleConfig     *oauth2.Config
-	facebookConfig   *oauth2.Config
 	allowedRedirects []string
 	callbackBaseURL  string
 
@@ -55,7 +53,6 @@ type oauthService struct {
 
 func NewOAuthService(
 	googleClientID, googleClientSecret string,
-	facebookAppID, facebookAppSecret string,
 	callbackBaseURL string,
 	allowedRedirects []string,
 	oauthRepo repositories.OAuthRepository,
@@ -68,12 +65,6 @@ func NewOAuthService(
 			ClientSecret: googleClientSecret,
 			Scopes:       []string{"openid", "email", "profile"},
 			Endpoint:     google.Endpoint,
-		},
-		facebookConfig: &oauth2.Config{
-			ClientID:     facebookAppID,
-			ClientSecret: facebookAppSecret,
-			Scopes:       []string{"email", "public_profile"},
-			Endpoint:     facebook.Endpoint,
 		},
 		callbackBaseURL:  callbackBaseURL,
 		allowedRedirects: allowedRedirects,
@@ -101,41 +92,31 @@ func (s *oauthService) ValidateRedirectURI(uri string) bool {
 }
 
 func (s *oauthService) GetAuthURL(provider, state, redirectURI string) (string, error) {
-	var config oauth2.Config
-	switch provider {
-	case models.OAuthProviderGoogle:
-		config = *s.googleConfig
-		config.RedirectURL = s.callbackBaseURL + "/api/v1/auth/oauth/google/callback"
-	case models.OAuthProviderFacebook:
-		config = *s.facebookConfig
-		config.RedirectURL = s.callbackBaseURL + "/api/v1/auth/oauth/facebook/callback"
-	default:
+	if provider != models.OAuthProviderGoogle {
 		return "", fmt.Errorf("unknown provider: %s", provider)
 	}
+
+	config := *s.googleConfig
+	config.RedirectURL = s.callbackBaseURL + "/api/v1/auth/oauth/google/callback"
 
 	fullState := state + ":" + redirectURI
 	return config.AuthCodeURL(fullState, oauth2.AccessTypeOffline), nil
 }
 
 func (s *oauthService) HandleCallback(ctx context.Context, provider, code, redirectURI string) (*models.AuthTokens, error) {
-	var config oauth2.Config
-	switch provider {
-	case models.OAuthProviderGoogle:
-		config = *s.googleConfig
-		config.RedirectURL = s.callbackBaseURL + "/api/v1/auth/oauth/google/callback"
-	case models.OAuthProviderFacebook:
-		config = *s.facebookConfig
-		config.RedirectURL = s.callbackBaseURL + "/api/v1/auth/oauth/facebook/callback"
-	default:
+	if provider != models.OAuthProviderGoogle {
 		return nil, fmt.Errorf("unknown provider: %s", provider)
 	}
+
+	config := *s.googleConfig
+	config.RedirectURL = s.callbackBaseURL + "/api/v1/auth/oauth/google/callback"
 
 	token, err := config.Exchange(ctx, code)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrOAuthProviderError, err)
 	}
 
-	userInfo, err := s.fetchUserInfo(ctx, provider, token)
+	userInfo, err := s.fetchGoogleUserInfo(oauth2.NewClient(ctx, oauth2.StaticTokenSource(token)))
 	if err != nil {
 		return nil, err
 	}
@@ -143,46 +124,8 @@ func (s *oauthService) HandleCallback(ctx context.Context, provider, code, redir
 	return s.findOrCreateUser(ctx, provider, userInfo)
 }
 
-func (s *oauthService) fetchUserInfo(ctx context.Context, provider string, token *oauth2.Token) (*OAuthUserInfo, error) {
-	client := oauth2.NewClient(ctx, oauth2.StaticTokenSource(token))
-
-	switch provider {
-	case models.OAuthProviderGoogle:
-		return s.fetchGoogleUserInfo(client)
-	case models.OAuthProviderFacebook:
-		return s.fetchFacebookUserInfo(client, token.AccessToken)
-	default:
-		return nil, fmt.Errorf("unknown provider: %s", provider)
-	}
-}
-
 func (s *oauthService) fetchGoogleUserInfo(client *http.Client) (*OAuthUserInfo, error) {
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, _ := io.ReadAll(resp.Body)
-	var data struct {
-		ID    string `json:"id"`
-		Email string `json:"email"`
-		Name  string `json:"name"`
-	}
-	if err := json.Unmarshal(body, &data); err != nil {
-		return nil, err
-	}
-
-	return &OAuthUserInfo{
-		ID:    data.ID,
-		Email: data.Email,
-		Name:  data.Name,
-	}, nil
-}
-
-func (s *oauthService) fetchFacebookUserInfo(client *http.Client, accessToken string) (*OAuthUserInfo, error) {
-	url := fmt.Sprintf("https://graph.facebook.com/me?fields=id,name,email&access_token=%s", accessToken)
-	resp, err := client.Get(url)
 	if err != nil {
 		return nil, err
 	}

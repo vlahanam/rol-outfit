@@ -21,6 +21,5 @@ func (UserOAuthProvider) TableName() string {
 }
 
 const (
-	OAuthProviderGoogle   = "google"
-	OAuthProviderFacebook = "facebook"
+	OAuthProviderGoogle = "google"
 )

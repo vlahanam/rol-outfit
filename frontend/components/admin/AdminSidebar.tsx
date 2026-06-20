@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Package, ShoppingCart, ClipboardList, Tags, Tag, LayoutPanelLeft, X } from 'lucide-react';
+import { LayoutDashboard, Users, Package, ShoppingCart, ClipboardList, Tags, Tag, LayoutPanelLeft, Settings, X } from 'lucide-react';
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -21,6 +21,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     { icon: LayoutPanelLeft, label: 'Widgets', path: '/admin/widgets' },
     { icon: ShoppingCart, label: 'Giỏ Hàng', path: '/admin/carts' },
     { icon: ClipboardList, label: 'Đơn Hàng', path: '/admin/orders' },
+    { icon: Settings, label: 'Cài Đặt', path: '/admin/settings' },
   ];
 
   const isActive = (path: string) => pathname === path;

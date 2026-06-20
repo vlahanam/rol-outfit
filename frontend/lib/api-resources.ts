@@ -315,3 +315,23 @@ export const adminDashboard = {
     return request<{ data: DashboardStats }>("/admin/dashboard");
   },
 };
+
+export interface SocialLinks {
+  facebook_url: string;
+  zalo_url: string;
+  instagram_url: string;
+  line_url: string;
+  email: string;
+}
+
+export const adminSettings = {
+  getSocialLinks(): Promise<{ data: SocialLinks }> {
+    return request<{ data: SocialLinks }>("/settings/social-links");
+  },
+  updateSocialLinks(body: SocialLinks): Promise<void> {
+    return request<void>("/admin/settings/social-links", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
+  },
+};

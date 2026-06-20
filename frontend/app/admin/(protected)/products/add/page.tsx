@@ -10,6 +10,7 @@ import { ImageUploader } from "@/components/admin/image-uploader";
 import { TiptapEditor } from "@/components/admin/tiptap-editor";
 import { LanguageTabsForm } from "@/components/admin/language-tabs-form";
 import type { ApiResponse, Category } from "@/types/api";
+import { getCurrencyLabel } from "@/lib/format";
 
 type Variant = Record<string, string> & { price: string; stock: string };
 
@@ -26,6 +27,7 @@ export default function AddProductPage() {
   const [description, setDescription] = useState("");
   const [descriptionJa, setDescriptionJa] = useState("");
   const [productAvatar, setProductAvatar] = useState("");
+  const [productType, setProductType] = useState("2");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Attribute names (defines variant columns)
@@ -166,6 +168,7 @@ export default function AddProductPage() {
         description_ja: descriptionJa || undefined,
         attribute_names: attributeNames,
         avatar: productAvatar,
+        product_type: Number(productType) || 2,
         discount_percent: Number(discountPercent) || 0,
         discount_start_at: discountStartAt ? new Date(discountStartAt).toISOString() : null,
         discount_end_at: discountEndAt ? new Date(discountEndAt).toISOString() : null,
@@ -288,7 +291,7 @@ export default function AddProductPage() {
               </div>
             }
           />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Danh mục <span className="text-red-500">*</span>
@@ -316,7 +319,20 @@ export default function AddProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Giá mặc định (₫) <span className="text-red-500">*</span>
+                Loại sản phẩm <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={productType}
+                onChange={(e) => setProductType(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="1">Hàng Nhật Bản</option>
+                <option value="2">Hàng Việt Nam</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Giá mặc định ({getCurrencyLabel(Number(productType))}) <span className="text-red-500">*</span>
               </label>
               <input
                 value={defaultPrice}
@@ -326,7 +342,7 @@ export default function AddProductPage() {
                 }}
                 type="number"
                 min="0"
-                placeholder="150000"
+                placeholder={productType === "1" ? "1000" : "150000"}
                 className={`w-full px-3 py-2 border ${fieldErrors.default_price ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
               />
               {fieldErrors.default_price && (
@@ -337,14 +353,14 @@ export default function AddProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phí vận chuyển (₫) <span className="text-red-500">*</span>
+                Phí vận chuyển ({getCurrencyLabel(Number(productType))}) <span className="text-red-500">*</span>
               </label>
               <input
                 value={shippingCost}
                 onChange={(e) => setShippingCost(e.target.value)}
                 type="number"
                 min="0"
-                placeholder="30000"
+                placeholder={productType === "1" ? "500" : "30000"}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -465,7 +481,7 @@ export default function AddProductPage() {
                 {attributeNames.map((attr) => (
                   <span key={attr}>{attr}</span>
                 ))}
-                <span>Giá (₫)</span>
+                <span>Giá ({getCurrencyLabel(Number(productType))})</span>
                 <span>Tồn kho</span>
                 <span>Ảnh</span>
                 <span />

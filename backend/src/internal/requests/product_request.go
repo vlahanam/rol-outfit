@@ -23,6 +23,7 @@ type CreateProductRequest struct {
 	DescriptionJa   string     `json:"description_ja"`
 	Avatar          string     `json:"avatar"`
 	AttributeNames  []string   `json:"attribute_names"`
+	ProductType     int8       `json:"product_type"`
 	DiscountPercent float64    `json:"discount_percent"`
 	DiscountStartAt *time.Time `json:"discount_start_at"`
 	DiscountEndAt   *time.Time `json:"discount_end_at"`
@@ -66,6 +67,7 @@ type UpdateProductRequest struct {
 	DescriptionJa   *string    `json:"description_ja"`
 	Avatar          *string    `json:"avatar"`
 	Status          *int8      `json:"status"`
+	ProductType     *int8      `json:"product_type"`
 	AttributeNames  []string   `json:"attribute_names"`
 	DiscountPercent *float64   `json:"discount_percent"`
 	DiscountStartAt *time.Time `json:"discount_start_at"`

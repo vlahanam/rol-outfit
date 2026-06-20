@@ -10,11 +10,13 @@ import { isLoggedIn } from "@/lib/auth";
 import { useCart } from "@/context/cart-context";
 import { PaymentQRModal } from "@/components/checkout/payment-qr-modal";
 import type { ApiResponse, Cart, CartItem, Product, Order, UserAddress } from "@/types/api";
+import { formatPrice } from "@/lib/format";
 
 interface RichCartItem extends CartItem {
   productName: string;
   productImage?: string;
   shippingCost: number;
+  productType: number;
 }
 
 export default function CheckoutPage() {
@@ -64,6 +66,7 @@ export default function CheckoutPage() {
                 productName: pRes.data.name,
                 productImage: pRes.data.avatar,
                 shippingCost: pRes.data.shipping_cost ?? 0,
+                productType: pRes.data.product_type ?? 2,
               };
             } catch {
               return {
@@ -71,6 +74,7 @@ export default function CheckoutPage() {
                 productName: item.product_id,
                 productImage: undefined,
                 shippingCost: 0,
+                productType: 2,
               };
             }
           })
@@ -248,7 +252,7 @@ export default function CheckoutPage() {
                         </p>
                       </div>
                       <p className="font-medium text-gray-900">
-                        {(item.price_at_add * item.quantity).toLocaleString("vi-VN")}₫
+                        {formatPrice(item.price_at_add * item.quantity, item.productType)}
                       </p>
                     </div>
                   ))}

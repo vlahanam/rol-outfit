@@ -17,7 +17,7 @@ type ProductRepository interface {
 	FindProductByIDNoFilter(ctx context.Context, id string) (*models.Product, error)
 	FindProductByIDAdmin(ctx context.Context, id string) (*models.ProductWithVariants, error)
 	FindProductBySlug(ctx context.Context, slug string) (*models.Product, error)
-	ListProducts(ctx context.Context, categoryID, search string, tagSlugs []string, sortMode string, offset, limit int) ([]*models.Product, int64, error)
+	ListProducts(ctx context.Context, categoryID, search string, tagSlugs []string, sortMode string, productType int8, offset, limit int) ([]*models.Product, int64, error)
 	UpdateProduct(ctx context.Context, id string, fields map[string]interface{}) error
 	SoftDeleteProduct(ctx context.Context, id string) error
 	ListAdminProductsWithVariants(ctx context.Context, categoryID, search string, offset, limit int) ([]*models.ProductWithVariants, int64, error)
@@ -58,7 +58,7 @@ func (r *postgreStorage) FindProductBySlug(ctx context.Context, slug string) (*m
 	return &p, nil
 }
 
-func (r *postgreStorage) ListProducts(ctx context.Context, categoryID, search string, tagSlugs []string, sortMode string, offset, limit int) ([]*models.Product, int64, error) {
+func (r *postgreStorage) ListProducts(ctx context.Context, categoryID, search string, tagSlugs []string, sortMode string, productType int8, offset, limit int) ([]*models.Product, int64, error) {
 	var products []*models.Product
 	var total int64
 	now := time.Now()
@@ -71,6 +71,9 @@ func (r *postgreStorage) ListProducts(ctx context.Context, categoryID, search st
 	}
 	if search != "" {
 		db = db.Where("products.name ILIKE ?", "%"+search+"%")
+	}
+	if productType > 0 {
+		db = db.Where("products.product_type = ?", productType)
 	}
 
 	if sortMode == "new_arrivals" && len(tagSlugs) > 0 {

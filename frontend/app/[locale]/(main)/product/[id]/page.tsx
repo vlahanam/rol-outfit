@@ -9,16 +9,13 @@ import { DiscountCountdown } from "@/components/product/discount-countdown";
 import { VariantPicker } from "@/components/product/variant-picker";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { api, ApiError } from "@/lib/api";
 import { isLoggedIn } from "@/lib/auth";
 import { useCart } from "@/context/cart-context";
 import { useFlyToCart } from "@/hooks/use-fly-to-cart";
 import type { ApiResponse, Product, ProductVariant } from "@/types/api";
-
-function formatPrice(v: number) {
-  return v.toLocaleString("vi-VN") + "₫";
-}
+import { formatPrice } from "@/lib/format";
 
 function buildImages(p: Product | null, vs: ProductVariant[]): string[] {
   const out = new Set<string>();
@@ -43,6 +40,7 @@ export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations("ProductDetailPage");
   const [product, setProduct] = useState<Product | null>(null);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [selected, setSelected] = useState<Record<string, string>>({});
@@ -99,7 +97,7 @@ export default function ProductDetailPage() {
   // stock display: variant stock when selected, total stock otherwise
   const stockValue = variant !== null ? variant.stock : totalStock;
   const stockEmpty = stockValue <= 0;
-  const stockText = stockEmpty ? "Hết hàng" : `Còn ${stockValue} sản phẩm`;
+  const stockText = stockEmpty ? t("outOfStock") : t("inStock", { count: stockValue });
 
   // jump gallery to selected variant's image
   useEffect(() => {
@@ -116,7 +114,7 @@ export default function ProductDetailPage() {
     }
     if (!product) return;
     if (needsPick) {
-      toast.warning("Vui lòng chọn phân loại sản phẩm");
+      toast.warning(t("pleaseSelectVariant"));
       return;
     }
     setAddingToCart(true);
@@ -128,9 +126,9 @@ export default function ProductDetailPage() {
       });
       incrementCart(quantity);
       flyToCart(images[imageIdx] ?? product.avatar ?? "");
-      toast.success("Đã thêm vào giỏ hàng!");
+      toast.success(t("addedToCart"));
     } catch {
-      toast.error("Không thể thêm vào giỏ hàng");
+      toast.error(t("addToCartFailed"));
     } finally {
       setAddingToCart(false);
     }
@@ -139,16 +137,16 @@ export default function ProductDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <p className="text-gray-500">Đang tải...</p>
+        <p className="text-gray-500">{t("loading")}</p>
       </div>
     );
   }
   if (notFound || !product) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-20">
-        <p className="text-gray-600">Không tìm thấy sản phẩm</p>
+        <p className="text-gray-600">{t("notFound")}</p>
         <Link href="/shop" className="text-blue-600 hover:underline">
-          Về cửa hàng
+          {t("backToShop")}
         </Link>
       </div>
     );
@@ -162,7 +160,7 @@ export default function ProductDetailPage() {
           className="flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-6 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span>Quay lại</span>
+          <span>{t("back")}</span>
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -181,12 +179,12 @@ export default function ProductDetailPage() {
             <div className="mb-4">
               <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-3xl font-bold text-blue-600">
-                  {formatPrice(salePrice)}
+                  {formatPrice(salePrice, product.product_type)}
                 </span>
                 {isDiscounted && !isExpired && (
                   <>
                     <span className="text-xl text-gray-400 line-through">
-                      {formatPrice(price)}
+                      {formatPrice(price, product.product_type)}
                     </span>
                     <span className="px-2 py-0.5 bg-red-100 text-red-600 text-sm font-semibold rounded">
                       -{Math.round((1 - salePrice / price) * 100)}%
@@ -200,7 +198,7 @@ export default function ProductDetailPage() {
                 )}
                 {isExpired && (
                   <span className="text-sm text-orange-500 font-medium">
-                    Đã hết hạn khuyến mãi
+                    {t("discountExpired")}
                   </span>
                 )}
               </div>
@@ -225,7 +223,7 @@ export default function ProductDetailPage() {
             )}
 
             <div className="mb-6">
-              <h3 className="font-semibold mb-3">Số Lượng</h3>
+              <h3 className="font-semibold mb-3">{t("quantity")}</h3>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -244,7 +242,7 @@ export default function ProductDetailPage() {
                 </button>
               </div>
               <p className="text-sm font-semibold text-blue-700 mt-2">
-                Thành tiền: {formatPrice(salePrice * quantity)}
+                {t("total")}: {formatPrice(salePrice * quantity, product.product_type)}
               </p>
             </div>
 
@@ -255,26 +253,55 @@ export default function ProductDetailPage() {
             >
               <ShoppingCart className="w-5 h-5" />
               {outOfStock
-                ? "Hết Hàng"
+                ? t("outOfStock")
                 : needsPick
-                  ? "Chọn Phân Loại"
+                  ? t("selectVariant")
                   : addingToCart
-                    ? "Đang thêm..."
-                    : "Thêm Vào Giỏ Hàng"}
+                    ? t("adding")
+                    : t("addToCart")}
             </button>
 
             <div className="mt-6 border-t border-gray-200 pt-6">
+              <h3 className="font-semibold mb-3">{t("sizeGuide")}</h3>
+              <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">{t("size")}</th>
+                    <th className="px-4 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">{t("height")}</th>
+                    <th className="px-4 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">{t("weight")}</th>
+                  </tr>
+                </thead>
+                <tbody className="text-gray-600">
+                  <tr className="border-b border-gray-100">
+                    <td className="px-4 py-2 font-medium">M</td>
+                    <td className="px-4 py-2">1m60 - 1m68</td>
+                    <td className="px-4 py-2">50 - 60kg</td>
+                  </tr>
+                  <tr className="border-b border-gray-100">
+                    <td className="px-4 py-2 font-medium">L</td>
+                    <td className="px-4 py-2">1m68 - 1m75</td>
+                    <td className="px-4 py-2">60 - 70kg</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-2 font-medium">XL</td>
+                    <td className="px-4 py-2">1m75 - 1m82</td>
+                    <td className="px-4 py-2">70 - 80kg</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-6 border-t border-gray-200 pt-6">
+              <h3 className="font-semibold mb-3">{t("deliveryTime")}</h3>
               <ul className="space-y-2 text-sm text-gray-600">
-                {[
-                  "Miễn phí vận chuyển cho đơn hàng trên 500.000₫",
-                  "Đổi trả trong vòng 7 ngày",
-                  "Hàng chính hãng 100%",
-                ].map((t) => (
-                  <li key={t} className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
-                    {t}
-                  </li>
-                ))}
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
+                  {t("japan")}: {t("japanDelivery")}
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
+                  {t("vietnam")}: {t("vietnamDelivery")}
+                </li>
               </ul>
             </div>
           </div>
@@ -283,7 +310,7 @@ export default function ProductDetailPage() {
         {product.description && (
           <div className="border-t border-gray-200 pt-8 mb-12">
             <h2 className="text-lg font-semibold text-gray-900 mb-3">
-              Mô tả sản phẩm
+              {t("description")}
             </h2>
             <div
               className="prose prose-sm max-w-none text-gray-600"

@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { products } from "@/lib/api-resources";
 import type { Product } from "@/types/api";
+import { formatPrice } from "@/lib/format";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -102,10 +103,10 @@ export function SearchDropdown() {
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-gray-900 truncate">{product.name}</p>
                 <p className="text-sm text-blue-600">
-                  {product.sale_price > 0
-                    ? product.sale_price.toLocaleString()
-                    : product.default_price.toLocaleString()}
-                  <span className="text-gray-400 ml-1">VND</span>
+                  {formatPrice(
+                    product.sale_price > 0 ? product.sale_price : product.default_price,
+                    product.product_type
+                  )}
                 </p>
               </div>
             </Link>

@@ -135,7 +135,7 @@ Request/response types for API contracts.
 **Key Tables:**
 - `users` — Authentication and profiles (with `avatar` field for user avatars)
 - `user_addresses` — User address management with default address tracking
-- `user_oauth_providers` — OAuth provider mappings (Google, Facebook)
+- `user_oauth_providers` — OAuth provider mappings (Google, Facebook, LINE)
 - `categories` — Product categories with slugs
 - `products` — Product catalog with avatar, discount, and Japanese i18n fields
 - `product_variants` — Variants with attributes, pricing, and Japanese i18n fields
@@ -145,6 +145,7 @@ Request/response types for API contracts.
 - `cart_items` — User shopping carts with item-level pricing
 - `orders` — Order history with order codes (ROL-YYMMDD-XXXX format)
 - `order_items` — Order line items
+- `order_status_history` — Audit trail for order state transitions (status history timeline)
 - `refresh_tokens` — Stateful token rotation with family-based theft detection
 - `order_code_sequences` — Atomic sequence generation per date
 
@@ -169,12 +170,17 @@ Request/response types for API contracts.
 - **Controller** (`controllers/widget_controller.go`) — HTTP handlers
 - **DTO** (`dto/widget_dto.go`) — Serialization format
 
+**Widget Types (4 total):**
+- `banner-slider` — Homepage hero banner with multiple slides
+- `collection-grid` — Category-based product collection display
+- `new-product` — Tag-filtered product showcase (new arrivals, promotions)
+- `trend-hot` — Trending/hot products with sorting options
+
 **Features:**
-- Configurable types: container, chart, table, stat, text, image
-- Hierarchical nesting via parent_id (depth field auto-calculated)
 - Display ordering via display_order field
-- JSON settings for type-specific configuration
-- Status flag (1=active, 2=inactive)
+- JSON metadata for type-specific configuration (slides, tags, category filters)
+- Status flag (1=hidden, 2=active)
+- Hierarchical nesting via parent_id (depth field auto-calculated)
 
 **API Endpoints:**
 - `GET /api/v1/widgets` — List all widgets (public)
@@ -741,89 +747,27 @@ GROUP BY products.id;
 | nginx | `uploads` | `/usr/share/nginx/html/uploads` | ro | Serve static files |
 | postgres | `pgdata` | `/var/lib/postgresql/data` | rw | Database persistence |
 
-## Database Migrations Summary
+## Database Migrations & Development Setup
 
-| Migration | File | Purpose |
-|-----------|------|---------|
-| 000001 | `create_users_table.sql` | User authentication and profiles |
-| 000002 | `create_categories_table.sql` | Product categories with slugs |
-| 000003 | `create_products_table.sql` | Product catalog |
-| 000004 | `create_product_variants_table.sql` | Product variants with attributes |
-| 000005 | `create_carts_table.sql` | User shopping carts |
-| 000006 | `create_cart_items_table.sql` | Cart line items |
-| 000007 | `create_orders_table.sql` | Order history |
-| 000008 | `add_avatar_to_products.sql` | Avatar field for products |
-| 000009 | `create_order_items_table.sql` | Order line items |
-| 000010 | `create_refresh_tokens_table.sql` | Stateful refresh token rotation |
-| 000011 | `create_tags_table.sql` | Tags with time-window activation |
-| 000012 | `create_product_tags_junction.sql` | Product-to-tags many-to-many |
-| 000013 | `add_discount_to_products.sql` | Discount fields on products |
-| 000014 | `add_discount_to_variants.sql` | Discount fields on variants |
-| 000015 | `add_metadata_to_widgets.sql` | Metadata JSONB column for widgets |
-| 000016 | `seed_fixed_widgets.sql` | Seed 4 fixed widgets (banner, collection, new-arrivals, trend-hot) |
-| 000017 | `add_display_order_to_widgets.sql` | Display order field for widget ordering |
-| 000018 | `create_user_addresses_table.sql` | User address management |
-| 000019 | `remove_address_from_users.sql` | Migrate address to separate table |
-| 000020 | `add_order_code_to_orders.sql` | Order code field (ROL-YYMMDD-XXXX format) |
-| 000021 | `create_order_code_sequences.sql` | Atomic sequence generation for order codes |
-| 000022 | `add_avatar_to_users.sql` | User avatar field for profiles |
-| 000023 | `add_japanese_i18n_columns.sql` | Japanese (_ja) columns on products, variants, categories, tags, widgets |
-| 000024 | `add_password_change_support.sql` | Support for password change operations |
-| 000025 | `add_oauth_providers_table.sql` | OAuth provider management |
+**Migrations (25 total):** Foundation tables (001-009: users, categories, products, variants, carts, orders) → Features (010-025: refresh tokens, tags, discounts, widgets, addresses, order codes, OAuth). See `backend/migrations/` for full SQL.
 
----
+**Docker Setup** (`docker/docker-compose.yml`):
+- PostgreSQL, Go/Fiber (8080, hot reload), Next.js (3000, HMR), Nginx (80)
+- Env: `docker/.env` with DB credentials
+- Run: `make up` to start all services
+- Access: http://localhost (frontend), http://localhost/api (backend API)
 
-## Development Environment
+## Performance & Error Handling
 
-**Entry:** `docker/docker-compose.yml`
+**Current:** Single filesystem upload, Nginx static caching, 10 MB body limit, pagination (default: page 1, limit 10), GORM query builder.
 
-**Services:**
-- `postgres:latest` — PostgreSQL database
-- `backend` — Go/Fiber (port 8080, Air hot reload)
-- `frontend` — Next.js (port 3000, HMR enabled)
-- `nginx` — Reverse proxy (port 80)
+**Scaling Design:** Stateless API (all state in PostgreSQL), JWT auth (no session storage), repository pattern (easy database swaps), service layer abstraction, optional S3 integration.
 
-**Setup:**
-1. Create `docker/.env` with DB credentials
-2. Run `make up` to start all services
-3. Access via http://localhost
-
-**Logs:** `make logs` (tail all containers)
-
-## Performance & Scalability
-
-### Current Implementation
-- Single filesystem backend at `backend/uploads/`
-- Nginx reverse proxy with static file caching for `/uploads/` path
-- 10 MB body limit for API requests
-- Pagination support on list endpoints (default: page 1, limit 10)
-- GORM query builder (no raw SQL unless necessary)
-
-### Design for Scaling
-- Stateless API design (all state in PostgreSQL)
-- JWT authentication (no session storage)
-- Repository pattern enables easy database swaps
-- Service layer abstracts business logic from data access
-- Optional S3 integration via `UploadService` interface in future
-
-## Error Handling
-
-All endpoints return consistent error format:
-
+**Error Response Format:**
 ```json
-{
-  "status": "error",
-  "message": "User-friendly error message",
-  "code": "ERROR_CODE"
-}
+{ "status": "error", "message": "User-friendly message", "code": "ERROR_CODE" }
 ```
 
-**Common Status Codes:**
-- 400 Bad Request — Invalid input
-- 401 Unauthorized — Missing/invalid JWT
-- 403 Forbidden — Insufficient permissions
-- 404 Not Found — Resource not found
-- 413 Payload Too Large — File exceeds size limit
-- 422 Unprocessable Entity — Invalid file type
-- 500 Internal Server Error — Server fault
+**Common HTTP Status Codes:**
+- 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 413 Payload Too Large, 422 Unprocessable Entity, 500 Server Error
 

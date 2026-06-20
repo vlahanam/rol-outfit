@@ -18,7 +18,13 @@ export default function AddressesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [formData, setFormData] = useState({ recipient_name: "", phone: "", address: "" });
+  const [formData, setFormData] = useState({
+    recipient_name: "",
+    phone: "",
+    address: "",
+    latitude: undefined as number | undefined,
+    longitude: undefined as number | undefined,
+  });
 
   useEffect(() => {
     if (!isLoggedIn()) {
@@ -78,15 +84,22 @@ export default function AddressesPage() {
 
   const startEdit = (addr: UserAddress) => {
     setEditingId(addr.id);
-    setFormData({ recipient_name: addr.recipient_name, phone: addr.phone, address: addr.address });
+    setFormData({
+      recipient_name: addr.recipient_name,
+      phone: addr.phone,
+      address: addr.address,
+      latitude: addr.latitude ?? undefined,
+      longitude: addr.longitude ?? undefined,
+    });
     setShowForm(true);
   };
 
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormData({ recipient_name: "", phone: "", address: "" });
+    setFormData({ recipient_name: "", phone: "", address: "", latitude: undefined, longitude: undefined });
   };
+
 
   const canAddMore = addresses.length < 5;
 
@@ -158,8 +171,9 @@ export default function AddressesPage() {
                 <textarea
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={t("enterAddress")}
                   required
                 />
               </div>

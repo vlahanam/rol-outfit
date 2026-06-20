@@ -51,6 +51,18 @@ export function Header({ onMenuClick, user, onLogout, onSwitchLocale }: HeaderPr
               >
                 {t("newArrivals")}
               </Link>
+              <Link
+                href="/shop?type=japanese"
+                className="text-gray-700 hover:text-red-600 transition-colors"
+              >
+                {t("japaneseProducts")}
+              </Link>
+              <Link
+                href="/shop?type=vietnamese"
+                className="text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                {t("vietnameseProducts")}
+              </Link>
             </nav>
           </div>
 

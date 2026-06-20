@@ -13,6 +13,7 @@ import { OrderStatusTimeline } from "@/components/orders/order-status-timeline";
 import { RefundRequestButton } from "@/components/orders/refund-request-button";
 import { CancelOrderModal } from "@/components/orders/cancel-order-modal";
 import type { ApiResponse, Order, Product } from "@/types/api";
+import { formatPrice } from "@/lib/format";
 
 const ORDER_STATUS_AWAITING_PAYMENT = 1;
 const ORDER_STATUS_PAYMENT_SUBMITTED = 2;
@@ -28,6 +29,7 @@ interface RichOrderItem {
   quantity: number;
   productName: string;
   productImage?: string;
+  productType: number;
 }
 
 export default function OrderDetailPage() {
@@ -64,12 +66,14 @@ export default function OrderDetailPage() {
                 ...item,
                 productName: pRes.data.name,
                 productImage: pRes.data.avatar,
+                productType: pRes.data.product_type ?? 2,
               };
             } catch {
               return {
                 ...item,
                 productName: item.product_id,
                 productImage: undefined,
+                productType: 2,
               };
             }
           })
@@ -175,7 +179,7 @@ export default function OrderDetailPage() {
                       <p className="text-sm text-gray-500">x{item.quantity}</p>
                     </div>
                     <p className="font-medium text-gray-900">
-                      {(item.price * item.quantity).toLocaleString("vi-VN")}₫
+                      {formatPrice(item.price * item.quantity, item.productType)}
                     </p>
                   </div>
                 ))}

@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [],
   },
+  allowedDevOrigins: ['roloutfit.io.vn', 'www.roloutfit.io.vn'],
   async redirects() {
     return [
       { source: "/admin", destination: "/admin/dashboard", permanent: false },

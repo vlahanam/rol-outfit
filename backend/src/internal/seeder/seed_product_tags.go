@@ -15,28 +15,48 @@ type seedProductTag struct {
 }
 
 var productTags = []seedProductTag{
-	// Hàng mới (6 products)
+	// ========== Hàng mới (new arrivals) ==========
+	// Vietnamese products
 	{ProductSlug: "ao-so-mi-trang-nam-basic", TagSlug: "hang-moi"},
 	{ProductSlug: "ao-so-mi-nu-tay-phong", TagSlug: "hang-moi"},
 	{ProductSlug: "quan-jean-nam-slim-fit", TagSlug: "hang-moi"},
 	{ProductSlug: "quan-jean-nu-ong-rong", TagSlug: "hang-moi"},
 	{ProductSlug: "ao-thun-nu-crop-top", TagSlug: "hang-moi"},
 	{ProductSlug: "ao-polo-nam-ke-soc", TagSlug: "hang-moi"},
+	// Japanese products
+	{ProductSlug: "uniqlo-u-crew-neck-t-shirt", TagSlug: "hang-moi"},
+	{ProductSlug: "muji-organic-cotton-shirt", TagSlug: "hang-moi"},
+	{ProductSlug: "gu-oversized-hoodie", TagSlug: "hang-moi"},
+	{ProductSlug: "uniqlo-supima-cotton-t-shirt", TagSlug: "hang-moi"},
 
-	// Bán chạy (4 products)
+	// ========== Bán chạy (best sellers) ==========
+	// Vietnamese products
 	{ProductSlug: "ao-thun-nam-co-tron", TagSlug: "ban-chay"},
 	{ProductSlug: "quan-tay-nam-cong-so", TagSlug: "ban-chay"},
 	{ProductSlug: "ao-kieu-nu-voan-hoa", TagSlug: "ban-chay"},
 	{ProductSlug: "quan-tay-nu-lung-cao", TagSlug: "ban-chay"},
+	// Japanese products
+	{ProductSlug: "uniqlo-smart-ankle-pants", TagSlug: "ban-chay"},
+	{ProductSlug: "muji-chino-pants", TagSlug: "ban-chay"},
+	{ProductSlug: "gu-ribbed-knit-top", TagSlug: "ban-chay"},
 
-	// Hot (3 products - overlap with hang-moi)
+	// ========== Hot ==========
+	// Vietnamese products
 	{ProductSlug: "ao-so-mi-trang-nam-basic", TagSlug: "hot"},
 	{ProductSlug: "quan-jean-nu-ong-rong", TagSlug: "hot"},
 	{ProductSlug: "ao-thun-nu-crop-top", TagSlug: "hot"},
+	// Japanese products
+	{ProductSlug: "uniqlo-u-crew-neck-t-shirt", TagSlug: "hot"},
+	{ProductSlug: "gu-oversized-hoodie", TagSlug: "hot"},
+	{ProductSlug: "uniqlo-wide-leg-pants", TagSlug: "hot"},
 
-	// Limited (2 products)
+	// ========== Limited ==========
+	// Vietnamese products
 	{ProductSlug: "chan-vay-chu-a-nu", TagSlug: "limited"},
 	{ProductSlug: "quan-short-kaki-nam", TagSlug: "limited"},
+	// Japanese products
+	{ProductSlug: "muji-linen-blend-blouse", TagSlug: "limited"},
+	{ProductSlug: "gu-high-waist-skirt", TagSlug: "limited"},
 }
 
 func SeedProductTags(db *gorm.DB) (Result, error) {

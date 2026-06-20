@@ -7,10 +7,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import type { ApiResponse, Product, Category } from "@/types/api";
-
-function formatPrice(value: number): string {
-  return value.toLocaleString("vi-VN") + "₫";
-}
+import { formatPrice } from "@/lib/format";
 
 function effectivePrice(p: Product): number {
   return p.sale_price ?? p.default_price;
@@ -150,11 +147,11 @@ export default function NewArrivalsPage() {
               >
                 <ProductItem
                   name={product.name}
-                  price={formatPrice(effectivePrice(product))}
+                  price={formatPrice(effectivePrice(product), product.product_type)}
                   originalPrice={
                     product.sale_price != null &&
                     product.sale_price < product.default_price
-                      ? formatPrice(product.default_price)
+                      ? formatPrice(product.default_price, product.product_type)
                       : undefined
                   }
                   discountPercent={

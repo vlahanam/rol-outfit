@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ImageIcon, Edit, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { AdminProduct } from "@/types/api";
+import { formatPrice } from "@/lib/format";
 
 type Props = {
   product: AdminProduct;
@@ -73,7 +74,7 @@ export function ProductListVariantsTable({ product, onDeleteVariant }: Props) {
                     </td>
                   ))}
                   <td className="px-4 py-2 text-xs font-medium text-gray-900 whitespace-nowrap">
-                    {variant.price.toLocaleString("vi-VN")}₫
+                    {formatPrice(variant.price, product.product_type)}
                   </td>
                   <td className="px-4 py-2 text-xs text-gray-900 whitespace-nowrap">{variant.stock}</td>
                   <td className="px-4 py-2 text-xs text-gray-600 whitespace-nowrap">{variant.sold}</td>

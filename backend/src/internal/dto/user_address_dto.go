@@ -7,13 +7,15 @@ import (
 )
 
 type UserAddressDTO struct {
-	ID            string `json:"id"`
-	RecipientName string `json:"recipient_name"`
-	Phone         string `json:"phone"`
-	Address       string `json:"address"`
-	IsDefault     bool   `json:"is_default"`
-	CreatedAt     string `json:"created_at"`
-	UpdatedAt     string `json:"updated_at"`
+	ID            string   `json:"id"`
+	RecipientName string   `json:"recipient_name"`
+	Phone         string   `json:"phone"`
+	Address       string   `json:"address"`
+	Latitude      *float64 `json:"latitude"`
+	Longitude     *float64 `json:"longitude"`
+	IsDefault     bool     `json:"is_default"`
+	CreatedAt     string   `json:"created_at"`
+	UpdatedAt     string   `json:"updated_at"`
 }
 
 func ToUserAddressDTO(a *models.UserAddress) *UserAddressDTO {
@@ -22,6 +24,8 @@ func ToUserAddressDTO(a *models.UserAddress) *UserAddressDTO {
 		RecipientName: a.RecipientName,
 		Phone:         a.Phone,
 		Address:       a.Address,
+		Latitude:      a.Latitude,
+		Longitude:     a.Longitude,
 		IsDefault:     a.IsDefault,
 		CreatedAt:     a.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:     a.UpdatedAt.Format(time.RFC3339),

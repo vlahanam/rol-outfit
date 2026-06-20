@@ -8,12 +8,14 @@ import { api } from "@/lib/api";
 import { isLoggedIn } from "@/lib/auth";
 import { useCart } from "@/context/cart-context";
 import type { ApiResponse, Cart, CartItem, Product } from "@/types/api";
+import { formatPrice } from "@/lib/format";
 
 interface RichCartItem extends CartItem {
   productName: string;
   productImage?: string;
   variantName?: string;
   shippingCost: number;
+  productType: number;
 }
 
 export default function CartPage() {
@@ -62,6 +64,7 @@ export default function CartPage() {
                 productImage: pRes.data.avatar,
                 variantName,
                 shippingCost: pRes.data.shipping_cost ?? 0,
+                productType: pRes.data.product_type ?? 2,
               };
             } catch {
               return {
@@ -69,6 +72,7 @@ export default function CartPage() {
                 productName: item.product_id,
                 productImage: undefined,
                 shippingCost: 0,
+                productType: 2,
               };
             }
           }),
@@ -183,10 +187,7 @@ export default function CartPage() {
                           </p>
                         )}
                         <p className="text-lg font-bold text-blue-600 mt-1">
-                          {(item.price_at_add * item.quantity).toLocaleString(
-                            "vi-VN",
-                          )}
-                          ₫
+                          {formatPrice(item.price_at_add * item.quantity, item.productType)}
                         </p>
                       </div>
 

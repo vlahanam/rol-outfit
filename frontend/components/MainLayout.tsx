@@ -7,6 +7,7 @@ import { routing } from '@/i18n/routing';
 import { Header } from './Header';
 import { MobileSidebar } from './MobileSidebar';
 import { Footer } from './Footer';
+import { SocialFloatingIcons } from './social-floating-icons';
 import { CartProvider, useCart } from '@/context/cart-context';
 import { isLoggedIn, subscribeAuthEvents } from '@/lib/auth';
 import { api } from '@/lib/api';
@@ -77,6 +78,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
       />
       <main className="flex-1">{children}</main>
       <Footer />
+      <SocialFloatingIcons />
     </div>
   );
 }

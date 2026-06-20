@@ -24,8 +24,6 @@ type AppConfig struct {
 	// OAuth
 	GoogleClientID        string
 	GoogleClientSecret    string
-	FacebookAppID         string
-	FacebookAppSecret     string
 	OAuthAllowedRedirects []string
 	OAuthCallbackBaseURL  string
 }
@@ -82,8 +80,6 @@ func LoadConfig() *AppConfig {
 		// OAuth
 		GoogleClientID:        getEnv("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret:    getEnv("GOOGLE_CLIENT_SECRET", ""),
-		FacebookAppID:         getEnv("FACEBOOK_APP_ID", ""),
-		FacebookAppSecret:     getEnv("FACEBOOK_APP_SECRET", ""),
 		OAuthAllowedRedirects: strings.Split(redirects, ","),
 		OAuthCallbackBaseURL:  getEnv("OAUTH_CALLBACK_BASE_URL", "http://localhost:8080"),
 	}

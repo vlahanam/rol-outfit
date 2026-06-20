@@ -20,7 +20,6 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	authSvc := services.NewAuthService(repo, repo, jwtSecret)
 	oauthSvc := services.NewOAuthService(
 		cfg.GoogleClientID, cfg.GoogleClientSecret,
-		cfg.FacebookAppID, cfg.FacebookAppSecret,
 		cfg.OAuthCallbackBaseURL,
 		cfg.OAuthAllowedRedirects,
 		oauthRepo, repo, authSvc,
@@ -45,8 +44,6 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	oauth := auth.Group("/oauth")
 	oauth.Get("/google", controllers.OAuthGoogle(oauthSvc))
 	oauth.Get("/google/callback", controllers.OAuthGoogleCallback(oauthSvc))
-	oauth.Get("/facebook", controllers.OAuthFacebook(oauthSvc))
-	oauth.Get("/facebook/callback", controllers.OAuthFacebookCallback(oauthSvc))
 
 	// Categories
 	cats := v1.Group("/categories")
@@ -208,4 +205,15 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
 	)
 	adminDashboard.Get("/", controllers.GetDashboardStats(db))
+
+	// Site settings (public)
+	settings := v1.Group("/settings")
+	settings.Get("/social-links", controllers.GetSocialLinks(db))
+
+	// Admin settings
+	adminSettings := v1.Group("/admin/settings",
+		middleware.JWTAuth(jwtSecret),
+		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
+	)
+	adminSettings.Put("/social-links", controllers.UpdateSocialLinks(db))
 }

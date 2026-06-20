@@ -88,6 +88,24 @@ export function MobileSidebar({
                 {t("newArrivals")}
               </Link>
             </li>
+            <li>
+              <Link
+                href="/shop?type=japanese"
+                onClick={onClose}
+                className="w-full text-left block px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
+              >
+                {t("japaneseProducts")}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/shop?type=vietnamese"
+                onClick={onClose}
+                className="w-full text-left block px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
+              >
+                {t("vietnameseProducts")}
+              </Link>
+            </li>
           </ul>
 
           <div className="mt-4 pt-4 border-t border-gray-200">

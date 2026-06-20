@@ -18,6 +18,14 @@ import { DeleteConfirmModal } from "@/components/admin/DeleteConfirmModal";
 import { ProductListVariantsTable } from "@/components/admin/product-list-variants-table";
 import { api } from "@/lib/api";
 import type { ApiResponse, AdminProduct, Category } from "@/types/api";
+import { formatPrice, PRODUCT_TYPE_JAPANESE } from "@/lib/format";
+
+function productTypeLabel(type: number): { label: string; cls: string } {
+  if (type === PRODUCT_TYPE_JAPANESE) {
+    return { label: "Nhật Bản", cls: "bg-red-100 text-red-700" };
+  }
+  return { label: "Việt Nam", cls: "bg-blue-100 text-blue-700" };
+}
 
 function stockBadge(stock: number): { label: string; cls: string } {
   if (stock === 0) return { label: "Hết hàng", cls: "bg-red-100 text-red-700" };
@@ -282,6 +290,9 @@ export default function ListProductPage() {
                     Danh Mục
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
+                    Loại
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
                     Giá
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
@@ -377,11 +388,21 @@ export default function ListProductPage() {
                         <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
                           {categoryName(product.category_id)}
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {(() => {
+                            const typeInfo = productTypeLabel(product.product_type);
+                            return (
+                              <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${typeInfo.cls}`}>
+                                {typeInfo.label}
+                              </span>
+                            );
+                          })()}
+                        </td>
                         <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
-                          {product.default_price.toLocaleString("vi-VN")}₫
+                          {formatPrice(product.default_price, product.product_type)}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
-                          {(product.shipping_cost ?? 0).toLocaleString("vi-VN")}₫
+                          {formatPrice(product.shipping_cost ?? 0, product.product_type)}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
                           {product.total_stock}
@@ -421,7 +442,7 @@ export default function ListProductPage() {
                       {/* Variants row */}
                       {isExpanded && hasVariants && (
                         <tr>
-                          <td colSpan={8} className="p-0 bg-gray-50">
+                          <td colSpan={9} className="p-0 bg-gray-50">
                             <ProductListVariantsTable
                               product={product}
                               onDeleteVariant={(variantId) =>
