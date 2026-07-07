@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -91,6 +92,47 @@ func parseStringArray(s string) StringSlice {
 	return result
 }
 
+// JSONB maps a Go value to a PostgreSQL JSONB column.
+type JSONB json.RawMessage
+
+func (j JSONB) Value() (driver.Value, error) {
+	if len(j) == 0 {
+		return nil, nil
+	}
+	return []byte(j), nil
+}
+
+func (j *JSONB) Scan(src interface{}) error {
+	if src == nil {
+		*j = nil
+		return nil
+	}
+	switch v := src.(type) {
+	case []byte:
+		*j = append((*j)[0:0], v...)
+	case string:
+		*j = []byte(v)
+	default:
+		return fmt.Errorf("JSONB.Scan: unsupported type %T", src)
+	}
+	return nil
+}
+
+func (j JSONB) MarshalJSON() ([]byte, error) {
+	if len(j) == 0 {
+		return []byte("null"), nil
+	}
+	return j, nil
+}
+
+func (j *JSONB) UnmarshalJSON(data []byte) error {
+	if j == nil {
+		return fmt.Errorf("JSONB.UnmarshalJSON: nil pointer")
+	}
+	*j = append((*j)[0:0], data...)
+	return nil
+}
+
 type Product struct {
 	ID              string         `gorm:"type:uuid;primaryKey"`
 	CategoryID      string         `gorm:"column:category_id;type:uuid"`
@@ -108,6 +150,10 @@ type Product struct {
 	DiscountStartAt *time.Time     `gorm:"column:discount_start_at"`
 	DiscountEndAt   *time.Time     `gorm:"column:discount_end_at"`
 	ShippingCost    float64        `gorm:"column:shipping_cost;type:numeric(12,2);default:0"`
+	SizeGuide       JSONB          `gorm:"column:size_guide;type:jsonb"`
+	SizeGuideJa     JSONB          `gorm:"column:size_guide_ja;type:jsonb"`
+	DeliveryInfo    JSONB          `gorm:"column:delivery_info;type:jsonb"`
+	DeliveryInfoJa  JSONB          `gorm:"column:delivery_info_ja;type:jsonb"`
 	CreatedAt       time.Time      `gorm:"column:created_at"`
 	UpdatedAt       time.Time      `gorm:"column:updated_at"`
 	DeletedAt       gorm.DeletedAt `gorm:"column:deleted_at;index"`

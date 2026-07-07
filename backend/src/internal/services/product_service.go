@@ -101,6 +101,10 @@ func (s *productService) Create(ctx context.Context, req *requests.CreateProduct
 		DiscountPercent: req.DiscountPercent,
 		DiscountStartAt: req.DiscountStartAt,
 		DiscountEndAt:   req.DiscountEndAt,
+		SizeGuide:       models.JSONB(req.SizeGuide),
+		SizeGuideJa:     models.JSONB(req.SizeGuideJa),
+		DeliveryInfo:    models.JSONB(req.DeliveryInfo),
+		DeliveryInfoJa:  models.JSONB(req.DeliveryInfoJa),
 	}
 	if err := s.repo.CreateProduct(ctx, p); err != nil {
 		return nil, fmt.Errorf("failed to create product: %w", err)
@@ -164,6 +168,18 @@ func (s *productService) Update(ctx context.Context, id string, req *requests.Up
 		fields["discount_percent"] = *req.DiscountPercent
 		fields["discount_start_at"] = req.DiscountStartAt
 		fields["discount_end_at"] = req.DiscountEndAt
+	}
+	if len(req.SizeGuide) > 0 {
+		fields["size_guide"] = models.JSONB(req.SizeGuide)
+	}
+	if len(req.SizeGuideJa) > 0 {
+		fields["size_guide_ja"] = models.JSONB(req.SizeGuideJa)
+	}
+	if len(req.DeliveryInfo) > 0 {
+		fields["delivery_info"] = models.JSONB(req.DeliveryInfo)
+	}
+	if len(req.DeliveryInfoJa) > 0 {
+		fields["delivery_info_ja"] = models.JSONB(req.DeliveryInfoJa)
 	}
 
 	if len(fields) == 0 {

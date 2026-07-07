@@ -58,6 +58,19 @@ export interface UpdateCategoryPayload {
   status?: number;
 }
 
+// Size guide entry format: [{size, height, weight}, ...]
+export interface SizeGuideEntry {
+  size: string;
+  height: string;
+  weight: string;
+}
+
+// Delivery info entry format: [{region, time}, ...]
+export interface DeliveryInfoEntry {
+  region: string;
+  time: string;
+}
+
 // Product
 export interface Product {
   id: string;
@@ -79,6 +92,8 @@ export interface Product {
   discount_start_at: string | null;
   discount_end_at: string | null;
   sale_price: number;
+  size_guide?: SizeGuideEntry[] | null;
+  delivery_info?: DeliveryInfoEntry[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -110,6 +125,8 @@ export interface AdminProduct extends Product {
   variant_count: number;
   variants: ProductVariant[];
   tags: Tag[];
+  size_guide_ja?: SizeGuideEntry[] | null;
+  delivery_info_ja?: DeliveryInfoEntry[] | null;
 }
 
 // Cart
@@ -250,6 +267,10 @@ export interface UpdateProductPayload {
   discount_percent?: number;
   discount_start_at?: string | null;
   discount_end_at?: string | null;
+  size_guide?: SizeGuideEntry[];
+  size_guide_ja?: SizeGuideEntry[];
+  delivery_info?: DeliveryInfoEntry[];
+  delivery_info_ja?: DeliveryInfoEntry[];
 }
 
 export interface CreateVariantPayload {

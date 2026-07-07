@@ -9,6 +9,7 @@ import { ProductInfoPanel } from "@/components/admin/product-info-panel";
 import { ProductAttrNamesPanel } from "@/components/admin/product-attr-names-panel";
 import { ProductVariantsTable } from "@/components/admin/product-variants-table";
 import { ProductTagsPanel } from "@/components/admin/product-tags-panel";
+import { ProductSizeDeliveryPanel } from "@/components/admin/product-size-delivery-panel";
 import type { ApiResponse, AdminProduct, Category, ProductVariant, Tag } from "@/types/api";
 
 export default function AdminProductDetailPage() {
@@ -105,6 +106,11 @@ export default function AdminProductDetailPage() {
         productId={id}
         currentTags={product.tags ?? []}
         onSaved={handleTagsSaved}
+      />
+
+      <ProductSizeDeliveryPanel
+        product={product}
+        onSaved={handleInfoSaved}
       />
 
       <ProductVariantsTable

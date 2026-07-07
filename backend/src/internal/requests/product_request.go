@@ -1,6 +1,7 @@
 package requests
 
 import (
+	"encoding/json"
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -14,19 +15,23 @@ func validateDiscountWindow(start, end *time.Time) error {
 }
 
 type CreateProductRequest struct {
-	CategoryID      string     `json:"category_id"`
-	Name            string     `json:"name"`
-	NameJa          string     `json:"name_ja"`
-	DefaultPrice    float64    `json:"default_price"`
-	ShippingCost    float64    `json:"shipping_cost"`
-	Description     string     `json:"description"`
-	DescriptionJa   string     `json:"description_ja"`
-	Avatar          string     `json:"avatar"`
-	AttributeNames  []string   `json:"attribute_names"`
-	ProductType     int8       `json:"product_type"`
-	DiscountPercent float64    `json:"discount_percent"`
-	DiscountStartAt *time.Time `json:"discount_start_at"`
-	DiscountEndAt   *time.Time `json:"discount_end_at"`
+	CategoryID      string          `json:"category_id"`
+	Name            string          `json:"name"`
+	NameJa          string          `json:"name_ja"`
+	DefaultPrice    float64         `json:"default_price"`
+	ShippingCost    float64         `json:"shipping_cost"`
+	Description     string          `json:"description"`
+	DescriptionJa   string          `json:"description_ja"`
+	Avatar          string          `json:"avatar"`
+	AttributeNames  []string        `json:"attribute_names"`
+	ProductType     int8            `json:"product_type"`
+	DiscountPercent float64         `json:"discount_percent"`
+	DiscountStartAt *time.Time      `json:"discount_start_at"`
+	DiscountEndAt   *time.Time      `json:"discount_end_at"`
+	SizeGuide       json.RawMessage `json:"size_guide"`
+	SizeGuideJa     json.RawMessage `json:"size_guide_ja"`
+	DeliveryInfo    json.RawMessage `json:"delivery_info"`
+	DeliveryInfoJa  json.RawMessage `json:"delivery_info_ja"`
 }
 
 func (r CreateProductRequest) Validate() error {
@@ -58,20 +63,24 @@ func (r CreateProductRequest) Validate() error {
 }
 
 type UpdateProductRequest struct {
-	CategoryID      *string    `json:"category_id"`
-	Name            *string    `json:"name"`
-	NameJa          *string    `json:"name_ja"`
-	DefaultPrice    *float64   `json:"default_price"`
-	ShippingCost    *float64   `json:"shipping_cost"`
-	Description     *string    `json:"description"`
-	DescriptionJa   *string    `json:"description_ja"`
-	Avatar          *string    `json:"avatar"`
-	Status          *int8      `json:"status"`
-	ProductType     *int8      `json:"product_type"`
-	AttributeNames  []string   `json:"attribute_names"`
-	DiscountPercent *float64   `json:"discount_percent"`
-	DiscountStartAt *time.Time `json:"discount_start_at"`
-	DiscountEndAt   *time.Time `json:"discount_end_at"`
+	CategoryID      *string         `json:"category_id"`
+	Name            *string         `json:"name"`
+	NameJa          *string         `json:"name_ja"`
+	DefaultPrice    *float64        `json:"default_price"`
+	ShippingCost    *float64        `json:"shipping_cost"`
+	Description     *string         `json:"description"`
+	DescriptionJa   *string         `json:"description_ja"`
+	Avatar          *string         `json:"avatar"`
+	Status          *int8           `json:"status"`
+	ProductType     *int8           `json:"product_type"`
+	AttributeNames  []string        `json:"attribute_names"`
+	DiscountPercent *float64        `json:"discount_percent"`
+	DiscountStartAt *time.Time      `json:"discount_start_at"`
+	DiscountEndAt   *time.Time      `json:"discount_end_at"`
+	SizeGuide       json.RawMessage `json:"size_guide"`
+	SizeGuideJa     json.RawMessage `json:"size_guide_ja"`
+	DeliveryInfo    json.RawMessage `json:"delivery_info"`
+	DeliveryInfoJa  json.RawMessage `json:"delivery_info_ja"`
 }
 
 func (r UpdateProductRequest) Validate() error {

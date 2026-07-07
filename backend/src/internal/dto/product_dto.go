@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/vlahanam/rol-outfit/src/internal/models"
@@ -8,26 +9,30 @@ import (
 )
 
 type ProductDTO struct {
-	ID              string    `json:"id"`
-	CategoryID      string    `json:"category_id"`
-	Name            string    `json:"name"`
-	NameJa          string    `json:"name_ja,omitempty"`
-	Slug            string    `json:"slug"`
-	DefaultPrice    float64   `json:"default_price"`
-	ShippingCost    float64   `json:"shipping_cost"`
-	Description     string    `json:"description"`
-	DescriptionJa   string    `json:"description_ja,omitempty"`
-	Status          int8      `json:"status"`
-	ProductType     int8      `json:"product_type"`
-	AttributeNames  []string  `json:"attribute_names"`
-	Avatar          string    `json:"avatar,omitempty"`
-	DiscountPercent float64   `json:"discount_percent"`
-	DiscountStartAt string    `json:"discount_start_at,omitempty"`
-	DiscountEndAt   string    `json:"discount_end_at,omitempty"`
-	SalePrice       float64   `json:"sale_price"`
-	Tags            []*TagDTO `json:"tags,omitempty"`
-	CreatedAt       string    `json:"created_at"`
-	UpdatedAt       string    `json:"updated_at"`
+	ID              string          `json:"id"`
+	CategoryID      string          `json:"category_id"`
+	Name            string          `json:"name"`
+	NameJa          string          `json:"name_ja,omitempty"`
+	Slug            string          `json:"slug"`
+	DefaultPrice    float64         `json:"default_price"`
+	ShippingCost    float64         `json:"shipping_cost"`
+	Description     string          `json:"description"`
+	DescriptionJa   string          `json:"description_ja,omitempty"`
+	Status          int8            `json:"status"`
+	ProductType     int8            `json:"product_type"`
+	AttributeNames  []string        `json:"attribute_names"`
+	Avatar          string          `json:"avatar,omitempty"`
+	DiscountPercent float64         `json:"discount_percent"`
+	DiscountStartAt string          `json:"discount_start_at,omitempty"`
+	DiscountEndAt   string          `json:"discount_end_at,omitempty"`
+	SalePrice       float64         `json:"sale_price"`
+	SizeGuide       json.RawMessage `json:"size_guide,omitempty"`
+	SizeGuideJa     json.RawMessage `json:"size_guide_ja,omitempty"`
+	DeliveryInfo    json.RawMessage `json:"delivery_info,omitempty"`
+	DeliveryInfoJa  json.RawMessage `json:"delivery_info_ja,omitempty"`
+	Tags            []*TagDTO       `json:"tags,omitempty"`
+	CreatedAt       string          `json:"created_at"`
+	UpdatedAt       string          `json:"updated_at"`
 }
 
 func ToProductDTO(p *models.Product) *ProductDTO {
@@ -60,6 +65,10 @@ func ToProductDTO(p *models.Product) *ProductDTO {
 		DiscountStartAt: formatTimePtr(p.DiscountStartAt),
 		DiscountEndAt:   formatTimePtr(p.DiscountEndAt),
 		SalePrice:       EffectivePrice(p.DefaultPrice, p.DiscountPercent, p.DiscountStartAt, p.DiscountEndAt),
+		SizeGuide:       json.RawMessage(p.SizeGuide),
+		SizeGuideJa:     json.RawMessage(p.SizeGuideJa),
+		DeliveryInfo:    json.RawMessage(p.DeliveryInfo),
+		DeliveryInfoJa:  json.RawMessage(p.DeliveryInfoJa),
 		Tags:            tags,
 		CreatedAt:       p.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:       p.UpdatedAt.Format(time.RFC3339),
@@ -82,6 +91,8 @@ type LocalizedProductDTO struct {
 	DiscountStartAt string             `json:"discount_start_at,omitempty"`
 	DiscountEndAt   string             `json:"discount_end_at,omitempty"`
 	SalePrice       float64            `json:"sale_price"`
+	SizeGuide       json.RawMessage    `json:"size_guide,omitempty"`
+	DeliveryInfo    json.RawMessage    `json:"delivery_info,omitempty"`
 	Tags            []*LocalizedTagDTO `json:"tags,omitempty"`
 	CreatedAt       string             `json:"created_at"`
 	UpdatedAt       string             `json:"updated_at"`
@@ -111,10 +122,19 @@ func (p *ProductDTO) ToLocalized(lang string) *LocalizedProductDTO {
 		DiscountStartAt: p.DiscountStartAt,
 		DiscountEndAt:   p.DiscountEndAt,
 		SalePrice:       p.SalePrice,
+		SizeGuide:       getLocalizedJSON(p.SizeGuide, p.SizeGuideJa, lang),
+		DeliveryInfo:    getLocalizedJSON(p.DeliveryInfo, p.DeliveryInfoJa, lang),
 		Tags:            tags,
 		CreatedAt:       p.CreatedAt,
 		UpdatedAt:       p.UpdatedAt,
 	}
+}
+
+func getLocalizedJSON(vi, ja json.RawMessage, lang string) json.RawMessage {
+	if lang == "ja" && len(ja) > 0 && string(ja) != "null" {
+		return ja
+	}
+	return vi
 }
 
 // ProductWithVariantsDTO is the admin response shape: product data + aggregated stats + variants.
@@ -136,6 +156,10 @@ type ProductWithVariantsDTO struct {
 	DiscountStartAt string               `json:"discount_start_at,omitempty"`
 	DiscountEndAt   string               `json:"discount_end_at,omitempty"`
 	SalePrice       float64              `json:"sale_price"`
+	SizeGuide       json.RawMessage      `json:"size_guide,omitempty"`
+	SizeGuideJa     json.RawMessage      `json:"size_guide_ja,omitempty"`
+	DeliveryInfo    json.RawMessage      `json:"delivery_info,omitempty"`
+	DeliveryInfoJa  json.RawMessage      `json:"delivery_info_ja,omitempty"`
 	TotalStock      int                  `json:"total_stock"`
 	TotalSold       int                  `json:"total_sold"`
 	VariantCount    int                  `json:"variant_count"`
@@ -177,6 +201,10 @@ func ToProductWithVariantsDTO(p *models.ProductWithVariants) *ProductWithVariant
 		DiscountStartAt: formatTimePtr(p.DiscountStartAt),
 		DiscountEndAt:   formatTimePtr(p.DiscountEndAt),
 		SalePrice:       EffectivePrice(p.DefaultPrice, p.DiscountPercent, p.DiscountStartAt, p.DiscountEndAt),
+		SizeGuide:       json.RawMessage(p.SizeGuide),
+		SizeGuideJa:     json.RawMessage(p.SizeGuideJa),
+		DeliveryInfo:    json.RawMessage(p.DeliveryInfo),
+		DeliveryInfoJa:  json.RawMessage(p.DeliveryInfoJa),
 		TotalStock:      totalStock,
 		TotalSold:       totalSold,
 		VariantCount:    len(p.Variants),

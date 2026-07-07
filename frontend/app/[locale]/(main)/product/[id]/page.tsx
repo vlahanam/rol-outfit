@@ -14,8 +14,19 @@ import { api, ApiError } from "@/lib/api";
 import { isLoggedIn } from "@/lib/auth";
 import { useCart } from "@/context/cart-context";
 import { useFlyToCart } from "@/hooks/use-fly-to-cart";
-import type { ApiResponse, Product, ProductVariant } from "@/types/api";
+import type { ApiResponse, Product, ProductVariant, SizeGuideEntry, DeliveryInfoEntry } from "@/types/api";
 import { formatPrice } from "@/lib/format";
+
+const DEFAULT_SIZE_GUIDE: SizeGuideEntry[] = [
+  { size: "M", height: "1m60 - 1m68", weight: "50 - 60kg" },
+  { size: "L", height: "1m68 - 1m75", weight: "60 - 70kg" },
+  { size: "XL", height: "1m75 - 1m82", weight: "70 - 80kg" },
+];
+
+const DEFAULT_DELIVERY_INFO: DeliveryInfoEntry[] = [
+  { region: "japan", time: "japanDelivery" },
+  { region: "vietnam", time: "vietnamDelivery" },
+];
 
 function buildImages(p: Product | null, vs: ProductVariant[]): string[] {
   const out = new Set<string>();
@@ -33,6 +44,71 @@ function resolveVariant(
     vs.find((v) =>
       Object.entries(sel).every(([k, val]) => v.attributes[k] === val),
     ) ?? null
+  );
+}
+
+function SizeGuideSection({
+  entries,
+  t,
+}: {
+  entries: SizeGuideEntry[];
+  t: (key: string) => string;
+}) {
+  if (!entries.length) return null;
+  return (
+    <div className="mt-6 border-t border-gray-200 pt-6">
+      <h3 className="font-semibold mb-3">{t("sizeGuide")}</h3>
+      <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-4 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">
+              {t("size")}
+            </th>
+            <th className="px-4 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">
+              {t("height")}
+            </th>
+            <th className="px-4 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">
+              {t("weight")}
+            </th>
+          </tr>
+        </thead>
+        <tbody className="text-gray-600">
+          {entries.map((entry, idx) => (
+            <tr
+              key={entry.size}
+              className={idx < entries.length - 1 ? "border-b border-gray-100" : ""}
+            >
+              <td className="px-4 py-2 font-medium">{entry.size}</td>
+              <td className="px-4 py-2">{entry.height}</td>
+              <td className="px-4 py-2">{entry.weight}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function DeliveryInfoSection({
+  entries,
+  t,
+}: {
+  entries: DeliveryInfoEntry[];
+  t: (key: string) => string;
+}) {
+  if (!entries.length) return null;
+  return (
+    <div className="mt-6 border-t border-gray-200 pt-6">
+      <h3 className="font-semibold mb-3">{t("deliveryTime")}</h3>
+      <ul className="space-y-2 text-sm text-gray-600">
+        {entries.map((entry) => (
+          <li key={entry.region} className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
+            {t(entry.region)}: {t(entry.time)}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -261,49 +337,15 @@ export default function ProductDetailPage() {
                     : t("addToCart")}
             </button>
 
-            <div className="mt-6 border-t border-gray-200 pt-6">
-              <h3 className="font-semibold mb-3">{t("sizeGuide")}</h3>
-              <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">{t("size")}</th>
-                    <th className="px-4 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">{t("height")}</th>
-                    <th className="px-4 py-2 text-left font-semibold text-gray-700 border-b border-gray-200">{t("weight")}</th>
-                  </tr>
-                </thead>
-                <tbody className="text-gray-600">
-                  <tr className="border-b border-gray-100">
-                    <td className="px-4 py-2 font-medium">M</td>
-                    <td className="px-4 py-2">1m60 - 1m68</td>
-                    <td className="px-4 py-2">50 - 60kg</td>
-                  </tr>
-                  <tr className="border-b border-gray-100">
-                    <td className="px-4 py-2 font-medium">L</td>
-                    <td className="px-4 py-2">1m68 - 1m75</td>
-                    <td className="px-4 py-2">60 - 70kg</td>
-                  </tr>
-                  <tr>
-                    <td className="px-4 py-2 font-medium">XL</td>
-                    <td className="px-4 py-2">1m75 - 1m82</td>
-                    <td className="px-4 py-2">70 - 80kg</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <SizeGuideSection
+              entries={product.size_guide ?? DEFAULT_SIZE_GUIDE}
+              t={t}
+            />
 
-            <div className="mt-6 border-t border-gray-200 pt-6">
-              <h3 className="font-semibold mb-3">{t("deliveryTime")}</h3>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
-                  {t("japan")}: {t("japanDelivery")}
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
-                  {t("vietnam")}: {t("vietnamDelivery")}
-                </li>
-              </ul>
-            </div>
+            <DeliveryInfoSection
+              entries={product.delivery_info ?? DEFAULT_DELIVERY_INFO}
+              t={t}
+            />
           </div>
         </div>
 
