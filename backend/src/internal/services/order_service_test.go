@@ -542,12 +542,13 @@ func TestCancelOrder_RequiresReason(t *testing.T) {
 	mockOrderRepo.AssertNotCalled(t, "UpdateOrder")
 }
 
-// Test MarkAsTransferred - Success: Mark awaiting payment order as transferred
-func TestMarkAsTransferred_Success(t *testing.T) {
+// Test UploadBill - Success: Upload bill for awaiting payment order → transitions to submitted
+func TestUploadBill_Success(t *testing.T) {
 	ctx := context.Background()
 	db := setupTestDB(t)
 	userID := uuid.New().String()
 	orderID := uuid.New().String()
+	billURL := "https://example.com/bills/test.jpg"
 
 	order := &models.Order{
 		ID:     orderID,
@@ -559,162 +560,110 @@ func TestMarkAsTransferred_Success(t *testing.T) {
 	repo := &testRepo{db: db}
 	svc := NewOrderService(db, repo, repo, repo, repo, repo)
 
-	err := svc.MarkAsTransferred(ctx, userID, orderID)
+	err := svc.UploadBill(ctx, userID, orderID, billURL)
 
 	assert.NoError(t, err)
 
 	var updated models.Order
 	db.First(&updated, "id = ?", orderID)
 	assert.Equal(t, models.ORDER_STATUS_PAYMENT_SUBMITTED, updated.Status)
+	assert.Equal(t, billURL, *updated.TransferBill)
 }
 
-// Test MarkAsTransferred - Fail: Order not found
-func TestMarkAsTransferred_OrderNotFound(t *testing.T) {
+// Test UploadBill - Re-upload: Already submitted, updates bill URL only
+func TestUploadBill_Reupload(t *testing.T) {
+	ctx := context.Background()
+	db := setupTestDB(t)
+	userID := uuid.New().String()
+	orderID := uuid.New().String()
+	oldBill := "https://example.com/bills/old.jpg"
+	newBill := "https://example.com/bills/new.jpg"
+
+	order := &models.Order{
+		ID:           orderID,
+		UserID:       userID,
+		Status:       models.ORDER_STATUS_PAYMENT_SUBMITTED,
+		TransferBill: &oldBill,
+	}
+	db.Create(order)
+
+	repo := &testRepo{db: db}
+	svc := NewOrderService(db, repo, repo, repo, repo, repo)
+
+	err := svc.UploadBill(ctx, userID, orderID, newBill)
+
+	assert.NoError(t, err)
+
+	var updated models.Order
+	db.First(&updated, "id = ?", orderID)
+	assert.Equal(t, models.ORDER_STATUS_PAYMENT_SUBMITTED, updated.Status)
+	assert.Equal(t, newBill, *updated.TransferBill)
+}
+
+// Test UploadBill - Fail: Order not found
+func TestUploadBill_OrderNotFound(t *testing.T) {
 	ctx := context.Background()
 	userID := uuid.New().String()
 	orderID := uuid.New().String()
+	billURL := "https://example.com/bills/test.jpg"
 
-	mockOrderRepo := new(MockOrderRepository)
-	mockOrderItemRepo := new(MockOrderItemRepository)
-	mockCartRepo := new(MockCartRepository)
-	mockCartItemRepo := new(MockCartItemRepository)
+	db := setupTestDB(t)
+	repo := &testRepo{db: db}
+	svc := NewOrderService(db, repo, repo, repo, repo, repo)
 
-	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(nil, nil)
+	err := svc.UploadBill(ctx, userID, orderID, billURL)
 
-	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
-
-	// Execute
-	err := svc.MarkAsTransferred(ctx, userID, orderID)
-
-	// Assert
 	assert.Error(t, err)
 	assert.Equal(t, ErrOrderNotFound, err)
-	mockOrderRepo.AssertNotCalled(t, "UpdateOrder")
 }
 
-// Test MarkAsTransferred - Fail: Order not owned by user
-func TestMarkAsTransferred_OrderNotOwned(t *testing.T) {
+// Test UploadBill - Fail: Order not owned by user
+func TestUploadBill_OrderNotOwned(t *testing.T) {
 	ctx := context.Background()
 	userID := uuid.New().String()
 	otherUserID := uuid.New().String()
 	orderID := uuid.New().String()
+	billURL := "https://example.com/bills/test.jpg"
 
+	db := setupTestDB(t)
 	order := &models.Order{
 		ID:     orderID,
 		UserID: otherUserID,
 		Status: models.ORDER_STATUS_AWAITING_PAYMENT,
 	}
+	db.Create(order)
 
-	mockOrderRepo := new(MockOrderRepository)
-	mockOrderItemRepo := new(MockOrderItemRepository)
-	mockCartRepo := new(MockCartRepository)
-	mockCartItemRepo := new(MockCartItemRepository)
+	repo := &testRepo{db: db}
+	svc := NewOrderService(db, repo, repo, repo, repo, repo)
 
-	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
+	err := svc.UploadBill(ctx, userID, orderID, billURL)
 
-	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
-
-	// Execute
-	err := svc.MarkAsTransferred(ctx, userID, orderID)
-
-	// Assert
 	assert.Error(t, err)
 	assert.Equal(t, ErrOrderNotOwned, err)
-	mockOrderRepo.AssertNotCalled(t, "UpdateOrder")
 }
 
-// Test MarkAsTransferred - Fail: Order not awaiting payment
-func TestMarkAsTransferred_NotAwaitingPayment(t *testing.T) {
+// Test UploadBill - Fail: Order not in allowed status
+func TestUploadBill_InvalidStatus(t *testing.T) {
 	ctx := context.Background()
 	userID := uuid.New().String()
 	orderID := uuid.New().String()
+	billURL := "https://example.com/bills/test.jpg"
 
+	db := setupTestDB(t)
 	order := &models.Order{
 		ID:     orderID,
 		UserID: userID,
 		Status: models.ORDER_STATUS_CONFIRMED,
 	}
+	db.Create(order)
 
-	mockOrderRepo := new(MockOrderRepository)
-	mockOrderItemRepo := new(MockOrderItemRepository)
-	mockCartRepo := new(MockCartRepository)
-	mockCartItemRepo := new(MockCartItemRepository)
+	repo := &testRepo{db: db}
+	svc := NewOrderService(db, repo, repo, repo, repo, repo)
 
-	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
+	err := svc.UploadBill(ctx, userID, orderID, billURL)
 
-	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
-
-	// Execute
-	err := svc.MarkAsTransferred(ctx, userID, orderID)
-
-	// Assert
 	assert.Error(t, err)
-	assert.Equal(t, ErrNotAwaitingPayment, err)
-	mockOrderRepo.AssertNotCalled(t, "UpdateOrder")
-}
-
-// Test MarkAsTransferred - Idempotent: Already submitted payment
-func TestMarkAsTransferred_AlreadySubmitted(t *testing.T) {
-	ctx := context.Background()
-	userID := uuid.New().String()
-	orderID := uuid.New().String()
-
-	order := &models.Order{
-		ID:     orderID,
-		UserID: userID,
-		Status: models.ORDER_STATUS_PAYMENT_SUBMITTED,
-	}
-
-	mockOrderRepo := new(MockOrderRepository)
-	mockOrderItemRepo := new(MockOrderItemRepository)
-	mockCartRepo := new(MockCartRepository)
-	mockCartItemRepo := new(MockCartItemRepository)
-
-	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
-
-	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
-
-	// Execute
-	err := svc.MarkAsTransferred(ctx, userID, orderID)
-
-	// Assert - Should succeed without updating (idempotent)
-	assert.NoError(t, err)
-	mockOrderRepo.AssertNotCalled(t, "UpdateOrder")
-}
-
-// Test MarkAsTransferred - Fail: Delivered order cannot be marked transferred
-func TestMarkAsTransferred_DeliveredOrder(t *testing.T) {
-	ctx := context.Background()
-	userID := uuid.New().String()
-	orderID := uuid.New().String()
-
-	order := &models.Order{
-		ID:     orderID,
-		UserID: userID,
-		Status: models.ORDER_STATUS_COMPLETED,
-	}
-
-	mockOrderRepo := new(MockOrderRepository)
-	mockOrderItemRepo := new(MockOrderItemRepository)
-	mockCartRepo := new(MockCartRepository)
-	mockCartItemRepo := new(MockCartItemRepository)
-
-	mockOrderRepo.On("FindOrderByID", ctx, orderID).Return(order, nil)
-
-	mockHistoryRepo := new(MockOrderStatusHistoryRepository)
-	svc := NewOrderService(nil, mockOrderRepo, mockOrderItemRepo, mockCartRepo, mockCartItemRepo, mockHistoryRepo)
-
-	// Execute
-	err := svc.MarkAsTransferred(ctx, userID, orderID)
-
-	// Assert
-	assert.Error(t, err)
-	assert.Equal(t, ErrNotAwaitingPayment, err)
-	mockOrderRepo.AssertNotCalled(t, "UpdateOrder")
+	assert.Equal(t, ErrCannotUploadBill, err)
 }
 
 // Test CancelOrder - Status 2 with reason succeeds

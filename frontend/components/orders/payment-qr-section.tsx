@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Copy, Check, Loader2 } from "lucide-react";
+import { Copy, Check, Loader2, Upload } from "lucide-react";
 import { api } from "@/lib/api";
+import { ApiError, BASE, getToken } from "@/lib/api-client";
 import { formatPrice } from "@/lib/format";
 
 interface Props {
@@ -27,6 +28,7 @@ export function PaymentQRSection({
   const t = useTranslations("Payment");
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const transferContent = `${userName} - ${orderCode}`;
 
@@ -47,16 +49,41 @@ export function PaymentQRSection({
     }
   };
 
-  const handleTransferred = async () => {
-    if (!onTransferred) return;
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !onTransferred) return;
+
     setLoading(true);
     try {
-      await api.put(`/orders/${orderId}/mark-transferred`);
+      const token = getToken();
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const headers: Record<string, string> = { "Accept-Language": "vi" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch(`${BASE}/orders/${orderId}/bill`, {
+        method: "POST",
+        headers,
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new ApiError(
+          res.status,
+          body.reason ?? body.error ?? "Upload failed",
+        );
+      }
+
       onTransferred();
     } catch (error) {
-      console.error("Failed to mark as transferred:", error);
+      console.error("Failed to upload bill:", error);
     } finally {
       setLoading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -113,18 +140,30 @@ export function PaymentQRSection({
         </div>
 
         {onTransferred && (
-          <button
-            type="button"
-            onClick={handleTransferred}
-            disabled={loading}
-            className="w-full max-w-sm px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              t("markAsTransferred")
-            )}
-          </button>
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={loading}
+              className="w-full max-w-sm px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <Upload className="w-4 h-4" />
+                  {t("uploadBill")}
+                </>
+              )}
+            </button>
+          </>
         )}
       </div>
     </div>

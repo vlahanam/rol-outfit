@@ -83,7 +83,7 @@ export function SearchDropdown() {
       )}
 
       {open && results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto w-auto min-w-[300px] max-w-[calc(100vw-2rem)]">
           {results.map((product) => (
             <Link
               key={product.id}
@@ -115,7 +115,7 @@ export function SearchDropdown() {
       )}
 
       {open && searched && !loading && results.length === 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4 text-center text-gray-500">
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4 text-center text-gray-500 w-auto min-w-[300px] max-w-[calc(100vw-2rem)]">
           {t("noResults")}
         </div>
       )}

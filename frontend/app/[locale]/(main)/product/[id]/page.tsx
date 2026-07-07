@@ -2,11 +2,14 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { ShoppingCart, Minus, Plus, ArrowLeft } from "lucide-react";
+import { ShoppingCart, Minus, Plus, ArrowLeft, MessageCircle } from "lucide-react";
 import { ImageGallery } from "@/components/product/image-gallery";
 import { TagBadges } from "@/components/product/tag-badges";
 import { DiscountCountdown } from "@/components/product/discount-countdown";
 import { VariantPicker } from "@/components/product/variant-picker";
+import { RelatedProductsSection } from "@/components/product/related-products-section";
+import { ReviewsSection } from "@/components/product/reviews-section";
+import { adminSettings } from "@/lib/api-resources";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -23,9 +26,14 @@ const DEFAULT_SIZE_GUIDE: SizeGuideEntry[] = [
   { size: "XL", height: "1m75 - 1m82", weight: "70 - 80kg" },
 ];
 
-const DEFAULT_DELIVERY_INFO: DeliveryInfoEntry[] = [
-  { region: "japan", time: "japanDelivery" },
-  { region: "vietnam", time: "vietnamDelivery" },
+const DEFAULT_DELIVERY_INFO_VN: DeliveryInfoEntry[] = [
+  { region: "Nhật Bản", time: "2-5 ngày" },
+  { region: "Việt Nam", time: "2-7 ngày" },
+];
+
+const DEFAULT_DELIVERY_INFO_JP: DeliveryInfoEntry[] = [
+  { region: "日本", time: "2〜5日" },
+  { region: "ベトナム", time: "2〜7日" },
 ];
 
 function buildImages(p: Product | null, vs: ProductVariant[]): string[] {
@@ -104,7 +112,7 @@ function DeliveryInfoSection({
         {entries.map((entry) => (
           <li key={entry.region} className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
-            {t(entry.region)}: {t(entry.time)}
+            {entry.region}: {entry.time}
           </li>
         ))}
       </ul>
@@ -126,6 +134,7 @@ export default function ProductDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
+  const [chatUrl, setChatUrl] = useState<string | null>(null);
   const { incrementCart } = useCart();
   const { trigger: flyToCart } = useFlyToCart();
 
@@ -145,12 +154,23 @@ export default function ProductDetailPage() {
       .finally(() => setLoading(false));
   }, [id, locale]);
 
+  useEffect(() => {
+    adminSettings
+      .getChatUrl()
+      .then((res) => setChatUrl(res.data?.chat_url || null))
+      .catch(() => setChatUrl(null));
+  }, []);
+
   const images = useMemo(
     () => buildImages(product, variants),
     [product, variants],
   );
   const totalStock = useMemo(
     () => variants.reduce((s, v) => s + (v.stock ?? 0), 0),
+    [variants],
+  );
+  const totalSold = useMemo(
+    () => variants.reduce((s, v) => s + (v.sold ?? 0), 0),
     [variants],
   );
 
@@ -279,11 +299,16 @@ export default function ProductDetailPage() {
                 )}
               </div>
               {hasVariants && (
-                <p
-                  className={`text-sm mt-1 ${!stockEmpty ? "text-gray-500" : "text-red-500"}`}
-                >
-                  {stockText}
-                </p>
+                <div className="flex items-center gap-3 mt-1">
+                  <p className={`text-sm ${!stockEmpty ? "text-gray-500" : "text-red-500"}`}>
+                    {stockText}
+                  </p>
+                  {totalSold > 0 && (
+                    <p className="text-sm text-gray-400">
+                      {t("sold", { count: totalSold })}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
 
@@ -322,20 +347,33 @@ export default function ProductDetailPage() {
               </p>
             </div>
 
-            <button
-              onClick={handleAddToCart}
-              disabled={cartDisabled}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {outOfStock
-                ? t("outOfStock")
-                : needsPick
-                  ? t("selectVariant")
-                  : addingToCart
-                    ? t("adding")
-                    : t("addToCart")}
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={handleAddToCart}
+                disabled={cartDisabled}
+                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {outOfStock
+                  ? t("outOfStock")
+                  : needsPick
+                    ? t("selectVariant")
+                    : addingToCart
+                      ? t("adding")
+                      : t("addToCart")}
+              </button>
+              {chatUrl && (
+                <a
+                  href={chatUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 border-2 border-green-500 text-green-600 py-3 rounded-lg font-semibold hover:bg-green-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  {t("messageNow")}
+                </a>
+              )}
+            </div>
 
             <SizeGuideSection
               entries={product.size_guide ?? DEFAULT_SIZE_GUIDE}
@@ -343,14 +381,14 @@ export default function ProductDetailPage() {
             />
 
             <DeliveryInfoSection
-              entries={product.delivery_info ?? DEFAULT_DELIVERY_INFO}
+              entries={product.delivery_info ?? (locale === "jp" ? DEFAULT_DELIVERY_INFO_JP : DEFAULT_DELIVERY_INFO_VN)}
               t={t}
             />
           </div>
         </div>
 
         {product.description && (
-          <div className="border-t border-gray-200 pt-8 mb-12">
+          <div className="border-t border-gray-200 pt-8 mb-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-3">
               {t("description")}
             </h2>
@@ -359,6 +397,15 @@ export default function ProductDetailPage() {
               dangerouslySetInnerHTML={{ __html: product.description }}
             />
           </div>
+        )}
+
+        <ReviewsSection productId={product.id} />
+
+        {product.category_id && (
+          <RelatedProductsSection
+            categoryId={product.category_id}
+            excludeProductId={product.id}
+          />
         )}
       </div>
     </div>

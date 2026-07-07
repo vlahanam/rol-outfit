@@ -481,3 +481,27 @@ export interface OrderStatusCount {
   status: number;
   count: number;
 }
+
+// Product Reviews
+export interface ProductReview {
+  id: string;
+  product_id: string;
+  product_name?: string;
+  user_id: string;
+  user_name: string;
+  rating: number;
+  comment: string;
+  status: number;
+  created_at: string;
+}
+
+export interface ReviewStats {
+  average_rating: number;
+  total_count: number;
+  distribution: Record<number, number>;
+}
+
+export interface CreateReviewPayload {
+  rating: number;
+  comment: string;
+}

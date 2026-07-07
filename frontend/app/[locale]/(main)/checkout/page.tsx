@@ -10,7 +10,7 @@ import { isLoggedIn } from "@/lib/auth";
 import { useCart } from "@/context/cart-context";
 import { PaymentQRModal } from "@/components/checkout/payment-qr-modal";
 import type { ApiResponse, Cart, CartItem, Product, Order, UserAddress } from "@/types/api";
-import { formatPrice, getCartCurrencyType } from "@/lib/format";
+import { formatPrice, getCartCurrencyType, getEffectiveShipping } from "@/lib/format";
 
 interface RichCartItem extends CartItem {
   productName: string;
@@ -123,12 +123,13 @@ export default function CheckoutPage() {
     (sum, item) => sum + item.price_at_add * item.quantity,
     0
   );
-  const shipping = cartItems.reduce(
+  const rawShipping = cartItems.reduce(
     (sum, item) => sum + item.shippingCost * item.quantity,
     0
   );
-  const total = subtotal + shipping;
   const cartCurrencyType = getCartCurrencyType(cartItems);
+  const shipping = getEffectiveShipping(subtotal, rawShipping, cartCurrencyType);
+  const total = subtotal + shipping;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

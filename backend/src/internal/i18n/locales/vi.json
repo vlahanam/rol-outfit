@@ -59,6 +59,7 @@
   "error.not_awaiting_payment": "Đơn hàng không ở trạng thái chờ chuyển khoản",
   "error.invalid_transition": "Chuyển trạng thái không hợp lệ",
   "error.cannot_request_refund": "Chỉ có thể yêu cầu hoàn tiền cho đơn hàng đã hoàn thành",
+  "error.cannot_upload_bill": "Không thể upload bill ở trạng thái hiện tại",
   "error.not_refund_request": "Đơn hàng không ở trạng thái chờ duyệt hoàn tiền",
   "error.reason_required": "Vui lòng nhập lý do hủy đơn",
   "error.invalid_status_transition": "Chuyển trạng thái không hợp lệ",

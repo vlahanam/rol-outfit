@@ -135,7 +135,12 @@
     "selectAllVietnamese": "Chọn tất cả hàng Việt",
     "clearSelection": "Bỏ chọn",
     "selectItemsHint": "Chọn sản phẩm để thanh toán",
-    "selectedItems": "Đã chọn {count} sản phẩm"
+    "selectedItems": "Đã chọn {count} sản phẩm",
+    "policyTitle": "Chính sách mua hàng",
+    "policyFreeShipping": "Miễn phí vận chuyển cho đơn từ {threshold}",
+    "policyReturn": "Đổi trả trong vòng 7 ngày",
+    "policySecurePayment": "Thanh toán an toàn & bảo mật",
+    "addMoreForFreeShipping": "Mua thêm {amount} để được miễn phí vận chuyển"
   },
   "LoginPage": {
     "title": "Đăng Nhập",
@@ -341,15 +346,34 @@
     "japan": "Nhật Bản",
     "vietnam": "Việt Nam",
     "japanDelivery": "2-5 ngày",
-    "vietnamDelivery": "2-7 ngày"
+    "vietnamDelivery": "2-7 ngày",
+    "sold": "Đã bán: {count}",
+    "relatedProducts": "Sản phẩm liên quan",
+    "messageNow": "Nhắn tin ngay",
+    "reviews": "Đánh giá sản phẩm",
+    "reviewCount": "{count} đánh giá",
+    "writeReview": "Viết đánh giá",
+    "yourRating": "Đánh giá của bạn",
+    "yourComment": "Nhận xét của bạn",
+    "commentPlaceholder": "Chia sẻ trải nghiệm của bạn về sản phẩm...",
+    "submitReview": "Gửi đánh giá",
+    "reviewSubmitted": "Đánh giá của bạn đã được gửi và đang chờ duyệt",
+    "reviewFailed": "Không thể gửi đánh giá",
+    "invalidRating": "Vui lòng chọn số sao từ 1-5",
+    "loginToReview": "Vui lòng đăng nhập để đánh giá sản phẩm",
+    "purchaseToReview": "Bạn cần mua sản phẩm này để đánh giá",
+    "alreadyReviewed": "Bạn đã đánh giá sản phẩm này",
+    "noReviews": "Chưa có đánh giá nào",
+    "loadMoreReviews": "Xem thêm đánh giá"
   },
   "Payment": {
     "title": "Thanh toán đơn hàng",
     "transferContent": "Nội dung chuyển khoản",
-    "alreadyTransferred": "Đã chuyển khoản",
     "close": "Đóng",
     "paymentInfo": "Thông tin thanh toán",
-    "markAsTransferred": "Đã chuyển khoản",
+    "uploadBill": "Tải lên bill chuyển khoản",
+    "uploading": "Đang tải lên...",
+    "billUploaded": "Đã tải lên bill",
     "waitingForVerification": "Đang chờ xác nhận thanh toán",
     "verifyPayment": "Xác nhận thanh toán"
   }

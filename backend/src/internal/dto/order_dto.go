@@ -24,10 +24,18 @@ type OrderDTO struct {
 	ShippingCost    float64         `json:"shipping_cost"`
 	CurrencyType    int8            `json:"currency_type"`
 	Status          int8            `json:"status"`
+	TransferBill    string          `json:"transfer_bill,omitempty"`
 	Note            string          `json:"note,omitempty"`
 	Items           []*OrderItemDTO `json:"items,omitempty"`
 	CreatedAt       string          `json:"created_at"`
 	UpdatedAt       string          `json:"updated_at"`
+}
+
+func nullableStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 func ToOrderItemDTO(item *models.OrderItem) *OrderItemDTO {
@@ -49,13 +57,9 @@ func ToOrderDTO(o *models.Order, items []*models.OrderItem) *OrderDTO {
 	for _, item := range items {
 		dtoItems = append(dtoItems, ToOrderItemDTO(item))
 	}
-	orderCode := ""
-	if o.OrderCode != nil {
-		orderCode = *o.OrderCode
-	}
 	return &OrderDTO{
 		ID:              o.ID,
-		OrderCode:       orderCode,
+		OrderCode:       nullableStr(o.OrderCode),
 		UserID:          o.UserID,
 		ShippingAddress: o.ShippingAddress,
 		Phone:           o.Phone,
@@ -63,6 +67,7 @@ func ToOrderDTO(o *models.Order, items []*models.OrderItem) *OrderDTO {
 		ShippingCost:    o.ShippingCost,
 		CurrencyType:    o.CurrencyType,
 		Status:          o.Status,
+		TransferBill:    nullableStr(o.TransferBill),
 		Note:            o.Note,
 		Items:           dtoItems,
 		CreatedAt:       o.CreatedAt.Format(time.RFC3339),

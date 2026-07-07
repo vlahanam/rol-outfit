@@ -8,7 +8,7 @@ import { api } from "@/lib/api";
 import { isLoggedIn } from "@/lib/auth";
 import { useCart } from "@/context/cart-context";
 import type { ApiResponse, Cart, CartItem, Product } from "@/types/api";
-import { formatPrice, getCartCurrencyType, PRODUCT_TYPE_JAPANESE, PRODUCT_TYPE_VIETNAMESE } from "@/lib/format";
+import { formatPrice, getCartCurrencyType, getEffectiveShipping, getFreeShippingThreshold, PRODUCT_TYPE_JAPANESE, PRODUCT_TYPE_VIETNAMESE } from "@/lib/format";
 
 interface RichCartItem extends CartItem {
   productName: string;
@@ -161,12 +161,13 @@ export default function CartPage() {
     (sum, item) => sum + item.price_at_add * item.quantity,
     0,
   );
-  const shipping = selectedItems.reduce(
+  const rawShipping = selectedItems.reduce(
     (sum, item) => sum + item.shippingCost * item.quantity,
     0,
   );
-  const total = subtotal + shipping;
   const cartCurrencyType = getCartCurrencyType(selectedItems);
+  const shipping = getEffectiveShipping(subtotal, rawShipping, cartCurrencyType);
+  const total = subtotal + shipping;
 
   const japaneseItems = cartItems.filter((i) => i.productType === PRODUCT_TYPE_JAPANESE);
   const vietnameseItems = cartItems.filter((i) => i.productType === PRODUCT_TYPE_VIETNAMESE);
@@ -376,10 +377,9 @@ export default function CartPage() {
                             : formatPrice(shipping, cartCurrencyType)}
                         </span>
                       </div>
-                      {cartCurrencyType !== PRODUCT_TYPE_JAPANESE && subtotal < 500000 && (
+                      {subtotal < getFreeShippingThreshold(cartCurrencyType) && (
                         <p className="text-sm text-blue-600">
-                          Mua thêm {formatPrice(500000 - subtotal, cartCurrencyType)} để
-                          được miễn phí vận chuyển
+                          {t("addMoreForFreeShipping", { amount: formatPrice(getFreeShippingThreshold(cartCurrencyType) - subtotal, cartCurrencyType) })}
                         </p>
                       )}
                     </div>
@@ -412,20 +412,20 @@ export default function CartPage() {
 
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <h3 className="font-semibold mb-3 text-sm">
-                    Chính sách mua hàng
+                    {t("policyTitle")}
                   </h3>
                   <ul className="space-y-2 text-xs text-gray-600">
                     <li className="flex items-center gap-2">
                       <span className="w-1 h-1 bg-blue-600 rounded-full"></span>
-                      Miễn phí vận chuyển cho đơn từ 500.000₫
+                      {t("policyFreeShipping", { threshold: formatPrice(getFreeShippingThreshold(cartCurrencyType), cartCurrencyType) })}
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="w-1 h-1 bg-blue-600 rounded-full"></span>
-                      Đổi trả trong vòng 7 ngày
+                      {t("policyReturn")}
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="w-1 h-1 bg-blue-600 rounded-full"></span>
-                      Thanh toán an toàn & bảo mật
+                      {t("policySecurePayment")}
                     </li>
                   </ul>
                 </div>

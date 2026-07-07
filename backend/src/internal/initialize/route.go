@@ -73,6 +73,12 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	variants.Put("/:id", jwtAuth, requireAdmin, controllers.UpdateVariant(db))
 	variants.Delete("/:id", jwtAuth, requireAdmin, controllers.DeleteVariant(db))
 
+	// Product Reviews (public read, auth for write)
+	prods.Get("/:id/reviews", controllers.ListProductReviews(db))
+	prods.Get("/:id/reviews/stats", controllers.GetReviewStats(db))
+	prods.Get("/:id/reviews/can-review", jwtAuth, controllers.CanUserReview(db))
+	prods.Post("/:id/reviews", jwtAuth, controllers.CreateReview(db))
+
 	// Cart (user auth required)
 	cart := v1.Group("/cart", middleware.JWTAuth(jwtSecret))
 	cart.Get("/", controllers.GetCart(db))
@@ -80,13 +86,16 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	cart.Put("/items/:itemID", controllers.UpdateCartItem(db))
 	cart.Delete("/items/:itemID", controllers.RemoveCartItem(db))
 
+	// Upload service (used by orders for bill upload and admin uploads)
+	uploadSvc := services.NewUploadService(cfg.UploadDir, cfg.UploadURL)
+
 	// Orders (user auth required)
 	orders := v1.Group("/orders", middleware.JWTAuth(jwtSecret))
 	orders.Post("/", controllers.CreateOrder(db))
 	orders.Get("/", controllers.ListOrders(db))
 	orders.Get("/:id", controllers.GetOrder(db))
 	orders.Put("/:id/shipping", controllers.UpdateOrderShipping(db))
-	orders.Put("/:id/mark-transferred", controllers.MarkOrderTransferred(db))
+	orders.Post("/:id/bill", controllers.UploadOrderBill(db, uploadSvc, cfg.UploadMaxSize))
 	orders.Delete("/:id", controllers.CancelOrder(db))
 	orders.Post("/:id/refund", controllers.RequestRefund(db))
 	orders.Get("/:id/history", controllers.GetOrderHistory(db, false))
@@ -138,7 +147,6 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	adminProductsGroup.Get("/:id", controllers.AdminGetProduct(db))
 
 	// Uploads (admin-only)
-	uploadSvc := services.NewUploadService(cfg.UploadDir, cfg.UploadURL)
 	adminUploads := v1.Group("/uploads",
 		middleware.JWTAuth(jwtSecret),
 		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
@@ -209,6 +217,7 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	// Site settings (public)
 	settings := v1.Group("/settings")
 	settings.Get("/social-links", controllers.GetSocialLinks(db))
+	settings.Get("/chat-url", controllers.GetChatURL(db))
 
 	// Admin settings
 	adminSettings := v1.Group("/admin/settings",
@@ -216,4 +225,15 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
 	)
 	adminSettings.Put("/social-links", controllers.UpdateSocialLinks(db))
+	adminSettings.Put("/chat-url", controllers.UpdateChatURL(db))
+
+	// Admin reviews
+	adminReviews := v1.Group("/admin/reviews",
+		middleware.JWTAuth(jwtSecret),
+		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
+	)
+	adminReviews.Get("/", controllers.AdminListReviews(db))
+	adminReviews.Put("/:id/approve", controllers.ApproveReview(db))
+	adminReviews.Put("/:id/reject", controllers.RejectReview(db))
+	adminReviews.Delete("/:id", controllers.DeleteReview(db))
 }

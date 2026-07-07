@@ -51,6 +51,7 @@ type Order struct {
 	Status          int8           `gorm:"column:status"`
 	Note            string         `gorm:"column:note"`
 	OrderCode       *string        `gorm:"column:order_code;type:varchar(16)"`
+	TransferBill    *string        `gorm:"column:transfer_bill;type:text"`
 	CreatedAt       time.Time      `gorm:"column:created_at"`
 	UpdatedAt       time.Time      `gorm:"column:updated_at"`
 	DeletedAt       gorm.DeletedAt `gorm:"column:deleted_at;index"`

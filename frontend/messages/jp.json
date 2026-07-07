@@ -135,7 +135,12 @@
     "selectAllVietnamese": "ベトナム製品を全て選択",
     "clearSelection": "選択解除",
     "selectItemsHint": "購入する商品を選択してください",
-    "selectedItems": "{count}点選択中"
+    "selectedItems": "{count}点選択中",
+    "policyTitle": "購入ポリシー",
+    "policyFreeShipping": "{threshold}以上のご注文で送料無料",
+    "policyReturn": "7日間返品交換可能",
+    "policySecurePayment": "安全・安心なお支払い",
+    "addMoreForFreeShipping": "あと{amount}で送料無料"
   },
   "LoginPage": {
     "title": "ログイン",
@@ -341,15 +346,34 @@
     "japan": "日本",
     "vietnam": "ベトナム",
     "japanDelivery": "2〜5日",
-    "vietnamDelivery": "2〜7日"
+    "vietnamDelivery": "2〜7日",
+    "sold": "{count}個販売済み",
+    "relatedProducts": "関連商品",
+    "messageNow": "今すぐメッセージ",
+    "reviews": "レビュー",
+    "reviewCount": "{count}件のレビュー",
+    "writeReview": "レビューを書く",
+    "yourRating": "評価",
+    "yourComment": "コメント",
+    "commentPlaceholder": "商品についてのご感想をお聞かせください...",
+    "submitReview": "レビューを送信",
+    "reviewSubmitted": "レビューが送信されました。承認をお待ちください",
+    "reviewFailed": "レビューの送信に失敗しました",
+    "invalidRating": "1〜5の評価を選択してください",
+    "loginToReview": "レビューするにはログインしてください",
+    "purchaseToReview": "レビューするには商品を購入する必要があります",
+    "alreadyReviewed": "この商品は既にレビュー済みです",
+    "noReviews": "まだレビューがありません",
+    "loadMoreReviews": "もっと見る"
   },
   "Payment": {
     "title": "ご注文のお支払い",
     "transferContent": "振込内容",
-    "alreadyTransferred": "振込済み",
     "close": "閉じる",
     "paymentInfo": "お支払い情報",
-    "markAsTransferred": "振込済みにする",
+    "uploadBill": "振込明細をアップロード",
+    "uploading": "アップロード中...",
+    "billUploaded": "明細をアップロードしました",
     "waitingForVerification": "支払い確認待ち",
     "verifyPayment": "支払いを確認"
   }

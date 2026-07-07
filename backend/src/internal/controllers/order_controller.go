@@ -218,8 +218,8 @@ func CancelOrder(db *gorm.DB) fiber.Handler {
 	}
 }
 
-// MarkOrderTransferred PUT /api/v1/orders/:id/mark-transferred
-func MarkOrderTransferred(db *gorm.DB) fiber.Handler {
+// UploadOrderBill POST /api/v1/orders/:id/bill — upload bank transfer bill
+func UploadOrderBill(db *gorm.DB, svc services.UploadService, maxSize int64) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		userID, err := userIDFromLocals(ctx)
@@ -228,8 +228,32 @@ func MarkOrderTransferred(db *gorm.DB) fiber.Handler {
 		}
 		orderID := ctx.Params("id")
 
-		svc := newOrderService(db)
-		if err := svc.MarkAsTransferred(ctx.Context(), userID, orderID); err != nil {
+		fh, err := ctx.FormFile("file")
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(
+				common.ErrBadRequest.WithReason(i18n.T(lang, "error.file_required")),
+			)
+		}
+
+		url, err := svc.Save(fh, maxSize)
+		if err != nil {
+			switch {
+			case errors.Is(err, services.ErrFileTooBig):
+				return ctx.Status(fiber.StatusRequestEntityTooLarge).JSON(
+					common.ErrBadRequest.WithReason(i18n.T(lang, "error.file_too_large")),
+				)
+			case errors.Is(err, services.ErrFileTypeNotAllow):
+				return ctx.Status(fiber.StatusUnprocessableEntity).JSON(
+					common.ErrBadRequest.WithReason(i18n.T(lang, "error.file_type_not_allowed")),
+				)
+			default:
+				slog.Error("UploadOrderBill: save failed", "error", err)
+				return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+			}
+		}
+
+		orderSvc := newOrderService(db)
+		if err := orderSvc.UploadBill(ctx.Context(), userID, orderID, url); err != nil {
 			if errors.Is(err, services.ErrOrderNotFound) {
 				return ctx.Status(fiber.StatusNotFound).JSON(
 					common.ErrNotFound.WithReason(i18n.T(lang, "error.order_not_found")),
@@ -240,15 +264,15 @@ func MarkOrderTransferred(db *gorm.DB) fiber.Handler {
 					common.ErrForbidden.WithReason(i18n.T(lang, "error.order_not_owned")),
 				)
 			}
-			if errors.Is(err, services.ErrNotAwaitingPayment) {
+			if errors.Is(err, services.ErrCannotUploadBill) {
 				return ctx.Status(fiber.StatusConflict).JSON(
-					common.ErrConflict.WithReason(i18n.T(lang, "error.not_awaiting_payment")),
+					common.ErrConflict.WithReason(i18n.T(lang, "error.cannot_upload_bill")),
 				)
 			}
-			slog.Error("MarkOrderTransferred failed", "error", err)
+			slog.Error("UploadOrderBill: upload failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
-		return ctx.JSON(common.ResponseData(fiber.Map{"message": "Order marked as transferred"}))
+		return ctx.JSON(common.ResponseData(fiber.Map{"url": url}))
 	}
 }
 

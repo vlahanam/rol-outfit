@@ -22,8 +22,8 @@ export function Header({ onMenuClick, user, onLogout, onSwitchLocale }: HeaderPr
   return (
     <header className="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-30">
       <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="flex items-center justify-between gap-8">
-          <div className="flex items-center gap-8">
+        <div className="flex items-center justify-between gap-2 md:gap-8">
+          <div className="flex items-center gap-1 md:gap-8">
             <button className="lg:hidden" onClick={onMenuClick}>
               <Menu className="w-6 h-6" />
             </button>
@@ -64,6 +64,10 @@ export function Header({ onMenuClick, user, onLogout, onSwitchLocale }: HeaderPr
                 {t("vietnameseProducts")}
               </Link>
             </nav>
+          </div>
+
+          <div className="md:hidden flex-1 min-w-0">
+            <SearchDropdown />
           </div>
 
           <div className="hidden md:flex flex-1 max-w-2xl">

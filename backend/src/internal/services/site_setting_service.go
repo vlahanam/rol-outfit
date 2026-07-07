@@ -22,6 +22,8 @@ type SocialLinksData struct {
 type SiteSettingService interface {
 	GetSocialLinks(ctx context.Context) (*SocialLinksData, error)
 	UpdateSocialLinks(ctx context.Context, data *SocialLinksData) error
+	GetChatURL(ctx context.Context) (string, error)
+	UpdateChatURL(ctx context.Context, url string) error
 }
 
 type siteSettingService struct {
@@ -70,6 +72,25 @@ func (s *siteSettingService) UpdateSocialLinks(ctx context.Context, data *Social
 	}
 	if err := s.repo.UpdateSettings(ctx, settings); err != nil {
 		return fmt.Errorf("failed to update social links: %w", err)
+	}
+	return nil
+}
+
+func (s *siteSettingService) GetChatURL(ctx context.Context) (string, error) {
+	setting, err := s.repo.GetSetting(ctx, "chat_url")
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", nil
+		}
+		return "", fmt.Errorf("failed to get chat URL: %w", err)
+	}
+	return setting.Value, nil
+}
+
+func (s *siteSettingService) UpdateChatURL(ctx context.Context, url string) error {
+	settings := map[string]string{"chat_url": url}
+	if err := s.repo.UpdateSettings(ctx, settings); err != nil {
+		return fmt.Errorf("failed to update chat URL: %w", err)
 	}
 	return nil
 }

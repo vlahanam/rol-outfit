@@ -48,3 +48,43 @@ func UpdateSocialLinks(db *gorm.DB) fiber.Handler {
 		return ctx.JSON(common.ResponseData(fiber.Map{"updated": true}))
 	}
 }
+
+// GetChatURL GET /api/v1/settings/chat-url (public)
+func GetChatURL(db *gorm.DB) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		repo := repositories.NewPostgreSQLStorage(db)
+		svc := services.NewSiteSettingService(repo)
+
+		url, err := svc.GetChatURL(ctx.Context())
+		if err != nil {
+			slog.Error("GetChatURL failed", "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+		return ctx.JSON(common.ResponseData(fiber.Map{"chat_url": url}))
+	}
+}
+
+// UpdateChatURL PUT /api/v1/admin/settings/chat-url (admin)
+func UpdateChatURL(db *gorm.DB) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
+
+		var req struct {
+			ChatURL string `json:"chat_url"`
+		}
+		if err := ctx.Bind().JSON(&req); err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(
+				common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_payload")),
+			)
+		}
+
+		repo := repositories.NewPostgreSQLStorage(db)
+		svc := services.NewSiteSettingService(repo)
+
+		if err := svc.UpdateChatURL(ctx.Context(), req.ChatURL); err != nil {
+			slog.Error("UpdateChatURL failed", "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+		return ctx.JSON(common.ResponseData(fiber.Map{"updated": true}))
+	}
+}

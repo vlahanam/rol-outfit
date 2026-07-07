@@ -21,6 +21,7 @@ var (
 	ErrCannotUpdateShipping = errors.New("cannot update shipping info for non-pending order")
 	ErrNotAwaitingPayment   = errors.New("order is not awaiting payment")
 	ErrInvalidTransition    = errors.New("invalid status transition")
+	ErrCannotUploadBill     = errors.New("cannot upload bill for order in current status")
 	ErrCannotRequestRefund  = errors.New("can only request refund for completed orders")
 	ErrNotRefundRequest     = errors.New("order is not pending refund approval")
 	ErrReasonRequired       = errors.New("cancellation reason is required")
@@ -34,7 +35,7 @@ type OrderService interface {
 	UpdateStatus(ctx context.Context, orderID string, newStatus int8, changedBy string, note string) error
 	UpdateShippingInfo(ctx context.Context, userID, orderID string, req *requests.UpdateOrderShippingRequest) error
 	CancelOrder(ctx context.Context, userID, orderID, reason string, isAdmin bool) error
-	MarkAsTransferred(ctx context.Context, userID, orderID string) error
+	UploadBill(ctx context.Context, userID, orderID, billURL string) error
 	RequestRefund(ctx context.Context, userID, orderID string, reason string) error
 	ApproveRefund(ctx context.Context, orderID string, adminID string) error
 	RejectRefund(ctx context.Context, orderID string, adminID string, reason string) error
@@ -126,6 +127,13 @@ func (s *orderService) CreateFromCart(ctx context.Context, userID string, req *r
 		currencyType := models.PRODUCT_TYPE_VIETNAMESE
 		if allJapanese {
 			currencyType = models.PRODUCT_TYPE_JAPANESE
+		}
+
+		// Free shipping threshold: 15000 yen for Japanese orders, 500000 VND for Vietnamese orders
+		if allJapanese && totalPrice >= 15000 {
+			totalShipping = 0
+		} else if !allJapanese && totalPrice >= 500000 {
+			totalShipping = 0
 		}
 
 		orderCode, err := txRepo.GenerateOrderCode(ctx)
@@ -355,24 +363,44 @@ func (s *orderService) CancelOrder(ctx context.Context, userID, orderID, reason 
 	return s.UpdateStatus(ctx, orderID, models.ORDER_STATUS_CANCELLED, changedBy, note)
 }
 
-func (s *orderService) MarkAsTransferred(ctx context.Context, userID, orderID string) error {
-	order, err := s.orderRepo.FindOrderByID(ctx, orderID)
-	if err != nil {
-		return fmt.Errorf("failed to find order: %w", err)
-	}
-	if order == nil {
-		return ErrOrderNotFound
-	}
-	if order.UserID != userID {
-		return ErrOrderNotOwned
-	}
-	if order.Status == models.ORDER_STATUS_PAYMENT_SUBMITTED {
-		return nil
-	}
-	if order.Status != models.ORDER_STATUS_AWAITING_PAYMENT {
-		return ErrNotAwaitingPayment
-	}
-	return s.UpdateStatus(ctx, orderID, models.ORDER_STATUS_PAYMENT_SUBMITTED, userID, "Payment transfer submitted")
+func (s *orderService) UploadBill(ctx context.Context, userID, orderID, billURL string) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		txRepo := repositories.NewPostgreSQLStorage(tx)
+
+		order, err := txRepo.FindOrderByID(ctx, orderID)
+		if err != nil {
+			return fmt.Errorf("failed to find order: %w", err)
+		}
+		if order == nil {
+			return ErrOrderNotFound
+		}
+		if order.UserID != userID {
+			return ErrOrderNotOwned
+		}
+		if order.Status != models.ORDER_STATUS_AWAITING_PAYMENT &&
+			order.Status != models.ORDER_STATUS_PAYMENT_SUBMITTED {
+			return ErrCannotUploadBill
+		}
+
+		updates := map[string]interface{}{"transfer_bill": billURL}
+		if order.Status == models.ORDER_STATUS_AWAITING_PAYMENT {
+			updates["status"] = models.ORDER_STATUS_PAYMENT_SUBMITTED
+
+			history := &models.OrderStatusHistory{
+				ID:         uuid.New().String(),
+				OrderID:    orderID,
+				FromStatus: &order.Status,
+				ToStatus:   models.ORDER_STATUS_PAYMENT_SUBMITTED,
+				ChangedBy:  &userID,
+				Note:       "Bill uploaded",
+			}
+			if err := txRepo.CreateStatusHistory(ctx, history); err != nil {
+				return fmt.Errorf("failed to create status history: %w", err)
+			}
+		}
+
+		return txRepo.UpdateOrder(ctx, orderID, updates)
+	})
 }
 
 func (s *orderService) RequestRefund(ctx context.Context, userID, orderID string, reason string) error {

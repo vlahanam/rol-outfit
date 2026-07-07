@@ -26,6 +26,9 @@ import type {
   AdminCartListItem,
   AdminCartDetail,
   DashboardStats,
+  ProductReview,
+  ReviewStats,
+  CreateReviewPayload,
 } from "@/types/api";
 import { ApiError, BASE, getToken, request } from "@/lib/api-client";
 
@@ -266,6 +269,9 @@ export const products = {
     qs.set("limit", String(limit));
     return request<ApiResponse<Product[]>>(`/products?${qs.toString()}`);
   },
+  listByCategory(categoryId: string, limit = 9): Promise<ApiResponse<Product[]>> {
+    return request<ApiResponse<Product[]>>(`/products?category_id=${categoryId}&limit=${limit}`);
+  },
 };
 
 export const userAddresses = {
@@ -333,5 +339,62 @@ export const adminSettings = {
       method: "PUT",
       body: JSON.stringify(body),
     });
+  },
+  getChatUrl(): Promise<{ data: { chat_url: string } }> {
+    return request<{ data: { chat_url: string } }>("/settings/chat-url");
+  },
+  updateChatUrl(chatUrl: string): Promise<void> {
+    return request<void>("/admin/settings/chat-url", {
+      method: "PUT",
+      body: JSON.stringify({ chat_url: chatUrl }),
+    });
+  },
+};
+
+export const productReviews = {
+  list(productId: string, page = 1, limit = 10): Promise<ApiResponse<ProductReview[]>> {
+    return request<ApiResponse<ProductReview[]>>(
+      `/products/${productId}/reviews?page=${page}&limit=${limit}`,
+    );
+  },
+  getStats(productId: string): Promise<{ data: ReviewStats }> {
+    return request<{ data: ReviewStats }>(`/products/${productId}/reviews/stats`);
+  },
+  canReview(productId: string): Promise<{ data: { can_review: boolean; reason?: string } }> {
+    return request<{ data: { can_review: boolean; reason?: string } }>(
+      `/products/${productId}/reviews/can-review`,
+    );
+  },
+  create(productId: string, body: CreateReviewPayload): Promise<{ data: ProductReview }> {
+    return request<{ data: ProductReview }>(`/products/${productId}/reviews`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+};
+
+export const adminReviews = {
+  list(params?: {
+    page?: number;
+    limit?: number;
+    status?: number;
+    search?: string;
+  }): Promise<ApiResponse<ProductReview[]>> {
+    const qs = new URLSearchParams();
+    if (params?.page) qs.set("page", String(params.page));
+    if (params?.limit) qs.set("limit", String(params.limit));
+    if (params?.status) qs.set("status", String(params.status));
+    if (params?.search) qs.set("search", params.search);
+    const query = qs.toString();
+    return request<ApiResponse<ProductReview[]>>(`/admin/reviews${query ? `?${query}` : ""}`);
+  },
+  approve(id: string): Promise<void> {
+    return request<void>(`/admin/reviews/${id}/approve`, { method: "PUT" });
+  },
+  reject(id: string): Promise<void> {
+    return request<void>(`/admin/reviews/${id}/reject`, { method: "PUT" });
+  },
+  remove(id: string): Promise<void> {
+    return request<void>(`/admin/reviews/${id}`, { method: "DELETE" });
   },
 };

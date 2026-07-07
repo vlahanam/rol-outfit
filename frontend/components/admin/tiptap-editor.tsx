@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import Image from "@tiptap/extension-image";
 import {
   Bold,
   Italic,
@@ -18,7 +19,10 @@ import {
   Quote,
   Code,
   Link as LinkIcon,
+  ImageIcon,
+  Loader2,
 } from "lucide-react";
+import { uploads } from "@/lib/api-resources";
 
 interface TiptapEditorProps {
   value: string;
@@ -32,19 +36,22 @@ function ToolbarButton({
   active,
   title,
   children,
+  disabled,
 }: {
   onClick: () => void;
   active?: boolean;
   title: string;
   children: React.ReactNode;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       title={title}
+      disabled={disabled}
       data-active={active}
-      className="p-1.5 rounded text-sm hover:bg-gray-200 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-700 text-gray-700"
+      className="p-1.5 rounded text-sm hover:bg-gray-200 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-700 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {children}
     </button>
@@ -57,6 +64,9 @@ export function TiptapEditor({
   placeholder,
   className,
 }: TiptapEditorProps) {
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -65,6 +75,13 @@ export function TiptapEditor({
         placeholder: placeholder ?? "Mô tả chi tiết sản phẩm...",
       }),
       Link.configure({ openOnClick: false }),
+      Image.configure({
+        inline: false,
+        allowBase64: false,
+        HTMLAttributes: {
+          class: "max-w-full h-auto rounded-lg my-4",
+        },
+      }),
     ],
     content: value,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
@@ -77,7 +94,6 @@ export function TiptapEditor({
     immediatelyRender: false,
   });
 
-  // Sync external value resets (e.g. cancel)
   useEffect(() => {
     if (!editor) return;
     if (editor.getHTML() !== value) {
@@ -97,11 +113,37 @@ export function TiptapEditor({
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editor) return;
+    e.target.value = "";
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ảnh không được vượt quá 10 MB");
+      return;
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Chỉ chấp nhận file JPEG, PNG, WebP hoặc GIF");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const url = await uploads.upload(file);
+      editor.chain().focus().setImage({ src: url }).run();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Upload thất bại");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   if (!editor) return null;
 
   return (
     <div className={`border border-gray-300 rounded-lg overflow-hidden ${className ?? ""}`}>
-      {/* Toolbar */}
       <div className="flex flex-wrap gap-0.5 p-1.5 border-b border-gray-200 bg-gray-50">
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -189,6 +231,29 @@ export function TiptapEditor({
         >
           <LinkIcon className="w-4 h-4" />
         </ToolbarButton>
+
+        <span className="w-px h-6 bg-gray-300 mx-1 self-center" />
+
+        <ToolbarButton
+          onClick={() => fileInputRef.current?.click()}
+          active={false}
+          title="Chèn ảnh"
+          disabled={uploading}
+        >
+          {uploading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <ImageIcon className="w-4 h-4" />
+          )}
+        </ToolbarButton>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="hidden"
+          onChange={handleImageUpload}
+        />
       </div>
 
       <EditorContent editor={editor} />

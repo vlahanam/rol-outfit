@@ -2,9 +2,11 @@ package repositories
 
 import (
 	"context"
+	"time"
 
 	"github.com/vlahanam/rol-outfit/src/internal/models"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type SiteSettingRepository interface {
@@ -31,17 +33,29 @@ func (s *postgreStorage) GetSettings(ctx context.Context, keys []string) ([]*mod
 }
 
 func (s *postgreStorage) UpdateSetting(ctx context.Context, key, value string) error {
-	return s.db.WithContext(ctx).Model(&models.SiteSetting{}).
-		Where("key = ?", key).
-		Updates(map[string]interface{}{"value": value, "updated_at": "NOW()"}).Error
+	setting := models.SiteSetting{
+		Key:       key,
+		Value:     value,
+		UpdatedAt: time.Now(),
+	}
+	return s.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "key"}},
+		DoUpdates: clause.AssignmentColumns([]string{"value", "updated_at"}),
+	}).Create(&setting).Error
 }
 
 func (s *postgreStorage) UpdateSettings(ctx context.Context, settings map[string]string) error {
 	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		for key, value := range settings {
-			if err := tx.Model(&models.SiteSetting{}).
-				Where("key = ?", key).
-				Updates(map[string]interface{}{"value": value, "updated_at": "NOW()"}).Error; err != nil {
+			setting := models.SiteSetting{
+				Key:       key,
+				Value:     value,
+				UpdatedAt: time.Now(),
+			}
+			if err := tx.Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "key"}},
+				DoUpdates: clause.AssignmentColumns([]string{"value", "updated_at"}),
+			}).Create(&setting).Error; err != nil {
 				return err
 			}
 		}
