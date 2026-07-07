@@ -19,3 +19,11 @@ export function getCurrencySymbol(productType?: number): string {
 export function getCurrencyLabel(productType?: number): string {
   return productType === PRODUCT_TYPE_JAPANESE ? "¥" : "₫";
 }
+
+// Determine cart currency type from items
+// Returns PRODUCT_TYPE_JAPANESE if all items are Japanese, otherwise PRODUCT_TYPE_VIETNAMESE
+export function getCartCurrencyType(items: { productType: number }[]): number {
+  if (items.length === 0) return PRODUCT_TYPE_VIETNAMESE;
+  const allJapanese = items.every(item => item.productType === PRODUCT_TYPE_JAPANESE);
+  return allJapanese ? PRODUCT_TYPE_JAPANESE : PRODUCT_TYPE_VIETNAMESE;
+}

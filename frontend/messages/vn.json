@@ -1,7 +1,7 @@
 {
   "Metadata": {
     "title": "RolOutfit - Thời Trang Cao Cấp",
-    "description": "Điểm đến hoàn hảo cho thời trang và phong cách sống của bạn."
+    "description": "RoLOutfit chọn lọc những sản phẩm chất lượng.\nChất lượng tốt, giá hợp lý."
   },
   "Common": {
     "switchLang": "JP",
@@ -24,7 +24,7 @@
     "logout": "Đăng xuất"
   },
   "Footer": {
-    "description": "Điểm đến hoàn hảo cho thời trang và phong cách sống của bạn.",
+    "description": "RoLOutfit chọn lọc những sản phẩm chất lượng.\nChất lượng tốt, giá hợp lý.",
     "contact": "Liên Hệ",
     "company": "Công Ty",
     "about": "Giới Thiệu",
@@ -128,7 +128,14 @@
     "free": "Miễn phí",
     "total": "Tổng cộng",
     "checkout": "Tiến Hành Thanh Toán",
-    "items": "sản phẩm"
+    "items": "sản phẩm",
+    "mixedCartWarning": "Giỏ hàng có cả sản phẩm Nhật và Việt Nam",
+    "mixedCartHint": "Vui lòng chọn sản phẩm cùng loại để thanh toán. Bạn có thể thanh toán riêng từng loại.",
+    "selectAllJapanese": "Chọn tất cả hàng Nhật",
+    "selectAllVietnamese": "Chọn tất cả hàng Việt",
+    "clearSelection": "Bỏ chọn",
+    "selectItemsHint": "Chọn sản phẩm để thanh toán",
+    "selectedItems": "Đã chọn {count} sản phẩm"
   },
   "LoginPage": {
     "title": "Đăng Nhập",

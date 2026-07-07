@@ -7,6 +7,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { isLoggedIn } from "@/lib/auth";
 import { OrderStatusBadge } from "@/components/orders/order-status-badge";
+import { formatPrice } from "@/lib/format";
 import type { ApiResponse, Order, Paging } from "@/types/api";
 
 export default function OrdersPage() {
@@ -100,7 +101,7 @@ export default function OrdersPage() {
                   </div>
                   <div className="flex items-center gap-4">
                     <p className="text-lg font-bold text-blue-600">
-                      {order.total_price.toLocaleString("vi-VN")}₫
+                      {formatPrice(order.total_price, order.currency_type)}
                     </p>
                     <ChevronRight className="w-5 h-5 text-gray-400" />
                   </div>

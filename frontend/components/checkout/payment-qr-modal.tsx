@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { X, Copy, Check, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { formatPrice } from "@/lib/format";
 
 interface Props {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface Props {
   orderCode: string;
   userName: string;
   totalPrice: number;
+  productType?: number;
   onTransferred: () => void;
   onClose: () => void;
 }
@@ -22,6 +24,7 @@ export function PaymentQRModal({
   orderCode,
   userName,
   totalPrice,
+  productType,
   onTransferred,
   onClose,
 }: Props) {
@@ -101,7 +104,7 @@ export function PaymentQRModal({
           </div>
 
           <p className="text-xl font-bold text-blue-600">
-            {totalPrice.toLocaleString("vi-VN")}₫
+            {formatPrice(totalPrice, productType)}
           </p>
 
           <div className="w-full">

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminHeader } from './AdminHeader';
-import { isAdmin, isLoggedIn, subscribeAuthEvents } from '@/lib/auth';
+import { isAdmin, isLoggedIn } from '@/lib/auth';
+import { useTokenRefresh } from '@/hooks/use-token-refresh';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -15,22 +16,19 @@ export function AdminLayoutWrapper({ children }: AdminLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [authorized, setAuthorized] = useState(false);
 
+  const handleAuthFailure = useCallback(() => {
+    router.replace('/admin/login');
+  }, [router]);
+
+  // Auto-refresh token and handle auth events (logout sync across tabs)
+  useTokenRefresh({ enabled: authorized, requireAuth: true, onAuthFailure: handleAuthFailure });
+
   useEffect(() => {
     if (!isLoggedIn() || !isAdmin()) {
       router.replace('/admin/login');
     } else {
       setAuthorized(true);
     }
-  }, [router]);
-
-  // Sync logout across tabs — when another tab clears auth, redirect here too
-  useEffect(() => {
-    const unsubscribe = subscribeAuthEvents(({ type }) => {
-      if (type === 'logout') {
-        router.replace('/admin/login');
-      }
-    });
-    return unsubscribe;
   }, [router]);
 
   if (!authorized) {

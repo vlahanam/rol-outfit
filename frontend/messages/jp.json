@@ -128,7 +128,14 @@
     "free": "無料",
     "total": "合計",
     "checkout": "購入手続きへ",
-    "items": "点の商品"
+    "items": "点の商品",
+    "mixedCartWarning": "カートに日本製品とベトナム製品が混在しています",
+    "mixedCartHint": "同じ種類の商品を選択して購入手続きを行ってください。それぞれ別々に購入できます。",
+    "selectAllJapanese": "日本製品を全て選択",
+    "selectAllVietnamese": "ベトナム製品を全て選択",
+    "clearSelection": "選択解除",
+    "selectItemsHint": "購入する商品を選択してください",
+    "selectedItems": "{count}点選択中"
   },
   "LoginPage": {
     "title": "ログイン",

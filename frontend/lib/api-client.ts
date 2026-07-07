@@ -1,5 +1,5 @@
 import type { ApiErrorBody, AuthTokens } from "@/types/api";
-import { getRefreshToken, setTokens, clearAuth } from "@/lib/auth";
+import { getRefreshToken, setTokens, clearAuth, isTokenExpiringSoon, isAdmin } from "@/lib/auth";
 
 export const BASE = "/api/v1";
 
@@ -62,10 +62,25 @@ export function ensureTokenRefreshed(): Promise<AuthTokens> {
   return refreshPromise;
 }
 
+/** Proactively refresh token if it's expiring soon. Returns current or new token. */
+export async function refreshIfExpiring(): Promise<string | null> {
+  if (!isTokenExpiringSoon()) {
+    return getToken();
+  }
+  try {
+    const tokens = await ensureTokenRefreshed();
+    return tokens.access_token;
+  } catch {
+    return getToken();
+  }
+}
+
 export function handleAuthFailure(): void {
-  clearAuth(); // broadcasts logout to other tabs
+  const wasAdmin = isAdmin();
+  clearAuth();
   if (typeof window !== "undefined") {
-    window.location.href = "/login";
+    const isAdminRoute = window.location.pathname.startsWith("/admin");
+    window.location.href = (wasAdmin || isAdminRoute) ? "/admin/login" : "/login";
   }
 }
 
@@ -73,7 +88,8 @@ export async function request<T>(
   path: string,
   options?: RequestInit & { locale?: string }
 ): Promise<T> {
-  const token = getToken();
+  // Proactively refresh token if expiring soon (before making request)
+  const token = path !== "/auth/refresh" ? await refreshIfExpiring() : getToken();
   const lang = getLangFromLocale(options?.locale);
 
   // Guard: non-JSON body types (FormData, Blob, ArrayBuffer) cannot be re-sent on retry.

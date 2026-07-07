@@ -10,7 +10,7 @@ import { isLoggedIn } from "@/lib/auth";
 import { useCart } from "@/context/cart-context";
 import { PaymentQRModal } from "@/components/checkout/payment-qr-modal";
 import type { ApiResponse, Cart, CartItem, Product, Order, UserAddress } from "@/types/api";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, getCartCurrencyType } from "@/lib/format";
 
 interface RichCartItem extends CartItem {
   productName: string;
@@ -24,8 +24,9 @@ export default function CheckoutPage() {
   const tCommon = useTranslations("Common");
   const router = useRouter();
   const locale = useLocale();
-  const { clearCart } = useCart();
+  const { decrementCart } = useCart();
   const [cartItems, setCartItems] = useState<RichCartItem[]>([]);
+  const [selectedCartItemIds, setSelectedCartItemIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +42,27 @@ export default function CheckoutPage() {
       router.push("/login");
       return;
     }
+
+    const selectedIdsArray = (() => {
+      try {
+        const stored = sessionStorage.getItem("checkoutItems");
+        if (stored) {
+          return JSON.parse(stored) as string[];
+        }
+      } catch {
+        // ignore
+      }
+      return null;
+    })();
+
+    if (!selectedIdsArray || selectedIdsArray.length === 0) {
+      router.push("/cart");
+      return;
+    }
+
+    setSelectedCartItemIds(selectedIdsArray);
+    const selectedIds = new Set<string>(selectedIdsArray);
+
     const fetchData = async () => {
       try {
         const [cartRes, addressRes] = await Promise.all([
@@ -48,7 +70,8 @@ export default function CheckoutPage() {
           userAddresses.list().catch(() => ({ data: [] })),
         ]);
 
-        const items = cartRes.data?.items ?? [];
+        const allItems = cartRes.data?.items ?? [];
+        const items = allItems.filter((item) => selectedIds.has(item.id));
         if (items.length === 0) {
           router.push("/cart");
           return;
@@ -105,6 +128,7 @@ export default function CheckoutPage() {
     0
   );
   const total = subtotal + shipping;
+  const cartCurrencyType = getCartCurrencyType(cartItems);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,8 +143,11 @@ export default function CheckoutPage() {
         shipping_address: selectedAddress.address,
         phone: selectedAddress.phone,
         note: note || undefined,
+        cart_item_ids: selectedCartItemIds,
       });
-      clearCart();
+      const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+      decrementCart(totalQuantity);
+      sessionStorage.removeItem("checkoutItems");
       setCreatedOrder(res.data);
       setShowQRModal(true);
       setSubmitting(false);
@@ -267,14 +294,14 @@ export default function CheckoutPage() {
                 <div className="space-y-3 mb-4">
                   <div className="flex justify-between text-gray-600">
                     <span>{t("subtotal")}</span>
-                    <span>{subtotal.toLocaleString("vi-VN")}₫</span>
+                    <span>{formatPrice(subtotal, cartCurrencyType)}</span>
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>{t("shipping")}</span>
                     <span>
                       {shipping === 0
                         ? t("free")
-                        : `${shipping.toLocaleString("vi-VN")}₫`}
+                        : formatPrice(shipping, cartCurrencyType)}
                     </span>
                   </div>
                 </div>
@@ -283,7 +310,7 @@ export default function CheckoutPage() {
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-semibold">{t("total")}</span>
                     <span className="text-2xl font-bold text-blue-600">
-                      {total.toLocaleString("vi-VN")}₫
+                      {formatPrice(total, cartCurrencyType)}
                     </span>
                   </div>
                 </div>
@@ -375,6 +402,7 @@ export default function CheckoutPage() {
           orderCode={createdOrder.order_code ?? ""}
           userName={selectedAddress?.recipient_name ?? ""}
           totalPrice={createdOrder.total_price}
+          productType={cartCurrencyType}
           onTransferred={handlePaymentTransferred}
           onClose={handleCloseQRModal}
         />

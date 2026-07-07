@@ -82,22 +82,50 @@ func (s *orderService) CreateFromCart(ctx context.Context, userID string, req *r
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		txRepo := repositories.NewPostgreSQLStorage(tx)
 
-		cartItems, err := txRepo.ListCartItems(ctx, cart.ID)
+		allCartItems, err := txRepo.ListCartItems(ctx, cart.ID)
 		if err != nil {
 			return fmt.Errorf("failed to list cart items: %w", err)
 		}
-		if len(cartItems) == 0 {
+		if len(allCartItems) == 0 {
 			return ErrCartEmpty
+		}
+
+		var cartItems []*models.CartItem
+		if len(req.CartItemIds) > 0 {
+			selectedIds := make(map[string]bool)
+			for _, id := range req.CartItemIds {
+				selectedIds[id] = true
+			}
+			for _, item := range allCartItems {
+				if selectedIds[item.ID] {
+					cartItems = append(cartItems, item)
+				}
+			}
+			if len(cartItems) == 0 {
+				return ErrCartEmpty
+			}
+		} else {
+			cartItems = allCartItems
 		}
 
 		var totalPrice float64
 		var totalShipping float64
+		allJapanese := true
 		for _, item := range cartItems {
 			totalPrice += item.PriceAtAdd * float64(item.Quantity)
 			product, err := txRepo.FindProductByIDNoFilter(ctx, item.ProductID)
 			if err == nil && product != nil {
 				totalShipping += product.ShippingCost * float64(item.Quantity)
+				if product.ProductType != models.PRODUCT_TYPE_JAPANESE {
+					allJapanese = false
+				}
+			} else {
+				allJapanese = false
 			}
+		}
+		currencyType := models.PRODUCT_TYPE_VIETNAMESE
+		if allJapanese {
+			currencyType = models.PRODUCT_TYPE_JAPANESE
 		}
 
 		orderCode, err := txRepo.GenerateOrderCode(ctx)
@@ -113,6 +141,7 @@ func (s *orderService) CreateFromCart(ctx context.Context, userID string, req *r
 			Phone:           req.Phone,
 			TotalPrice:      totalPrice + totalShipping,
 			ShippingCost:    totalShipping,
+			CurrencyType:    currencyType,
 			Status:          models.ORDER_STATUS_AWAITING_PAYMENT,
 			Note:            req.Note,
 		}
@@ -134,6 +163,15 @@ func (s *orderService) CreateFromCart(ctx context.Context, userID string, req *r
 		}
 		if err := txRepo.CreateOrderItems(ctx, orderItems); err != nil {
 			return err
+		}
+
+		if len(req.CartItemIds) > 0 {
+			for _, ci := range cartItems {
+				if err := txRepo.DeleteCartItem(ctx, ci.ID); err != nil {
+					return err
+				}
+			}
+			return nil
 		}
 		return txRepo.ClearCart(ctx, cart.ID)
 	})

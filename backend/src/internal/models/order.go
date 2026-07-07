@@ -47,6 +47,7 @@ type Order struct {
 	Phone           string         `gorm:"column:phone"`
 	TotalPrice      float64        `gorm:"column:total_price;type:numeric(12,2)"`
 	ShippingCost    float64        `gorm:"column:shipping_cost;type:numeric(12,2);default:0"`
+	CurrencyType    int8           `gorm:"column:currency_type;default:2"`
 	Status          int8           `gorm:"column:status"`
 	Note            string         `gorm:"column:note"`
 	OrderCode       *string        `gorm:"column:order_code;type:varchar(16)"`

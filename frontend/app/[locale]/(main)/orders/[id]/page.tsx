@@ -13,7 +13,7 @@ import { OrderStatusTimeline } from "@/components/orders/order-status-timeline";
 import { RefundRequestButton } from "@/components/orders/refund-request-button";
 import { CancelOrderModal } from "@/components/orders/cancel-order-modal";
 import type { ApiResponse, Order, Product } from "@/types/api";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, getCartCurrencyType } from "@/lib/format";
 
 const ORDER_STATUS_AWAITING_PAYMENT = 1;
 const ORDER_STATUS_PAYMENT_SUBMITTED = 2;
@@ -103,6 +103,7 @@ export default function OrderDetailPage() {
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = order?.shipping_cost ?? 0;
+  const orderCurrencyType = getCartCurrencyType(items);
 
   if (loading) {
     return (
@@ -213,14 +214,14 @@ export default function OrderDetailPage() {
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-gray-600">
                   <span>{t("subtotal")}</span>
-                  <span>{subtotal.toLocaleString("vi-VN")}₫</span>
+                  <span>{formatPrice(subtotal, orderCurrencyType)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>{t("shipping")}</span>
                   <span>
                     {shipping === 0
                       ? t("free")
-                      : `${shipping.toLocaleString("vi-VN")}₫`}
+                      : formatPrice(shipping, orderCurrencyType)}
                   </span>
                 </div>
               </div>
@@ -228,7 +229,7 @@ export default function OrderDetailPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-semibold">{t("total")}</span>
                   <span className="text-2xl font-bold text-blue-600">
-                    {order.total_price.toLocaleString("vi-VN")}₫
+                    {formatPrice(order.total_price, orderCurrencyType)}
                   </span>
                 </div>
               </div>
@@ -240,6 +241,7 @@ export default function OrderDetailPage() {
                 orderCode={order.order_code ?? ""}
                 userName={order.shipping_address.split(",")[0] || ""}
                 totalPrice={order.total_price}
+                productType={orderCurrencyType}
                 onTransferred={() => router.refresh()}
               />
             )}

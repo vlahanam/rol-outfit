@@ -10,6 +10,7 @@ import { Footer } from './Footer';
 import { SocialFloatingIcons } from './social-floating-icons';
 import { CartProvider, useCart } from '@/context/cart-context';
 import { isLoggedIn, subscribeAuthEvents } from '@/lib/auth';
+import { useTokenRefresh } from '@/hooks/use-token-refresh';
 import { api } from '@/lib/api';
 import type { ApiResponse, User } from '@/types/api';
 
@@ -20,9 +21,16 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const locale = useLocale();
   const { clearCart } = useCart();
   const [user, setUser] = useState<{ full_name: string; email: string } | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Auto-refresh token for logged-in users (no redirect on failure - just clear auth)
+  useTokenRefresh({ enabled: isAuthenticated });
 
   useEffect(() => {
-    if (isLoggedIn()) {
+    const loggedIn = isLoggedIn();
+    setIsAuthenticated(loggedIn);
+
+    if (loggedIn) {
       api
         .get<ApiResponse<User>>('/users/me')
         .then((res) => setUser({ full_name: res.data.full_name, email: res.data.email }))
@@ -32,7 +40,9 @@ function LayoutContent({ children }: { children: ReactNode }) {
     const unsub = subscribeAuthEvents((event) => {
       if (event.type === 'logout') {
         setUser(null);
+        setIsAuthenticated(false);
       } else if (event.type === 'tokens-updated' && isLoggedIn()) {
+        setIsAuthenticated(true);
         api
           .get<ApiResponse<User>>('/users/me')
           .then((res) => setUser({ full_name: res.data.full_name, email: res.data.email }))

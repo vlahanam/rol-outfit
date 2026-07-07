@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "RolOutfit - Thời Trang Cao Cấp",
-  description: "Điểm đến hoàn hảo cho thời trang và phong cách sống của bạn.",
+  description: "RoLOutfit chọn lọc những sản phẩm chất lượng.\nChất lượng tốt, giá hợp lý.",
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",

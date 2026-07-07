@@ -179,6 +179,7 @@ export interface Order {
   phone: string;
   total_price: number;
   shipping_cost: number;
+  currency_type?: number;
   status: number;
   note?: string;
   items?: OrderItem[];

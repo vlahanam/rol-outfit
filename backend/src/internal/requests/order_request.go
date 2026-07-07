@@ -3,9 +3,10 @@ package requests
 import validation "github.com/go-ozzo/ozzo-validation/v4"
 
 type CreateOrderRequest struct {
-	ShippingAddress string `json:"shipping_address"`
-	Phone           string `json:"phone"`
-	Note            string `json:"note"`
+	ShippingAddress string   `json:"shipping_address"`
+	Phone           string   `json:"phone"`
+	Note            string   `json:"note"`
+	CartItemIds     []string `json:"cart_item_ids"`
 }
 
 func (r CreateOrderRequest) Validate() error {

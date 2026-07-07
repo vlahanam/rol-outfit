@@ -5,12 +5,14 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Copy, Check, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { formatPrice } from "@/lib/format";
 
 interface Props {
   orderId: string;
   orderCode: string;
   userName: string;
   totalPrice: number;
+  productType?: number;
   onTransferred?: () => void;
 }
 
@@ -19,6 +21,7 @@ export function PaymentQRSection({
   orderCode,
   userName,
   totalPrice,
+  productType,
   onTransferred,
 }: Props) {
   const t = useTranslations("Payment");
@@ -85,7 +88,7 @@ export function PaymentQRSection({
         </div>
 
         <p className="text-xl font-bold text-blue-600">
-          {totalPrice.toLocaleString("vi-VN")}₫
+          {formatPrice(totalPrice, productType)}
         </p>
 
         <div className="w-full max-w-sm">
