@@ -12,6 +12,7 @@ type UserAddress struct {
 	RecipientName string         `gorm:"column:recipient_name;size:100"`
 	Phone         string         `gorm:"column:phone;size:15"`
 	Address       string         `gorm:"column:address;type:text"`
+	PostalCode    string         `gorm:"column:postal_code;size:20"`
 	Latitude      *float64       `gorm:"column:latitude;type:double precision"`
 	Longitude     *float64       `gorm:"column:longitude;type:double precision"`
 	IsDefault     bool           `gorm:"column:is_default;default:false"`

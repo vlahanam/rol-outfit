@@ -271,6 +271,7 @@ export default function OrderDetailPage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Vận Chuyển</h2>
             <div className="space-y-2 text-sm">
               <div><span className="text-gray-500">Địa chỉ:</span> <span className="ml-2">{order.shipping_address}</span></div>
+              {order.postal_code && <div><span className="text-gray-500">Mã bưu điện:</span> <span className="ml-2">{order.postal_code}</span></div>}
               {order.note && <div><span className="text-gray-500">Ghi chú:</span> <span className="ml-2">{order.note}</span></div>}
             </div>
           </div>
@@ -295,6 +296,15 @@ export default function OrderDetailPage() {
                    'Chưa thanh toán'}
                 </span>
               </div>
+              {order.transfer_bill && (
+                <div className="mt-3">
+                  <span className="text-gray-500 text-sm">Bill chuyển khoản:</span>
+                  <a href={order.transfer_bill} target="_blank" rel="noopener noreferrer"
+                     className="mt-1 block border border-gray-200 rounded-lg overflow-hidden hover:opacity-90 transition-opacity">
+                    <img src={order.transfer_bill} alt="Bill chuyển khoản" className="w-full h-auto max-h-48 object-contain bg-gray-50" />
+                  </a>
+                </div>
+              )}
             </div>
             {order.status === ORDER_STATUS_PAYMENT_SUBMITTED && (
               <button

@@ -193,12 +193,14 @@ export interface Order {
   order_code?: string;
   user_id: string;
   shipping_address: string;
+  postal_code?: string;
   phone: string;
   total_price: number;
   shipping_cost: number;
   currency_type?: number;
   status: number;
   note?: string;
+  transfer_bill?: string;
   items?: OrderItem[];
   user_name?: string;
   user_email?: string;
@@ -419,6 +421,7 @@ export interface UserAddress {
   recipient_name: string;
   phone: string;
   address: string;
+  postal_code: string;
   latitude: number | null;
   longitude: number | null;
   is_default: boolean;
@@ -430,6 +433,7 @@ export interface CreateAddressPayload {
   recipient_name: string;
   phone: string;
   address: string;
+  postal_code?: string;
   latitude?: number;
   longitude?: number;
 }
@@ -438,6 +442,7 @@ export interface UpdateAddressPayload {
   recipient_name?: string;
   phone?: string;
   address?: string;
+  postal_code?: string;
   latitude?: number;
   longitude?: number;
 }

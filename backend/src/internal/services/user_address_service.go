@@ -43,6 +43,7 @@ func (s *userAddressService) Create(ctx context.Context, userID string, req *req
 		RecipientName: req.RecipientName,
 		Phone:         req.Phone,
 		Address:       req.Address,
+		PostalCode:    req.PostalCode,
 		Latitude:      req.Latitude,
 		Longitude:     req.Longitude,
 	}
@@ -70,6 +71,9 @@ func (s *userAddressService) Update(ctx context.Context, userID, addressID strin
 	}
 	if req.Address != nil {
 		fields["address"] = *req.Address
+	}
+	if req.PostalCode != nil {
+		fields["postal_code"] = *req.PostalCode
 	}
 	if req.Latitude != nil {
 		fields["latitude"] = *req.Latitude

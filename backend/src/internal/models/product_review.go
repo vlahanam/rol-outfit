@@ -12,7 +12,7 @@ type ProductReview struct {
 	ID        string    `gorm:"type:uuid;primaryKey"`
 	ProductID string    `gorm:"column:product_id;type:uuid"`
 	UserID    string    `gorm:"column:user_id;type:uuid"`
-	OrderID   string    `gorm:"column:order_id;type:uuid"`
+	OrderID   *string   `gorm:"column:order_id;type:uuid"`
 	Rating    int8      `gorm:"column:rating"`
 	Comment   string    `gorm:"column:comment"`
 	Status    int8      `gorm:"column:status"`

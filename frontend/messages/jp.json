@@ -189,7 +189,9 @@
     "passwordsMismatch": "パスワードが一致しません",
     "addressTooShort": "住所は10文字以上で入力してください",
     "addressTooLong": "住所は500文字以内で入力してください",
-    "invalidPhone": "電話番号が無効です"
+    "invalidPhone": "電話番号が無効です",
+    "postalCodeRequired": "郵便番号を入力してください",
+    "invalidPostalCode": "郵便番号が無効です（5〜10桁）"
   },
   "AddressesPage": {
     "title": "住所管理",
@@ -197,6 +199,7 @@
     "recipientName": "受取人名",
     "phone": "電話番号",
     "address": "住所",
+    "postalCode": "郵便番号",
     "searchAddress": "住所を検索...",
     "enterAddress": "配送先住所を入力...",
     "selectOnMap": "地図をクリックまたは検索して住所を選択",
@@ -242,6 +245,7 @@
     "addressPlaceholder": "住所を入力してください",
     "phone": "電話番号",
     "phonePlaceholder": "09012345678",
+    "postalCode": "郵便番号",
     "note": "備考",
     "notePlaceholder": "注文に関する備考（任意）",
     "orderItems": "商品",
@@ -283,6 +287,7 @@
     "items": "商品",
     "shippingInfo": "配送先情報",
     "address": "住所",
+    "postalCode": "郵便番号",
     "phone": "電話番号",
     "note": "備考",
     "orderSummary": "注文概要",

@@ -14,7 +14,6 @@ import (
 var (
 	ErrReviewNotFound  = errors.New("review not found")
 	ErrAlreadyReviewed = errors.New("user already reviewed this product")
-	ErrNotPurchased    = errors.New("user has not purchased this product")
 	ErrInvalidRating   = errors.New("rating must be between 1 and 5")
 )
 
@@ -55,19 +54,10 @@ func (s *productReviewService) Create(ctx context.Context, userID, productID str
 		return nil, err
 	}
 
-	hasPurchased, orderID, err := s.repo.UserHasPurchasedProduct(ctx, userID, productID)
-	if err != nil {
-		return nil, err
-	}
-	if !hasPurchased {
-		return nil, ErrNotPurchased
-	}
-
 	review := &models.ProductReview{
 		ID:        uuid.New().String(),
 		ProductID: productID,
 		UserID:    userID,
-		OrderID:   orderID,
 		Rating:    req.Rating,
 		Comment:   req.Comment,
 		Status:    models.REVIEW_STATUS_PENDING,
@@ -136,14 +126,6 @@ func (s *productReviewService) CanUserReview(ctx context.Context, userID, produc
 	}
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return false, "", err
-	}
-
-	hasPurchased, _, err := s.repo.UserHasPurchasedProduct(ctx, userID, productID)
-	if err != nil {
-		return false, "", err
-	}
-	if !hasPurchased {
-		return false, "not_purchased", nil
 	}
 
 	return true, "", nil

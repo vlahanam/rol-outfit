@@ -16,7 +16,6 @@ type ProductReviewRepository interface {
 	UpdateReviewStatus(ctx context.Context, id string, status int8) error
 	DeleteReview(ctx context.Context, id string) error
 	GetReviewStats(ctx context.Context, productID string) (*models.ReviewStats, error)
-	UserHasPurchasedProduct(ctx context.Context, userID, productID string) (bool, string, error)
 }
 
 func (s *postgreStorage) CreateReview(ctx context.Context, review *models.ProductReview) error {
@@ -179,20 +178,4 @@ func (s *postgreStorage) GetReviewStats(ctx context.Context, productID string) (
 	return &stats, nil
 }
 
-func (s *postgreStorage) UserHasPurchasedProduct(ctx context.Context, userID, productID string) (bool, string, error) {
-	var orderID string
-	err := s.db.WithContext(ctx).
-		Table("orders").
-		Select("orders.id").
-		Joins("JOIN order_items ON orders.id = order_items.order_id").
-		Where("orders.user_id = ?", userID).
-		Where("order_items.product_id = ?", productID).
-		Where("orders.status >= ?", models.ORDER_STATUS_COMPLETED).
-		Order("orders.created_at DESC").
-		Limit(1).
-		Scan(&orderID).Error
-	if err != nil {
-		return false, "", err
-	}
-	return orderID != "", orderID, nil
-}
+

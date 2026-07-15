@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Eye, Search, Calendar, ArrowUpDown, X } from 'lucide-react';
+import { Eye, Search, Calendar, ArrowUpDown, X, ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import type { ApiResponse, Order } from '@/types/api';
@@ -214,6 +214,7 @@ export default function ListOrderPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Người Đặt</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Địa chỉ giao</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Tổng Tiền</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Bill</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Trạng Thái</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Ngày Đặt</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Hành Động</th>
@@ -235,6 +236,17 @@ export default function ListOrderPage() {
                       <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">{order.shipping_address}</td>
                       <td className="px-6 py-4 text-sm font-medium text-blue-600 whitespace-nowrap">
                         {order.total_price.toLocaleString('vi-VN')}₫
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        {order.transfer_bill ? (
+                          <a href={order.transfer_bill} target="_blank" rel="noopener noreferrer"
+                             className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                             title="Xem bill chuyển khoản">
+                            <ImageIcon className="w-4 h-4" />
+                          </a>
+                        ) : (
+                          <span className="text-xs text-gray-400">—</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${statusColors[order.status] ?? 'bg-gray-100 text-gray-700'}`}>

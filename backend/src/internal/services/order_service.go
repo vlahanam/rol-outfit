@@ -146,6 +146,7 @@ func (s *orderService) CreateFromCart(ctx context.Context, userID string, req *r
 			OrderCode:       &orderCode,
 			UserID:          userID,
 			ShippingAddress: req.ShippingAddress,
+			PostalCode:      req.PostalCode,
 			Phone:           req.Phone,
 			TotalPrice:      totalPrice + totalShipping,
 			ShippingCost:    totalShipping,
@@ -318,6 +319,9 @@ func (s *orderService) UpdateShippingInfo(ctx context.Context, userID, orderID s
 	fields := map[string]interface{}{}
 	if req.ShippingAddress != nil {
 		fields["shipping_address"] = *req.ShippingAddress
+	}
+	if req.PostalCode != nil {
+		fields["postal_code"] = *req.PostalCode
 	}
 	if req.Phone != nil {
 		fields["phone"] = *req.Phone

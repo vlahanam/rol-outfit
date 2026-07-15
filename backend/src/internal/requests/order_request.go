@@ -4,6 +4,7 @@ import validation "github.com/go-ozzo/ozzo-validation/v4"
 
 type CreateOrderRequest struct {
 	ShippingAddress string   `json:"shipping_address"`
+	PostalCode      string   `json:"postal_code"`
 	Phone           string   `json:"phone"`
 	Note            string   `json:"note"`
 	CartItemIds     []string `json:"cart_item_ids"`
@@ -13,6 +14,9 @@ func (r CreateOrderRequest) Validate() error {
 	return validation.ValidateStruct(&r,
 		validation.Field(&r.ShippingAddress,
 			validation.Required.Error("validation.shipping_address.required"),
+		),
+		validation.Field(&r.PostalCode,
+			validation.Required.Error("validation.postal_code.required"),
 		),
 		validation.Field(&r.Phone,
 			validation.Required.Error("validation.phone.required"),
@@ -61,6 +65,7 @@ func (r RejectRefundRequest) Validate() error {
 
 type UpdateOrderShippingRequest struct {
 	ShippingAddress *string `json:"shipping_address"`
+	PostalCode      *string `json:"postal_code"`
 	Phone           *string `json:"phone"`
 	Note            *string `json:"note"`
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { ShoppingCart, Menu } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -28,14 +27,6 @@ export function Header({ onMenuClick, user, onLogout, onSwitchLocale }: HeaderPr
               <Menu className="w-6 h-6" />
             </button>
             <Link href="/" className="flex items-center gap-2">
-              <Image
-                src="/images/logo.png"
-                alt="RolOutfit"
-                width={48}
-                height={48}
-                className="h-10 w-auto lg:h-12 rounded-lg"
-                priority
-              />
               <span className="text-xl font-bold text-blue-600 lg:text-2xl">RolOutfit</span>
             </Link>
             <nav className="hidden lg:flex items-center gap-6">

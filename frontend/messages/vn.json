@@ -189,7 +189,9 @@
     "passwordsMismatch": "Mật khẩu không khớp",
     "addressTooShort": "Địa chỉ phải có ít nhất 10 ký tự",
     "addressTooLong": "Địa chỉ không được quá 500 ký tự",
-    "invalidPhone": "Số điện thoại không hợp lệ"
+    "invalidPhone": "Số điện thoại không hợp lệ",
+    "postalCodeRequired": "Vui lòng nhập mã bưu điện",
+    "invalidPostalCode": "Mã bưu điện không hợp lệ (5-10 chữ số)"
   },
   "AddressesPage": {
     "title": "Địa chỉ của tôi",
@@ -197,6 +199,7 @@
     "recipientName": "Tên người nhận",
     "phone": "Số điện thoại",
     "address": "Địa chỉ",
+    "postalCode": "Mã bưu điện",
     "searchAddress": "Tìm kiếm địa chỉ...",
     "enterAddress": "Nhập địa chỉ giao hàng...",
     "selectOnMap": "Nhấp vào bản đồ hoặc tìm kiếm để chọn địa chỉ",
@@ -242,6 +245,7 @@
     "addressPlaceholder": "Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố",
     "phone": "Số điện thoại",
     "phonePlaceholder": "0912345678",
+    "postalCode": "Mã bưu điện",
     "note": "Ghi chú",
     "notePlaceholder": "Ghi chú cho đơn hàng (tùy chọn)",
     "orderItems": "Sản phẩm",
@@ -283,6 +287,7 @@
     "items": "Sản phẩm",
     "shippingInfo": "Thông tin giao hàng",
     "address": "Địa chỉ",
+    "postalCode": "Mã bưu điện",
     "phone": "Số điện thoại",
     "note": "Ghi chú",
     "orderSummary": "Tóm tắt",

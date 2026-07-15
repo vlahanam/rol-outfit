@@ -11,6 +11,9 @@
   "validation.password.length": "Mật khẩu phải từ 8 đến 100 ký tự",
 
   "validation.address.required": "Địa chỉ không được để trống",
+  "validation.postal_code.required": "Mã bưu điện không được để trống",
+  "validation.postal_code.empty": "Mã bưu điện không được để trống",
+  "validation.postal_code.invalid": "Mã bưu điện không hợp lệ",
 
   "validation.phone.required": "Số điện thoại không được để trống",
   "validation.phone.length": "Số điện thoại tối đa 20 ký tự",

@@ -194,6 +194,12 @@ export default function OrderDetailPage() {
                   <span className="text-gray-500">{t("address")}:</span>
                   <span className="ml-2">{order.shipping_address}</span>
                 </div>
+                {order.postal_code && (
+                  <div>
+                    <span className="text-gray-500">{t("postalCode")}:</span>
+                    <span className="ml-2">{order.postal_code}</span>
+                  </div>
+                )}
                 <div>
                   <span className="text-gray-500">{t("phone")}:</span>
                   <span className="ml-2">{order.phone}</span>

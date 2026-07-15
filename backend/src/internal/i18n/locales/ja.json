@@ -11,6 +11,9 @@
   "validation.password.length": "パスワードは8文字以上100文字以下で入力してください",
 
   "validation.address.required": "住所は必須です",
+  "validation.postal_code.required": "郵便番号は必須です",
+  "validation.postal_code.empty": "郵便番号は必須です",
+  "validation.postal_code.invalid": "郵便番号が無効です",
 
   "validation.phone.required": "電話番号は必須です",
   "validation.phone.length": "電話番号は20文字以下で入力してください",

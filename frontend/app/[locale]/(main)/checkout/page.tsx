@@ -142,6 +142,7 @@ export default function CheckoutPage() {
     try {
       const res = await api.post<ApiResponse<Order>>("/orders", {
         shipping_address: selectedAddress.address,
+        postal_code: selectedAddress.postal_code || undefined,
         phone: selectedAddress.phone,
         note: note || undefined,
         cart_item_ids: selectedCartItemIds,
@@ -228,6 +229,7 @@ export default function CheckoutPage() {
                       <p className="font-semibold text-gray-900">{selectedAddress.recipient_name}</p>
                       <p>{selectedAddress.phone}</p>
                       <p>{selectedAddress.address}</p>
+                      {selectedAddress.postal_code && <p>{t("postalCode")}: {selectedAddress.postal_code}</p>}
                     </div>
                   </div>
                 ) : (
@@ -376,6 +378,7 @@ export default function CheckoutPage() {
                       </p>
                       <p className="text-sm text-gray-600">{addr.phone}</p>
                       <p className="text-sm text-gray-600">{addr.address}</p>
+                      {addr.postal_code && <p className="text-sm text-gray-600">{t("postalCode")}: {addr.postal_code}</p>}
                     </div>
                     {selectedAddress?.id === addr.id && (
                       <Check className="w-5 h-5 text-blue-600 flex-shrink-0" />

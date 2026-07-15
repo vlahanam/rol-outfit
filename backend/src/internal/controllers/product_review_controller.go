@@ -141,11 +141,6 @@ func CreateReview(db *gorm.DB) fiber.Handler {
 					common.ErrConflict.WithReason("You have already reviewed this product"),
 				)
 			}
-			if errors.Is(err, services.ErrNotPurchased) {
-				return ctx.Status(fiber.StatusForbidden).JSON(
-					common.ErrForbidden.WithReason("You must purchase this product before reviewing"),
-				)
-			}
 			if errors.Is(err, services.ErrInvalidRating) {
 				return ctx.Status(fiber.StatusBadRequest).JSON(
 					common.ErrBadRequest.WithReason("Rating must be between 1 and 5"),

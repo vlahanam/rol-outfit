@@ -8,6 +8,7 @@ type CreateAddressRequest struct {
 	RecipientName string   `json:"recipient_name"`
 	Phone         string   `json:"phone"`
 	Address       string   `json:"address"`
+	PostalCode    string   `json:"postal_code"`
 	Latitude      *float64 `json:"latitude"`
 	Longitude     *float64 `json:"longitude"`
 }
@@ -26,6 +27,9 @@ func (r CreateAddressRequest) Validate() error {
 			validation.Required.Error("validation.address.required"),
 			validation.Length(10, 500).Error("validation.address.length"),
 		),
+		validation.Field(&r.PostalCode,
+			validation.Required.Error("validation.postal_code.required"),
+		),
 	)
 }
 
@@ -33,6 +37,7 @@ type UpdateAddressRequest struct {
 	RecipientName *string  `json:"recipient_name"`
 	Phone         *string  `json:"phone"`
 	Address       *string  `json:"address"`
+	PostalCode    *string  `json:"postal_code"`
 	Latitude      *float64 `json:"latitude"`
 	Longitude     *float64 `json:"longitude"`
 }
@@ -49,6 +54,9 @@ func (r UpdateAddressRequest) Validate() error {
 		),
 		validation.Field(&r.Address,
 			validation.NilOrNotEmpty.Error("validation.address.empty"),
+		),
+		validation.Field(&r.PostalCode,
+			validation.NilOrNotEmpty.Error("validation.postal_code.empty"),
 		),
 	)
 }

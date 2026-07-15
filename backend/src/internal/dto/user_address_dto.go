@@ -11,6 +11,7 @@ type UserAddressDTO struct {
 	RecipientName string   `json:"recipient_name"`
 	Phone         string   `json:"phone"`
 	Address       string   `json:"address"`
+	PostalCode    string   `json:"postal_code"`
 	Latitude      *float64 `json:"latitude"`
 	Longitude     *float64 `json:"longitude"`
 	IsDefault     bool     `json:"is_default"`
@@ -24,6 +25,7 @@ func ToUserAddressDTO(a *models.UserAddress) *UserAddressDTO {
 		RecipientName: a.RecipientName,
 		Phone:         a.Phone,
 		Address:       a.Address,
+		PostalCode:    a.PostalCode,
 		Latitude:      a.Latitude,
 		Longitude:     a.Longitude,
 		IsDefault:     a.IsDefault,

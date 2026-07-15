@@ -44,6 +44,7 @@ type Order struct {
 	ID              string         `gorm:"type:uuid;primaryKey"`
 	UserID          string         `gorm:"column:user_id;type:uuid"`
 	ShippingAddress string         `gorm:"column:shipping_address"`
+	PostalCode      string         `gorm:"column:postal_code;size:20"`
 	Phone           string         `gorm:"column:phone"`
 	TotalPrice      float64        `gorm:"column:total_price;type:numeric(12,2)"`
 	ShippingCost    float64        `gorm:"column:shipping_cost;type:numeric(12,2);default:0"`
