@@ -1,6 +1,8 @@
 package initialize
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v3"
 	"github.com/vlahanam/rol-outfit/src/internal/controllers"
 	"github.com/vlahanam/rol-outfit/src/internal/middleware"
@@ -89,9 +91,16 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	// Upload service (used by orders for bill upload and admin uploads)
 	uploadSvc := services.NewUploadService(cfg.UploadDir, cfg.UploadURL)
 
+	// Email service (used for order notifications)
+	emailSvc := services.NewEmailService(
+		cfg.SmtpHost, cfg.SmtpPort, cfg.SmtpUser, cfg.SmtpPassword,
+		cfg.SmtpFromEmail, cfg.AdminEmail,
+	)
+	adminURL := fmt.Sprintf("%s/admin/orders", cfg.OAuthCallbackBaseURL)
+
 	// Orders (user auth required)
 	orders := v1.Group("/orders", middleware.JWTAuth(jwtSecret))
-	orders.Post("/", controllers.CreateOrder(db))
+	orders.Post("/", controllers.CreateOrder(db, emailSvc, adminURL))
 	orders.Get("/", controllers.ListOrders(db))
 	orders.Get("/:id", controllers.GetOrder(db))
 	orders.Put("/:id/shipping", controllers.UpdateOrderShipping(db))

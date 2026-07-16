@@ -22,7 +22,7 @@ func newOrderService(db *gorm.DB) services.OrderService {
 }
 
 // CreateOrder POST /api/v1/orders
-func CreateOrder(db *gorm.DB) fiber.Handler {
+func CreateOrder(db *gorm.DB, emailSvc services.EmailService, adminURL string) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		userID, err := userIDFromLocals(ctx)
@@ -56,6 +56,13 @@ func CreateOrder(db *gorm.DB) fiber.Handler {
 			slog.Error("CreateOrder failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
+
+		go func() {
+			if err := emailSvc.SendNewOrderNotification(order, items, adminURL); err != nil {
+				slog.Error("failed to send order notification email", "error", err, "order_code", order.OrderCode)
+			}
+		}()
+
 		return ctx.Status(fiber.StatusCreated).JSON(common.ResponseData(dto.ToOrderDTO(order, items)))
 	}
 }

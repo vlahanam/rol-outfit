@@ -26,6 +26,14 @@ type AppConfig struct {
 	GoogleClientSecret    string
 	OAuthAllowedRedirects []string
 	OAuthCallbackBaseURL  string
+
+	// SMTP
+	SmtpHost     string
+	SmtpPort     string
+	SmtpUser     string
+	SmtpPassword string
+	SmtpFromEmail string
+	AdminEmail   string
 }
 
 // DSN trả về chuỗi kết nối PostgreSQL cho GORM.
@@ -82,5 +90,13 @@ func LoadConfig() *AppConfig {
 		GoogleClientSecret:    getEnv("GOOGLE_CLIENT_SECRET", ""),
 		OAuthAllowedRedirects: strings.Split(redirects, ","),
 		OAuthCallbackBaseURL:  getEnv("OAUTH_CALLBACK_BASE_URL", "http://localhost:8080"),
+
+		// SMTP
+		SmtpHost:      getEnv("SMTP_HOST", ""),
+		SmtpPort:      getEnv("SMTP_PORT", "587"),
+		SmtpUser:      getEnv("SMTP_USER", ""),
+		SmtpPassword:  getEnv("SMTP_PASSWORD", ""),
+		SmtpFromEmail: getEnv("SMTP_FROM_EMAIL", ""),
+		AdminEmail:    getEnv("ADMIN_EMAIL", "roloutfit@gmail.com"),
 	}
 }
