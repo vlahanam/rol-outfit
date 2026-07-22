@@ -49,6 +49,10 @@ func (s *emailService) SendNewOrderNotification(order *models.Order, items []*mo
 	var itemRows strings.Builder
 	for _, item := range items {
 		subtotal := item.Price * float64(item.Quantity)
+		name := item.ProductName
+		if item.VariantName != "" {
+			name = name + " - " + item.VariantName
+		}
 		itemRows.WriteString(fmt.Sprintf(`
 			<tr>
 				<td style="padding:8px;border-bottom:1px solid #eee">%s</td>
@@ -56,14 +60,12 @@ func (s *emailService) SendNewOrderNotification(order *models.Order, items []*mo
 				<td style="padding:8px;border-bottom:1px solid #eee;text-align:right">%s %s</td>
 				<td style="padding:8px;border-bottom:1px solid #eee;text-align:right">%s %s</td>
 			</tr>`,
-			item.ProductID[:8],
+			name,
 			item.Quantity,
 			formatPrice(item.Price), currency,
 			formatPrice(subtotal), currency,
 		))
 	}
-
-	statusText := statusLabel(order.Status)
 
 	noteHTML := ""
 	if strings.TrimSpace(order.Note) != "" {
@@ -81,7 +83,6 @@ func (s *emailService) SendNewOrderNotification(order *models.Order, items []*mo
 		<p style="color:#666">Một đơn hàng mới vừa được tạo trên cửa hàng.</p>
 		<table style="width:100%%;border-collapse:collapse;margin:16px 0;background:white;border-radius:4px;overflow:hidden">
 			<tr><td style="padding:8px 12px;background:#f1f1f1;font-weight:bold;width:120px">Mã đơn hàng</td><td style="padding:8px 12px">%s</td></tr>
-			<tr><td style="padding:8px 12px;background:#f1f1f1;font-weight:bold">Trạng thái</td><td style="padding:8px 12px">%s</td></tr>
 			<tr><td style="padding:8px 12px;background:#f1f1f1;font-weight:bold">Tổng tiền</td><td style="padding:8px 12px">%s %s</td></tr>
 			<tr><td style="padding:8px 12px;background:#f1f1f1;font-weight:bold">Phí vận chuyển</td><td style="padding:8px 12px">%s %s</td></tr>
 			<tr><td style="padding:8px 12px;background:#f1f1f1;font-weight:bold">Địa chỉ</td><td style="padding:8px 12px">%s</td></tr>
@@ -108,7 +109,6 @@ func (s *emailService) SendNewOrderNotification(order *models.Order, items []*mo
 </body>
 </html>`,
 		*order.OrderCode,
-		statusText,
 		formatPrice(order.TotalPrice), currency,
 		formatPrice(order.ShippingCost), currency,
 		order.ShippingAddress,
@@ -135,25 +135,4 @@ func formatPrice(p float64) string {
 	return strings.TrimRight(strings.TrimRight(fmt.Sprintf("%.2f", p), "0"), ".")
 }
 
-func statusLabel(status int8) string {
-	switch status {
-	case models.ORDER_STATUS_AWAITING_PAYMENT:
-		return "Chờ chuyển khoản"
-	case models.ORDER_STATUS_PAYMENT_SUBMITTED:
-		return "Đã báo chuyển khoản"
-	case models.ORDER_STATUS_CONFIRMED:
-		return "Xác nhận thành công"
-	case models.ORDER_STATUS_SHIPPING:
-		return "Đang giao"
-	case models.ORDER_STATUS_COMPLETED:
-		return "Hoàn thành"
-	case models.ORDER_STATUS_CANCELLED:
-		return "Đã hủy"
-	case models.ORDER_STATUS_REFUND_REQUESTED:
-		return "Yêu cầu hoàn tiền"
-	case models.ORDER_STATUS_REFUNDED:
-		return "Đã hoàn tiền"
-	default:
-		return "Không xác định"
-	}
-}
+

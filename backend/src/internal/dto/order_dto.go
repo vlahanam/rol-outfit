@@ -7,11 +7,13 @@ import (
 )
 
 type OrderItemDTO struct {
-	ID        string  `json:"id"`
-	ProductID string  `json:"product_id"`
-	AttrID    string  `json:"attr_id,omitempty"`
-	Price     float64 `json:"price"`
-	Quantity  int     `json:"quantity"`
+	ID          string  `json:"id"`
+	ProductID   string  `json:"product_id"`
+	ProductName string  `json:"product_name"`
+	VariantName string  `json:"variant_name,omitempty"`
+	AttrID      string  `json:"attr_id,omitempty"`
+	Price       float64 `json:"price"`
+	Quantity    int     `json:"quantity"`
 }
 
 type OrderDTO struct {
@@ -45,11 +47,13 @@ func ToOrderItemDTO(item *models.OrderItem) *OrderItemDTO {
 		attrID = *item.AttrID
 	}
 	return &OrderItemDTO{
-		ID:        item.ID,
-		ProductID: item.ProductID,
-		AttrID:    attrID,
-		Price:     item.Price,
-		Quantity:  item.Quantity,
+		ID:          item.ID,
+		ProductID:   item.ProductID,
+		ProductName: item.ProductName,
+		VariantName: item.VariantName,
+		AttrID:      attrID,
+		Price:       item.Price,
+		Quantity:    item.Quantity,
 	}
 }
 

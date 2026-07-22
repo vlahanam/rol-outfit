@@ -61,14 +61,16 @@ type Order struct {
 func (Order) TableName() string { return "orders" }
 
 type OrderItem struct {
-	ID        string    `gorm:"type:uuid;primaryKey"`
-	OrderID   string    `gorm:"column:order_id;type:uuid"`
-	ProductID string    `gorm:"column:product_id;type:uuid"`
-	AttrID    *string   `gorm:"column:attr_id;type:uuid"`
-	Price     float64   `gorm:"column:price;type:numeric(12,2)"`
-	Quantity  int       `gorm:"column:quantity"`
-	CreatedAt time.Time `gorm:"column:created_at"`
-	UpdatedAt time.Time `gorm:"column:updated_at"`
+	ID          string    `gorm:"type:uuid;primaryKey"`
+	OrderID     string    `gorm:"column:order_id;type:uuid"`
+	ProductID   string    `gorm:"column:product_id;type:uuid"`
+	ProductName string    `gorm:"column:product_name"`
+	VariantName string    `gorm:"column:variant_name"`
+	AttrID      *string   `gorm:"column:attr_id;type:uuid"`
+	Price       float64   `gorm:"column:price;type:numeric(12,2)"`
+	Quantity    int       `gorm:"column:quantity"`
+	CreatedAt   time.Time `gorm:"column:created_at"`
+	UpdatedAt   time.Time `gorm:"column:updated_at"`
 }
 
 func (OrderItem) TableName() string { return "order_item" }

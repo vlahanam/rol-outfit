@@ -157,14 +157,23 @@ func (s *orderService) CreateFromCart(ctx context.Context, userID string, req *r
 
 		orderItems = make([]*models.OrderItem, 0, len(cartItems))
 		for _, ci := range cartItems {
-			orderItems = append(orderItems, &models.OrderItem{
+			item := &models.OrderItem{
 				ID:        uuid.New().String(),
 				OrderID:   order.ID,
 				ProductID: ci.ProductID,
 				AttrID:    ci.AttrID,
 				Price:     ci.PriceAtAdd,
 				Quantity:  ci.Quantity,
-			})
+			}
+			if product, err := txRepo.FindProductByIDNoFilter(ctx, ci.ProductID); err == nil && product != nil {
+				item.ProductName = product.Name
+			}
+			if ci.AttrID != nil && *ci.AttrID != "" {
+				if variant, err := txRepo.FindVariantByID(ctx, *ci.AttrID); err == nil && variant != nil {
+					item.VariantName = variant.Name
+				}
+			}
+			orderItems = append(orderItems, item)
 		}
 
 		if err := txRepo.CreateOrder(ctx, order); err != nil {
