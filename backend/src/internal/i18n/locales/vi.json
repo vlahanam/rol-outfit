@@ -1,0 +1,108 @@
+{
+  "validation.failed": "Dữ liệu không hợp lệ",
+
+  "validation.full_name.required": "Họ và tên không được để trống",
+  "validation.full_name.length": "Họ và tên phải từ 2 đến 255 ký tự",
+
+  "validation.email.required": "Email không được để trống",
+  "validation.email.invalid": "Địa chỉ email không hợp lệ",
+
+  "validation.password.required": "Mật khẩu không được để trống",
+  "validation.password.length": "Mật khẩu phải từ 8 đến 100 ký tự",
+
+  "validation.address.required": "Địa chỉ không được để trống",
+  "validation.postal_code.required": "Mã bưu điện không được để trống",
+  "validation.postal_code.empty": "Mã bưu điện không được để trống",
+  "validation.postal_code.invalid": "Mã bưu điện không hợp lệ",
+
+  "validation.phone.required": "Số điện thoại không được để trống",
+  "validation.phone.length": "Số điện thoại tối đa 20 ký tự",
+
+  "validation.name.required": "Tên không được để trống",
+  "validation.name.length": "Tên phải từ 2 đến 255 ký tự",
+
+  "validation.category_id.required": "Danh mục không được để trống",
+  "validation.price.invalid": "Giá sản phẩm không hợp lệ",
+  "validation.avatar.required": "Ảnh sản phẩm không được để trống",
+
+  "validation.product_id.required": "Sản phẩm không được để trống",
+  "validation.quantity.min": "Số lượng phải ít nhất là 1",
+
+  "validation.shipping_address.required": "Địa chỉ giao hàng không được để trống",
+
+  "error.invalid_payload": "Dữ liệu yêu cầu không hợp lệ",
+  "error.invalid_id": "ID không hợp lệ",
+  "error.email_already_exists": "Email này đã được đăng ký",
+  "error.phone_already_exists": "Số điện thoại này đã được sử dụng bởi tài khoản khác",
+  "error.invalid_credentials": "Email hoặc mật khẩu không đúng",
+  "error.account_disabled": "Tài khoản của bạn đã bị vô hiệu hóa",
+
+  "error.missing_token": "Thiếu token xác thực",
+  "error.invalid_token": "Token không hợp lệ hoặc đã hết hạn",
+  "error.forbidden": "Bạn không có quyền thực hiện thao tác này",
+
+  "error.category_not_found": "Danh mục không tồn tại",
+  "error.category_slug_taken": "Đường dẫn danh mục đã được sử dụng",
+
+  "error.product_not_found": "Sản phẩm không tồn tại",
+  "error.product_slug_taken": "Đường dẫn sản phẩm đã được sử dụng",
+
+  "error.cart_item_not_found": "Mục giỏ hàng không tồn tại",
+  "error.cart_item_not_owned": "Bạn không có quyền thao tác mục này",
+
+  "error.order_not_found": "Đơn hàng không tồn tại",
+  "error.order_not_owned": "Bạn không có quyền xem đơn hàng này",
+  "error.cart_empty": "Giỏ hàng của bạn đang trống",
+  "error.cannot_cancel": "Không thể hủy đơn hàng ở trạng thái hiện tại",
+  "error.cannot_update_shipping": "Không thể cập nhật thông tin giao hàng cho đơn hàng đã được xử lý",
+  "error.invalid_order_status": "Trạng thái đơn hàng không hợp lệ",
+
+  "validation.order_status.required": "Trạng thái đơn hàng không được để trống",
+  "validation.order_status.invalid": "Trạng thái đơn hàng không hợp lệ (phải từ 1 đến 8)",
+  "error.not_awaiting_payment": "Đơn hàng không ở trạng thái chờ chuyển khoản",
+  "error.invalid_transition": "Chuyển trạng thái không hợp lệ",
+  "error.cannot_request_refund": "Chỉ có thể yêu cầu hoàn tiền cho đơn hàng đã hoàn thành",
+  "error.cannot_upload_bill": "Không thể upload bill ở trạng thái hiện tại",
+  "error.not_refund_request": "Đơn hàng không ở trạng thái chờ duyệt hoàn tiền",
+  "error.reason_required": "Vui lòng nhập lý do hủy đơn",
+  "error.invalid_status_transition": "Chuyển trạng thái không hợp lệ",
+
+  "error.user_not_found": "Người dùng không tồn tại",
+  "error.user_email_taken": "Email này đã được sử dụng bởi tài khoản khác",
+  "error.invalid_password": "Mật khẩu hiện tại không đúng",
+
+  "validation.current_password.required": "Vui lòng nhập mật khẩu hiện tại",
+  "validation.avatar.length": "URL ảnh đại diện quá dài",
+
+  "error.widget_not_found": "Widget không tồn tại",
+
+  "validation.type.required": "Loại widget không được để trống",
+  "validation.type.invalid": "Loại widget không hợp lệ",
+  "validation.display_order.min": "Thứ tự hiển thị phải lớn hơn hoặc bằng 0",
+
+  "error.variant_not_found": "Biến thể sản phẩm không tồn tại",
+  "error.variant_attributes_mismatch": "Thuộc tính biến thể không khớp với danh sách thuộc tính sản phẩm",
+  "validation.attributes.required": "Thuộc tính biến thể không được để trống",
+  "validation.attributes.invalid": "Thuộc tính biến thể không hợp lệ",
+  "validation.stock.min": "Số lượng tồn kho không được âm",
+
+  "error.refresh_token_invalid": "Refresh token không hợp lệ",
+  "error.refresh_token_expired": "Refresh token đã hết hạn",
+  "error.token_family_revoked": "Phiên đăng nhập đã bị thu hồi. Vui lòng đăng nhập lại",
+  "validation.refresh_token.required": "Refresh token không được để trống",
+
+  "error.tag_not_found": "Không tìm thấy thẻ tag",
+  "error.tag_slug_taken": "Slug thẻ tag đã tồn tại",
+  "error.tag_invalid_window": "Khoảng thời gian hiển thị không hợp lệ",
+
+  "error.too_many_tags": "Mỗi sản phẩm chỉ có tối đa 3 thẻ tag",
+  "validation.tags.max_3": "Tối đa 3 thẻ tag",
+
+  "auth.oauth_failed": "Đăng nhập thất bại. Vui lòng thử lại.",
+  "auth.admin_oauth_forbidden": "Tài khoản admin không thể đăng nhập bằng OAuth.",
+  "auth.cannot_unlink_last_method": "Không thể gỡ phương thức đăng nhập cuối cùng.",
+
+  "error.file_required": "Vui lòng chọn tệp",
+  "error.file_too_large": "Kích thước tệp quá lớn",
+  "error.file_type_not_allowed": "Loại tệp không được hỗ trợ"
+}

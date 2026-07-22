@@ -1,0 +1,3 @@
+ALTER TABLE order_item
+ADD COLUMN product_name TEXT NOT NULL DEFAULT '',
+ADD COLUMN variant_name TEXT NOT NULL DEFAULT '';
