@@ -330,6 +330,12 @@ export interface SocialLinks {
   email: string;
 }
 
+export interface QRData {
+  nhat_text: string;
+  nhat_text_ja: string;
+  viet_url: string;
+}
+
 export const adminSettings = {
   getSocialLinks(): Promise<{ data: SocialLinks }> {
     return request<{ data: SocialLinks }>("/settings/social-links");
@@ -347,6 +353,15 @@ export const adminSettings = {
     return request<void>("/admin/settings/chat-url", {
       method: "PUT",
       body: JSON.stringify({ chat_url: chatUrl }),
+    });
+  },
+  getQR(): Promise<{ data: QRData }> {
+    return request<{ data: QRData }>("/settings/qr");
+  },
+  updateQR(body: QRData): Promise<void> {
+    return request<void>("/admin/settings/qr", {
+      method: "PUT",
+      body: JSON.stringify(body),
     });
   },
 };

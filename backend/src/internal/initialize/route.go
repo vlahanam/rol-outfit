@@ -227,6 +227,7 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	settings := v1.Group("/settings")
 	settings.Get("/social-links", controllers.GetSocialLinks(db))
 	settings.Get("/chat-url", controllers.GetChatURL(db))
+	settings.Get("/qr", controllers.GetQRData(db))
 
 	// Admin settings
 	adminSettings := v1.Group("/admin/settings",
@@ -235,6 +236,7 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	)
 	adminSettings.Put("/social-links", controllers.UpdateSocialLinks(db))
 	adminSettings.Put("/chat-url", controllers.UpdateChatURL(db))
+	adminSettings.Put("/qr", controllers.UpdateQRData(db))
 
 	// Admin reviews
 	adminReviews := v1.Group("/admin/reviews",

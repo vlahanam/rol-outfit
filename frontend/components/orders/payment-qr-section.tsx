@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
-import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useState, useRef, useEffect } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Copy, Check, Loader2, Upload } from "lucide-react";
-import { api } from "@/lib/api";
 import { ApiError, BASE, getToken } from "@/lib/api-client";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, PRODUCT_TYPE_JAPANESE } from "@/lib/format";
+import { adminSettings } from "@/lib/api-resources";
 
 interface Props {
   orderId: string;
@@ -26,11 +25,33 @@ export function PaymentQRSection({
   onTransferred,
 }: Props) {
   const t = useTranslations("Payment");
+  const locale = useLocale();
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [nhatText, setNhatText] = useState("");
+  const [nhatTextJa, setNhatTextJa] = useState("");
+  const [vietUrl, setVietUrl] = useState("");
+  const [imgError, setImgError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    setNhatText("");
+    setNhatTextJa("");
+    setVietUrl("");
+    setImgError(false);
+    adminSettings.getQR().then((res) => {
+      setNhatText(res.data.nhat_text);
+      setNhatTextJa(res.data.nhat_text_ja);
+      setVietUrl(res.data.viet_url);
+    }).catch(() => {});
+  }, [productType]);
+
+  const displayNhatText = locale === "jp" && nhatTextJa ? nhatTextJa : nhatText;
+
   const transferContent = `${userName} - ${orderCode}`;
+  const isJapanese = productType === PRODUCT_TYPE_JAPANESE;
+  const defaultVietUrl = "/qr-viet.jpg";
+  const displayVietUrl = vietUrl || defaultVietUrl;
 
   const handleCopy = async () => {
     try {
@@ -87,37 +108,50 @@ export function PaymentQRSection({
     }
   };
 
-  return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <h3 className="text-lg font-bold mb-4">{t("paymentInfo")}</h3>
+  const renderPaymentInfo = () => {
+    if (isJapanese) {
+      return (
+        <div className="w-full space-y-4">
+          {displayNhatText && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <p className="text-sm font-medium text-gray-600 mb-2">{t("paymentInfo")}:</p>
+              <p className="text-base font-semibold text-gray-900 whitespace-pre-wrap break-words">{displayNhatText}</p>
+            </div>
+          )}
+          <div className="w-full max-w-sm">
+            <p className="text-sm text-gray-600 mb-2">{t("transferContent")}:</p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 px-3 py-2 bg-gray-100 rounded-lg text-sm font-mono truncate">
+                {transferContent}
+              </code>
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Copy"
+              >
+                {copied ? (
+                  <Check className="w-5 h-5 text-green-600" />
+                ) : (
+                  <Copy className="w-5 h-5 text-gray-600" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
-      <div className="flex flex-col items-center gap-4">
+    return (
+      <>
         <div className="w-44 h-44 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-          <Image
-            src="/images/payment-qr-placeholder.png"
+          <img
+            src={displayVietUrl}
             alt="Payment QR"
-            width={176}
-            height={176}
-            className="object-contain"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.style.display = "none";
-              target.parentElement!.innerHTML = `
-                <div class="flex flex-col items-center justify-center w-full h-full text-gray-400">
-                  <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span class="text-sm mt-2">QR Code</span>
-                </div>
-              `;
-            }}
+            className="w-full h-full object-contain"
+            onError={() => setImgError(true)}
           />
         </div>
-
-        <p className="text-xl font-bold text-blue-600">
-          {formatPrice(totalPrice, productType)}
-        </p>
-
         <div className="w-full max-w-sm">
           <p className="text-sm text-gray-600 mb-2">{t("transferContent")}:</p>
           <div className="flex items-center gap-2">
@@ -138,6 +172,20 @@ export function PaymentQRSection({
             </button>
           </div>
         </div>
+      </>
+    );
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm p-6">
+      <h3 className="text-lg font-bold mb-4">{t("paymentInfo")}</h3>
+
+      <div className="flex flex-col items-center gap-4">
+        <p className="text-xl font-bold text-blue-600">
+          {formatPrice(totalPrice, productType)}
+        </p>
+
+        {renderPaymentInfo()}
 
         {onTransferred && (
           <>

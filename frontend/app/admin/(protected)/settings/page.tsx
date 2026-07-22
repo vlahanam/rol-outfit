@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Settings, Loader2, Save, ExternalLink, MessageCircle } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { Settings, Loader2, Save, ExternalLink, MessageCircle, Upload, ImageIcon, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { adminSettings, type SocialLinks } from '@/lib/api-resources';
+import { adminSettings, uploads, type SocialLinks, type QRData } from '@/lib/api-resources';
 
 export default function SettingsPage() {
   const [links, setLinks] = useState<SocialLinks>({
@@ -14,19 +14,25 @@ export default function SettingsPage() {
     email: '',
   });
   const [chatUrl, setChatUrl] = useState('');
+  const [qrData, setQrData] = useState<QRData>({ nhat_text: '', nhat_text_ja: '', viet_url: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingChat, setSavingChat] = useState(false);
+  const [savingQR, setSavingQR] = useState(false);
+  const [uploadingViet, setUploadingViet] = useState(false);
+  const vietInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function fetchSettings() {
       try {
-        const [socialRes, chatRes] = await Promise.all([
+        const [socialRes, chatRes, qrRes] = await Promise.all([
           adminSettings.getSocialLinks(),
           adminSettings.getChatUrl(),
+          adminSettings.getQR(),
         ]);
         setLinks(socialRes.data);
         setChatUrl(chatRes.data?.chat_url || '');
+        setQrData(qrRes.data);
       } catch {
         toast.error('Không thể tải cài đặt');
       } finally {
@@ -35,6 +41,28 @@ export default function SettingsPage() {
     }
     fetchSettings();
   }, []);
+
+  const handleUploadVietQR = async (file: File) => {
+    try {
+      const url = await uploads.upload(file);
+      setQrData((prev) => ({ ...prev, viet_url: url }));
+      toast.success('Đã tải lên ảnh QR Việt');
+    } catch {
+      toast.error('Không thể tải lên ảnh QR');
+    }
+  };
+
+  const handleSaveQR = async () => {
+    setSavingQR(true);
+    try {
+      await adminSettings.updateQR(qrData);
+      toast.success('Đã lưu cài đặt QR');
+    } catch {
+      toast.error('Không thể lưu cài đặt QR');
+    } finally {
+      setSavingQR(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -288,6 +316,142 @@ export default function SettingsPage() {
                 <Save className="w-4 h-4" />
               )}
               Lưu Chat URL
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-50 rounded-lg">
+              <ImageIcon className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Mã QR Thanh Toán</h2>
+              <p className="text-sm text-gray-500">Hiển thị sau khi khách hàng đặt hàng</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Thông tin chuyển khoản hàng Nhật (¥) - Tiếng Việt
+              </label>
+              <div className="space-y-3 mb-4">
+                <textarea
+                  value={qrData.nhat_text}
+                  onChange={(e) => setQrData((prev) => ({ ...prev, nhat_text: e.target.value }))}
+                  placeholder="Nhập thông tin tài khoản ngân hàng, số tài khoản, nội dung..."
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+                {qrData.nhat_text && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <p className="text-xs font-medium text-gray-500 mb-1">Xem trước:</p>
+                    <p className="text-sm text-gray-900 whitespace-pre-wrap">{qrData.nhat_text}</p>
+                  </div>
+                )}
+              </div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                日本向け銀行振込情報 (¥) - 日本語
+              </label>
+              <div className="space-y-3">
+                <textarea
+                  value={qrData.nhat_text_ja}
+                  onChange={(e) => setQrData((prev) => ({ ...prev, nhat_text_ja: e.target.value }))}
+                  placeholder="口座情報、口座番号、振込内容などを入力..."
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+                {qrData.nhat_text_ja && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <p className="text-xs font-medium text-gray-500 mb-1">プレビュー:</p>
+                    <p className="text-sm text-gray-900 whitespace-pre-wrap">{qrData.nhat_text_ja}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                QR Hàng Việt (₫)
+              </label>
+              <div className="space-y-3">
+                <div className="w-40 h-40 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center mx-auto">
+                  {qrData.viet_url ? (
+                    <img
+                      src={qrData.viet_url}
+                      alt="QR Việt"
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center text-gray-400">
+                      <ImageIcon className="w-8 h-8" />
+                      <span className="text-xs mt-1">Chưa có ảnh</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2 justify-center">
+                  <input
+                    ref={vietInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setUploadingViet(true);
+                        handleUploadVietQR(file).finally(() => {
+                          setUploadingViet(false);
+                          if (vietInputRef.current) vietInputRef.current.value = '';
+                        });
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => vietInputRef.current?.click()}
+                    disabled={uploadingViet}
+                    className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    {uploadingViet ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Upload className="w-4 h-4" />
+                    )}
+                    Tải ảnh
+                  </button>
+                  {qrData.viet_url && (
+                    <button
+                      type="button"
+                      onClick={() => setQrData((prev) => ({ ...prev, viet_url: '' }))}
+                      className="inline-flex items-center gap-2 px-3 py-2 border border-red-300 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Xóa
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={handleSaveQR}
+              disabled={savingQR}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {savingQR ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              Lưu Cài Đặt QR
             </button>
           </div>
         </div>

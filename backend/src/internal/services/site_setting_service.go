@@ -19,11 +19,19 @@ type SocialLinksData struct {
 	Email        string `json:"email"`
 }
 
+type QRData struct {
+	NhatText   string `json:"nhat_text"`
+	NhatTextJa string `json:"nhat_text_ja"`
+	VietURL    string `json:"viet_url"`
+}
+
 type SiteSettingService interface {
 	GetSocialLinks(ctx context.Context) (*SocialLinksData, error)
 	UpdateSocialLinks(ctx context.Context, data *SocialLinksData) error
 	GetChatURL(ctx context.Context) (string, error)
 	UpdateChatURL(ctx context.Context, url string) error
+	GetQRData(ctx context.Context) (*QRData, error)
+	UpdateQRData(ctx context.Context, data *QRData) error
 }
 
 type siteSettingService struct {
@@ -91,6 +99,39 @@ func (s *siteSettingService) UpdateChatURL(ctx context.Context, url string) erro
 	settings := map[string]string{"chat_url": url}
 	if err := s.repo.UpdateSettings(ctx, settings); err != nil {
 		return fmt.Errorf("failed to update chat URL: %w", err)
+	}
+	return nil
+}
+
+func (s *siteSettingService) GetQRData(ctx context.Context) (*QRData, error) {
+	keys := []string{"qr_nhat_text", "qr_nhat_text_ja", "qr_viet_url"}
+	settings, err := s.repo.GetSettings(ctx, keys)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("failed to get QR data: %w", err)
+	}
+
+	data := &QRData{}
+	for _, setting := range settings {
+		switch setting.Key {
+		case "qr_nhat_text":
+			data.NhatText = setting.Value
+		case "qr_nhat_text_ja":
+			data.NhatTextJa = setting.Value
+		case "qr_viet_url":
+			data.VietURL = setting.Value
+		}
+	}
+	return data, nil
+}
+
+func (s *siteSettingService) UpdateQRData(ctx context.Context, data *QRData) error {
+	settings := map[string]string{
+		"qr_nhat_text":    data.NhatText,
+		"qr_nhat_text_ja": data.NhatTextJa,
+		"qr_viet_url":     data.VietURL,
+	}
+	if err := s.repo.UpdateSettings(ctx, settings); err != nil {
+		return fmt.Errorf("failed to update QR data: %w", err)
 	}
 	return nil
 }
