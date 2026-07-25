@@ -9,7 +9,6 @@ import (
 	"github.com/vlahanam/rol-outfit/src/internal/services"
 )
 
-// UploadFile POST /api/v1/uploads
 func UploadFile(svc services.UploadService, maxSize int64) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		fh, err := ctx.FormFile("file")
@@ -19,7 +18,10 @@ func UploadFile(svc services.UploadService, maxSize int64) fiber.Handler {
 			)
 		}
 
-		url, err := svc.Save(fh, maxSize)
+		modelType := ctx.FormValue("model_type", "")
+		modelID := ctx.FormValue("model_id", "")
+
+		result, err := svc.Save(ctx.Context(), fh, maxSize, modelType, modelID, nil)
 		if err != nil {
 			switch {
 			case errors.Is(err, services.ErrFileTooBig):
@@ -36,19 +38,18 @@ func UploadFile(svc services.UploadService, maxSize int64) fiber.Handler {
 			}
 		}
 
-		return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"url": url})
+		return ctx.Status(fiber.StatusCreated).JSON(common.ResponseData(result))
 	}
 }
 
-// DeleteFile DELETE /api/v1/uploads/:filename
 func DeleteFile(svc services.UploadService) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
-		filename := ctx.Params("filename")
-		if err := svc.Delete(filename); err != nil {
+		id := ctx.Params("id")
+		if err := svc.Delete(ctx.Context(), id); err != nil {
 			if errors.Is(err, services.ErrFileNotFound) {
 				return ctx.Status(fiber.StatusNotFound).JSON(common.ErrNotFound)
 			}
-			slog.Error("DeleteFile failed", "filename", filename, "error", err)
+			slog.Error("DeleteFile failed", "id", id, "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
 		return ctx.SendStatus(fiber.StatusNoContent)

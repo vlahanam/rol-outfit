@@ -1,16 +1,21 @@
 package services
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
+	"github.com/vlahanam/rol-outfit/src/internal/models"
+	"github.com/vlahanam/rol-outfit/src/internal/repositories"
 )
 
 var (
@@ -26,89 +31,143 @@ var allowedMIME = map[string]string{
 	"image/gif":  ".gif",
 }
 
+type UploadResult struct {
+	ID           string `json:"id"`
+	OriginalName string `json:"original_name"`
+	FilePath     string `json:"file_path"`
+	FileSize     int64  `json:"file_size"`
+	MimeType     string `json:"mime_type"`
+	URL          string `json:"url"`
+}
+
 type UploadService interface {
-	Save(fh *multipart.FileHeader, maxSize int64) (url string, err error)
-	Delete(filename string) error
+	Save(ctx context.Context, fh *multipart.FileHeader, maxSize int64, modelType, modelID string, metadata map[string]interface{}) (*UploadResult, error)
+	Delete(ctx context.Context, id string) error
+	GetFileURL(key string) string
 }
 
 type uploadService struct {
-	uploadDir string
-	uploadURL string
+	s3Client *s3.Client
+	bucket   string
+	region   string
+	repo     repositories.UploadRepository
 }
 
-func NewUploadService(uploadDir, uploadURL string) UploadService {
-	return &uploadService{uploadDir: uploadDir, uploadURL: uploadURL}
+func NewUploadService(awsRegion, awsAccessKeyID, awsSecretAccessKey, bucket string, repo repositories.UploadRepository) (UploadService, error) {
+	cfg, err := awsconfig.LoadDefaultConfig(context.Background(),
+		awsconfig.WithRegion(awsRegion),
+		awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(awsAccessKeyID, awsSecretAccessKey, "")),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to load AWS SDK config: %w", err)
+	}
+
+	client := s3.NewFromConfig(cfg)
+
+	return &uploadService{
+		s3Client: client,
+		bucket:   bucket,
+		region:   awsRegion,
+		repo:     repo,
+	}, nil
 }
 
-func (s *uploadService) Save(fh *multipart.FileHeader, maxSize int64) (string, error) {
+func (s *uploadService) Save(ctx context.Context, fh *multipart.FileHeader, maxSize int64, modelType, modelID string, metadata map[string]interface{}) (*UploadResult, error) {
 	if fh.Size > maxSize {
-		return "", ErrFileTooBig
+		return nil, ErrFileTooBig
 	}
 
 	src, err := fh.Open()
 	if err != nil {
-		return "", fmt.Errorf("open upload: %w", err)
+		return nil, fmt.Errorf("open upload: %w", err)
 	}
 	defer src.Close()
 
-	// Detect MIME from actual file bytes — do not trust client-supplied Content-Type
 	buf := make([]byte, 512)
 	n, err := src.Read(buf)
 	if err != nil && err != io.EOF {
-		return "", fmt.Errorf("read upload: %w", err)
+		return nil, fmt.Errorf("read upload: %w", err)
 	}
 	detected := http.DetectContentType(buf[:n])
 	ext, ok := allowedMIME[detected]
 	if !ok {
-		return "", ErrFileTypeNotAllow
+		return nil, ErrFileTypeNotAllow
 	}
 	if _, err := src.Seek(0, io.SeekStart); err != nil {
-		return "", fmt.Errorf("seek upload: %w", err)
+		return nil, fmt.Errorf("seek upload: %w", err)
 	}
 
-	if err := os.MkdirAll(s.uploadDir, 0o755); err != nil {
-		return "", fmt.Errorf("mkdir upload dir: %w", err)
-	}
+	key := fmt.Sprintf("uploads/%s%s", uuid.New().String(), ext)
 
-	filename := uuid.New().String() + ext
-	dst := filepath.Join(s.uploadDir, filename)
-
-	out, err := os.Create(dst)
+	_, err = s.s3Client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(s.bucket),
+		Key:         aws.String(key),
+		Body:        src,
+		ContentType: aws.String(detected),
+	})
 	if err != nil {
-		return "", fmt.Errorf("create file: %w", err)
+		return nil, fmt.Errorf("s3 upload: %w", err)
 	}
 
-	// Clean up partial file on any write failure
-	success := false
-	defer func() {
-		out.Close()
-		if !success {
-			os.Remove(dst)
-		}
-	}()
+	url := s.GetFileURL(key)
 
-	if _, err := io.Copy(out, src); err != nil {
-		return "", fmt.Errorf("write file: %w", err)
+	meta := models.JSONB("{}")
+	if metadata != nil {
+		b, _ := json.Marshal(metadata)
+		meta = models.JSONB(b)
 	}
 
-	success = true
-	return s.uploadURL + "/" + filename, nil
+	upload := &models.Upload{
+		ID:           uuid.New().String(),
+		OriginalName: fh.Filename,
+		FilePath:     key,
+		FileSize:     fh.Size,
+		MimeType:     detected,
+		ModelType:    modelType,
+		ModelID:      modelID,
+		Metadata:     meta,
+	}
+
+	if err := s.repo.CreateUpload(ctx, upload); err != nil {
+		// Best-effort cleanup of S3 object on DB failure
+		_, _ = s.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
+			Bucket: aws.String(s.bucket),
+			Key:    aws.String(key),
+		})
+		return nil, fmt.Errorf("save upload record: %w", err)
+	}
+
+	return &UploadResult{
+		ID:           upload.ID,
+		OriginalName: upload.OriginalName,
+		FilePath:     upload.FilePath,
+		FileSize:     upload.FileSize,
+		MimeType:     upload.MimeType,
+		URL:          url,
+	}, nil
 }
 
-func (s *uploadService) Delete(filename string) error {
-	if strings.ContainsAny(filename, "/\\") {
-		return errors.New("invalid filename")
+func (s *uploadService) Delete(ctx context.Context, id string) error {
+	upload, err := s.repo.FindUploadByID(ctx, id)
+	if err != nil {
+		return ErrFileNotFound
 	}
-	path := filepath.Join(s.uploadDir, filename)
-	// Defence-in-depth: verify resolved path stays within uploadDir
-	if !strings.HasPrefix(path, filepath.Clean(s.uploadDir)+string(os.PathSeparator)) {
-		return errors.New("invalid filename")
+
+	_, err = s.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(upload.FilePath),
+	})
+	if err != nil {
+		return fmt.Errorf("s3 delete: %w", err)
 	}
-	if err := os.Remove(path); err != nil {
-		if os.IsNotExist(err) {
-			return ErrFileNotFound
-		}
-		return fmt.Errorf("delete file: %w", err)
+
+	if err := s.repo.SoftDeleteUpload(ctx, id); err != nil {
+		return fmt.Errorf("soft delete upload record: %w", err)
 	}
+
 	return nil
+}
+
+func (s *uploadService) GetFileURL(key string) string {
+	return fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", s.bucket, s.region, key)
 }

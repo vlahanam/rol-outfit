@@ -27,13 +27,19 @@ type AppConfig struct {
 	OAuthAllowedRedirects []string
 	OAuthCallbackBaseURL  string
 
+	// AWS S3
+	AWSRegion          string
+	AWSAccessKeyID     string
+	AWSSecretAccessKey string
+	AWSBucket          string
+
 	// SMTP
-	SmtpHost     string
-	SmtpPort     string
-	SmtpUser     string
-	SmtpPassword string
+	SmtpHost      string
+	SmtpPort      string
+	SmtpUser      string
+	SmtpPassword  string
 	SmtpFromEmail string
-	AdminEmail   string
+	AdminEmail    string
 }
 
 // DSN trả về chuỗi kết nối PostgreSQL cho GORM.
@@ -90,6 +96,12 @@ func LoadConfig() *AppConfig {
 		GoogleClientSecret:    getEnv("GOOGLE_CLIENT_SECRET", ""),
 		OAuthAllowedRedirects: strings.Split(redirects, ","),
 		OAuthCallbackBaseURL:  getEnv("OAUTH_CALLBACK_BASE_URL", "http://localhost:8080"),
+
+		// AWS S3
+		AWSRegion:          getEnv("AWS_REGION", "ap-southeast-1"),
+		AWSAccessKeyID:     getEnv("AWS_ACCESS_KEY_ID", ""),
+		AWSSecretAccessKey: getEnv("AWS_SECRET_ACCESS_KEY", ""),
+		AWSBucket:          getEnv("AWS_S3_BUCKET", ""),
 
 		// SMTP
 		SmtpHost:      getEnv("SMTP_HOST", ""),

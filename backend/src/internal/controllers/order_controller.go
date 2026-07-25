@@ -242,7 +242,7 @@ func UploadOrderBill(db *gorm.DB, svc services.UploadService, maxSize int64) fib
 			)
 		}
 
-		url, err := svc.Save(fh, maxSize)
+		result, err := svc.Save(ctx.Context(), fh, maxSize, "order", orderID, nil)
 		if err != nil {
 			switch {
 			case errors.Is(err, services.ErrFileTooBig):
@@ -260,7 +260,7 @@ func UploadOrderBill(db *gorm.DB, svc services.UploadService, maxSize int64) fib
 		}
 
 		orderSvc := newOrderService(db)
-		if err := orderSvc.UploadBill(ctx.Context(), userID, orderID, url); err != nil {
+		if err := orderSvc.UploadBill(ctx.Context(), userID, orderID, result.URL); err != nil {
 			if errors.Is(err, services.ErrOrderNotFound) {
 				return ctx.Status(fiber.StatusNotFound).JSON(
 					common.ErrNotFound.WithReason(i18n.T(lang, "error.order_not_found")),
@@ -279,7 +279,7 @@ func UploadOrderBill(db *gorm.DB, svc services.UploadService, maxSize int64) fib
 			slog.Error("UploadOrderBill: upload failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
-		return ctx.JSON(common.ResponseData(fiber.Map{"url": url}))
+		return ctx.JSON(common.ResponseData(result))
 	}
 }
 

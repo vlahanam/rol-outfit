@@ -89,7 +89,10 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	cart.Delete("/items/:itemID", controllers.RemoveCartItem(db))
 
 	// Upload service (used by orders for bill upload and admin uploads)
-	uploadSvc := services.NewUploadService(cfg.UploadDir, cfg.UploadURL)
+	uploadSvc, err := services.NewUploadService(cfg.AWSRegion, cfg.AWSAccessKeyID, cfg.AWSSecretAccessKey, cfg.AWSBucket, repo)
+	if err != nil {
+		panic(err)
+	}
 
 	// Email service (used for order notifications)
 	emailSvc := services.NewEmailService(
@@ -161,7 +164,7 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
 	)
 	adminUploads.Post("/", controllers.UploadFile(uploadSvc, cfg.UploadMaxSize))
-	adminUploads.Delete("/:filename", controllers.DeleteFile(uploadSvc))
+	adminUploads.Delete("/:id", controllers.DeleteFile(uploadSvc))
 
 	// Tags
 	tags := v1.Group("/tags")
