@@ -7,7 +7,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import type { ApiResponse, Product, Category } from "@/types/api";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, getFirstImageUrl } from "@/lib/format";
 
 function effectivePrice(p: Product): number {
   return p.sale_price ?? p.default_price;
@@ -163,7 +163,7 @@ export default function NewArrivalsPage() {
                         )
                       : undefined
                   }
-                  image={product.avatar}
+                  image={getFirstImageUrl(product.images) ?? product.avatar}
                   tags={product.tags}
                   maxTags={2}
                 />

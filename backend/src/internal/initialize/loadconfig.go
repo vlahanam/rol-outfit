@@ -20,6 +20,7 @@ type AppConfig struct {
 	UploadDir      string
 	UploadURL      string
 	UploadMaxSize  int64
+	UploadDriver   string
 
 	// OAuth
 	GoogleClientID        string
@@ -90,6 +91,7 @@ func LoadConfig() *AppConfig {
 		UploadDir:      getEnv("UPLOAD_DIR", "/app/uploads"),
 		UploadURL:      getEnv("UPLOAD_URL", "/uploads"),
 		UploadMaxSize:  getEnvInt64("UPLOAD_MAX_SIZE", 10*1024*1024), // default 10 MB
+		UploadDriver:   getEnv("UPLOAD_DRIVER", "local"),
 
 		// OAuth
 		GoogleClientID:        getEnv("GOOGLE_CLIENT_ID", ""),

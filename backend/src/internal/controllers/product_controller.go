@@ -16,6 +16,11 @@ import (
 	"gorm.io/gorm"
 )
 
+func productServiceFromDB(db *gorm.DB) services.ProductService {
+	repo := repositories.NewPostgreSQLStorage(db)
+	return services.NewProductService(repo, repo)
+}
+
 // ListProducts GET /api/v1/products?category_id=&search=&tags=&tag=&sort=&product_type=&page=&limit=
 func ListProducts(db *gorm.DB) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
@@ -50,8 +55,7 @@ func ListProducts(db *gorm.DB) fiber.Handler {
 			tagSlugs = []string{singleTag}
 		}
 
-		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductService(repo)
+		svc := productServiceFromDB(db)
 
 		products, total, err := svc.List(ctx.Context(), categoryID, search, tagSlugs, sortMode, productType, offset, p.Limit)
 		if err != nil {
@@ -82,7 +86,7 @@ func GetProduct(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductService(repo)
+		svc := productServiceFromDB(db)
 
 		p, err := svc.GetByID(ctx.Context(), id)
 		if err != nil {
@@ -125,8 +129,7 @@ func CreateProduct(db *gorm.DB) fiber.Handler {
 			return ctx.Status(fiber.StatusBadRequest).JSON(resp)
 		}
 
-		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductService(repo)
+		svc := productServiceFromDB(db)
 
 		p, err := svc.Create(ctx.Context(), &req)
 		if err != nil {
@@ -169,8 +172,7 @@ func UpdateProduct(db *gorm.DB) fiber.Handler {
 			return ctx.Status(fiber.StatusBadRequest).JSON(resp)
 		}
 
-		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductService(repo)
+		svc := productServiceFromDB(db)
 
 		if err := svc.Update(ctx.Context(), id, &req); err != nil {
 			if errors.Is(err, services.ErrProductNotFound) {
@@ -202,8 +204,7 @@ func DeleteProduct(db *gorm.DB) fiber.Handler {
 			)
 		}
 
-		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductService(repo)
+		svc := productServiceFromDB(db)
 
 		if err := svc.Delete(ctx.Context(), id); err != nil {
 			if errors.Is(err, services.ErrProductNotFound) {
@@ -231,7 +232,7 @@ func AdminGetProduct(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductService(repo)
+		svc := productServiceFromDB(db)
 
 		pw, err := svc.AdminGetByID(ctx.Context(), id)
 		if err != nil {
@@ -268,8 +269,7 @@ func AdminListProducts(db *gorm.DB) fiber.Handler {
 		search := ctx.Query("search")
 		offset := (p.Page - 1) * p.Limit
 
-		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductService(repo)
+		svc := productServiceFromDB(db)
 
 		products, total, err := svc.AdminList(ctx.Context(), categoryID, search, offset, p.Limit)
 		if err != nil {

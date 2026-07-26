@@ -7,8 +7,8 @@ import { api } from "@/lib/api";
 import { ImageUploader } from "@/components/admin/image-uploader";
 import { TiptapEditor } from "@/components/admin/tiptap-editor";
 import { LanguageTabsForm } from "@/components/admin/language-tabs-form";
-import type { AdminProduct, Category } from "@/types/api";
-import { formatPrice, getCurrencyLabel } from "@/lib/format";
+import type { AdminProduct, Category, UploadDTO } from "@/types/api";
+import { formatPrice, getCurrencyLabel, getFirstImageUrl } from "@/lib/format";
 
 const STATUS_LABEL: Record<number, string> = { 1: "Hiển thị", 2: "Ẩn" };
 const PRODUCT_TYPE_LABEL: Record<number, string> = { 1: "Hàng Nhật Bản", 2: "Hàng Việt Nam" };
@@ -95,7 +95,8 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
   };
 
   const handleCancel = () => {
-    if (form.avatar && form.avatar !== (product.avatar ?? "")) {
+    const initialAvatar = getFirstImageUrl(product.images) ?? product.avatar ?? "";
+    if (form.avatar && form.avatar !== initialAvatar) {
       api.uploads
         .delete(form.avatar.split("/").pop()?.split("?")[0] ?? "")
         .catch(() => {});
@@ -110,7 +111,7 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
       description_ja: product.description_ja ?? "",
       status: String(product.status),
       product_type: String(product.product_type ?? 2),
-      avatar: product.avatar ?? "",
+    avatar: initialAvatar,
       discount_percent: String(product.discount_percent ?? 0),
       discount_start_at: toDatetimeLocal(product.discount_start_at ?? null),
       discount_end_at: toDatetimeLocal(product.discount_end_at ?? null),
@@ -162,6 +163,8 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
               value={form.avatar}
               onChange={(url) => setForm((p) => ({ ...p, avatar: url }))}
               label="Ảnh sản phẩm"
+              modelType="product"
+              modelID={product.id}
             />
           </div>
           <LanguageTabsForm
@@ -316,11 +319,11 @@ export function ProductInfoPanel({ product, categories, onSaved }: Props) {
         </div>
       ) : (
         <div className="flex gap-6">
-          {product.avatar && (
+          {(getFirstImageUrl(product.images) ?? product.avatar) && (
             <div className="flex-shrink-0">
               <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-gray-200">
                 <Image
-                  src={product.avatar}
+                  src={getFirstImageUrl(product.images) ?? product.avatar ?? ""}
                   alt={product.name}
                   fill
                   unoptimized

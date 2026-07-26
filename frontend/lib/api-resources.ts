@@ -222,10 +222,12 @@ export const adminCarts = {
 };
 
 export const uploads = {
-  async upload(file: File): Promise<string> {
+  async upload(file: File, modelType?: string, modelID?: string): Promise<string> {
     const token = getToken();
     const form = new FormData();
     form.append("file", file);
+    if (modelType) form.append("model_type", modelType);
+    if (modelID) form.append("model_id", modelID);
 
     const headers: Record<string, string> = { "Accept-Language": "vi" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -246,8 +248,8 @@ export const uploads = {
       );
     }
 
-    const data: { url: string } = await res.json();
-    return data.url;
+    const body = await res.json();
+    return body.data?.url ?? "";
   },
 
   delete(filename: string): Promise<void> {

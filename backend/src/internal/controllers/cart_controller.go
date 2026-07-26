@@ -17,12 +17,12 @@ import (
 
 func newCartService(db *gorm.DB) services.CartService {
 	repo := repositories.NewPostgreSQLStorage(db)
-	return services.NewCartService(repo, repo, repo, repo)
+	return services.NewCartService(repo, repo, repo, repo, repo)
 }
 
 func newAdminCartService(db *gorm.DB) services.CartService {
 	repo := repositories.NewPostgreSQLStorage(db)
-	return services.NewCartServiceWithUserRepo(repo, repo, repo, repo, repo)
+	return services.NewCartServiceWithUserRepo(repo, repo, repo, repo, repo, repo)
 }
 
 func userIDFromLocals(ctx fiber.Ctx) (string, error) {

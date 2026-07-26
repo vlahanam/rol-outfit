@@ -6,6 +6,7 @@ import { Users, Package, ShoppingCart, DollarSign, TrendingUp, Loader2 } from 'l
 import { adminDashboard } from '@/lib/api-resources';
 import { OrderStatusBadge } from '@/components/orders/order-status-badge';
 import type { DashboardStats } from '@/types/api';
+import { getUploadUrl } from '@/lib/format';
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('vi-VN', {
@@ -144,9 +145,9 @@ export default function DashboardPage() {
                 {stats.top_products.map((product) => (
                   <div key={product.id} className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                      {product.avatar ? (
+                      {getUploadUrl(product.images?.[0]) ?? product.avatar ? (
                         <img
-                          src={product.avatar}
+                          src={getUploadUrl(product.images?.[0]) ?? product.avatar}
                           alt={product.name}
                           className="w-full h-full object-cover"
                         />

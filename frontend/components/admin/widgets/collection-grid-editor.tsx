@@ -73,6 +73,7 @@ export function CollectionGridEditor({ items, onChange, activeIndex, onActiveCha
             value={item.image}
             onChange={(url) => update({ image: url })}
             required
+            modelType="collection-grid"
           />
 
           <div className="grid gap-3">

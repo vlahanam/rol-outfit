@@ -7,6 +7,17 @@ import (
 	"github.com/vlahanam/rol-outfit/src/internal/models"
 )
 
+func mapVariantUploads(uploads []*models.Upload) []*UploadDTO {
+	if len(uploads) == 0 {
+		return nil
+	}
+	result := make([]*UploadDTO, 0, len(uploads))
+	for i := range uploads {
+		result = append(result, ToUploadDTO(uploads[i]))
+	}
+	return result
+}
+
 type ProductVariantDTO struct {
 	ID              string          `json:"id"`
 	ProductID       string          `json:"product_id"`
@@ -16,7 +27,7 @@ type ProductVariantDTO struct {
 	Price           float64         `json:"price"`
 	Stock           int             `json:"stock"`
 	Sold            int             `json:"sold"`
-	Avatar          string          `json:"avatar,omitempty"`
+	Images          []*UploadDTO    `json:"images,omitempty"`
 	Status          int8            `json:"status"`
 	DiscountPercent float64         `json:"discount_percent"`
 	DiscountStartAt string          `json:"discount_start_at,omitempty"`
@@ -43,7 +54,7 @@ func ToVariantDTOWithProduct(v *models.ProductVariant, p *models.Product) *Produ
 		Price:           v.Price,
 		Stock:           v.Stock,
 		Sold:            v.Sold,
-		Avatar:          v.Avatar,
+		Images:          mapVariantUploads(v.Uploads),
 		Status:          v.Status,
 		DiscountPercent: v.DiscountPercent,
 		DiscountStartAt: formatTimePtr(v.DiscountStartAt),

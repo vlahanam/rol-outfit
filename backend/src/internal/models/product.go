@@ -145,7 +145,6 @@ type Product struct {
 	Status          int8           `gorm:"column:status"`
 	ProductType     int8           `gorm:"column:product_type"`
 	AttributeNames  StringSlice    `gorm:"column:attribute_names;type:text[]"`
-	Avatar          string         `gorm:"column:avatar"`
 	DiscountPercent float64        `gorm:"column:discount_percent;type:numeric(5,2)"`
 	DiscountStartAt *time.Time     `gorm:"column:discount_start_at"`
 	DiscountEndAt   *time.Time     `gorm:"column:discount_end_at"`
@@ -158,6 +157,7 @@ type Product struct {
 	UpdatedAt       time.Time      `gorm:"column:updated_at"`
 	DeletedAt       gorm.DeletedAt `gorm:"column:deleted_at;index"`
 	Tags            []Tag          `gorm:"-"`
+	Uploads         []*Upload      `gorm:"-"`
 }
 
 func (Product) TableName() string { return "products" }

@@ -10,7 +10,7 @@ import { isLoggedIn } from "@/lib/auth";
 import { useCart } from "@/context/cart-context";
 import { PaymentQRModal } from "@/components/checkout/payment-qr-modal";
 import type { ApiResponse, Cart, CartItem, Product, Order, UserAddress } from "@/types/api";
-import { formatPrice, getCartCurrencyType, getEffectiveShipping } from "@/lib/format";
+import { formatPrice, getCartCurrencyType, getEffectiveShipping, getFirstImageUrl } from "@/lib/format";
 
 interface RichCartItem extends CartItem {
   productName: string;
@@ -87,7 +87,7 @@ export default function CheckoutPage() {
               return {
                 ...item,
                 productName: pRes.data.name,
-                productImage: pRes.data.avatar,
+                productImage: getFirstImageUrl(pRes.data.images) ?? pRes.data.avatar,
                 shippingCost: pRes.data.shipping_cost ?? 0,
                 productType: pRes.data.product_type ?? 2,
               };

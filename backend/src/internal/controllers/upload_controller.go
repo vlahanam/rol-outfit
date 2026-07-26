@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"io"
 	"log/slog"
 
 	"github.com/gofiber/fiber/v3"
@@ -39,6 +40,35 @@ func UploadFile(svc services.UploadService, maxSize int64) fiber.Handler {
 		}
 
 		return ctx.Status(fiber.StatusCreated).JSON(common.ResponseData(result))
+	}
+}
+
+func GetFile(svc services.UploadService) fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		key := ctx.Params("*")
+		if key == "" {
+			return ctx.Status(fiber.StatusBadRequest).JSON(common.ErrBadRequest.WithReason("file key is required"))
+		}
+
+		stream, contentType, err := svc.GetFileStream(ctx.Context(), key)
+		if err != nil {
+			slog.Error("GetFile failed", "key", key, "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+
+		if contentType != nil {
+			ctx.Set(fiber.HeaderContentType, *contentType)
+		}
+		ctx.Set(fiber.HeaderCacheControl, "public, max-age=31536000, immutable")
+
+		data, err := io.ReadAll(stream)
+		stream.Close()
+		if err != nil {
+			slog.Error("GetFile read failed", "key", key, "error", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
+		}
+
+		return ctx.Send(data)
 	}
 }
 

@@ -87,6 +87,7 @@ export interface Product {
   attribute_names: string[];
   data?: unknown;
   avatar?: string;
+  images?: UploadDTO[];
   tags?: Tag[];
   discount_percent: number;
   discount_start_at: string | null;
@@ -96,6 +97,16 @@ export interface Product {
   delivery_info?: DeliveryInfoEntry[] | null;
   created_at: string;
   updated_at: string;
+}
+
+// Upload
+export interface UploadDTO {
+  id: string;
+  original_name: string;
+  file_path: string;
+  file_size: number;
+  mime_type: string;
+  url?: string;
 }
 
 // ProductVariant
@@ -109,6 +120,7 @@ export interface ProductVariant {
   stock: number;
   sold: number;
   avatar?: string;
+  images?: UploadDTO[];
   status: number;
   discount_percent: number;
   discount_start_at: string | null;
@@ -477,7 +489,8 @@ export interface RecentOrder {
 export interface TopProduct {
   id: string;
   name: string;
-  avatar: string;
+  avatar?: string;
+  images?: UploadDTO[];
   sold: number;
   revenue: number;
 }

@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { products as productsApi } from "@/lib/api-resources";
 import { ProductItem } from "@/components/ProductItem";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, getFirstImageUrl } from "@/lib/format";
 import type { Product } from "@/types/api";
 
 interface RelatedProductsSectionProps {
@@ -68,7 +68,7 @@ export function RelatedProductsSection({
                     )
                   : undefined
               }
-              image={product.avatar}
+              image={getFirstImageUrl(product.images) ?? product.avatar}
               tags={product.tags}
               maxTags={1}
             />

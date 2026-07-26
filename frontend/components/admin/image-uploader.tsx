@@ -24,7 +24,9 @@ export function ImageUploader({
   required,
   label = "Ảnh",
   error,
-}: Props) {
+  modelType,
+  modelID,
+}: Props & { modelType?: string; modelID?: string }) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -40,7 +42,7 @@ export function ImageUploader({
     setUploading(true);
     setUploadError(null);
     try {
-      const newUrl = await api.uploads.upload(file);
+      const newUrl = await api.uploads.upload(file, modelType, modelID);
       if (value) {
         api.uploads.delete(filenameFromUrl(value)).catch(() => {});
       }

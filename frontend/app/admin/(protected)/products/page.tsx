@@ -18,7 +18,7 @@ import { DeleteConfirmModal } from "@/components/admin/DeleteConfirmModal";
 import { ProductListVariantsTable } from "@/components/admin/product-list-variants-table";
 import { api } from "@/lib/api";
 import type { ApiResponse, AdminProduct, Category } from "@/types/api";
-import { formatPrice, PRODUCT_TYPE_JAPANESE } from "@/lib/format";
+import { formatPrice, PRODUCT_TYPE_JAPANESE, getFirstImageUrl } from "@/lib/format";
 
 function productTypeLabel(type: number): { label: string; cls: string } {
   if (type === PRODUCT_TYPE_JAPANESE) {
@@ -344,9 +344,9 @@ export default function ListProductPage() {
 
                             {/* Avatar */}
                             <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                              {product.avatar ? (
+                              {(getFirstImageUrl(product.images) ?? product.avatar) ? (
                                 <Image
-                                  src={product.avatar}
+                                  src={getFirstImageUrl(product.images) ?? product.avatar ?? ""}
                                   alt={product.name}
                                   width={48}
                                   height={48}

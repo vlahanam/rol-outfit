@@ -73,6 +73,7 @@ export function TrendHotEditor({ items, onChange, activeIndex, onActiveChange }:
             value={item.image}
             onChange={(url) => update({ image: url })}
             required
+            modelType="trend-hot"
           />
 
           <div className="grid gap-3">

@@ -50,3 +50,14 @@ export function getFreeShippingThreshold(currencyType: number): number {
     ? FREE_SHIPPING_THRESHOLD_JAPANESE
     : FREE_SHIPPING_THRESHOLD_VIETNAMESE;
 }
+
+export function getUploadUrl(upload?: { file_path: string; url?: string } | null): string | undefined {
+  if (!upload) return undefined;
+  if (upload.url) return upload.url;
+  if (!upload.file_path) return undefined;
+  return `/api/v1/files/${upload.file_path}`;
+}
+
+export function getFirstImageUrl(images?: { file_path: string; url?: string }[] | null): string | undefined {
+  return getUploadUrl(images?.[0]);
+}

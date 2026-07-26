@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { ProductItem } from "@/components/ProductItem";
 import type { Product } from "@/types/api";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, getFirstImageUrl } from "@/lib/format";
 
 interface NewArrivalsGridProps {
   title: string;
@@ -130,7 +130,7 @@ export function NewArrivalsGrid({ title, products, autoScrollInterval = 5000 }: 
                       price={formatPrice(p.sale_price, p.product_type)}
                       originalPrice={p.discount_percent > 0 ? formatPrice(p.default_price, p.product_type) : undefined}
                       discountPercent={p.discount_percent > 0 ? p.discount_percent : undefined}
-                      image={p.avatar || "/placeholder-product.svg"}
+                      image={getFirstImageUrl(p.images) ?? (p.avatar || "/placeholder-product.svg")}
                       tags={p.tags}
                       maxTags={2}
                     />

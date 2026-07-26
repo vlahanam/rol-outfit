@@ -71,12 +71,11 @@ func (s *DashboardService) GetStats(ctx context.Context) (*dto.DashboardStatsDTO
 	var topProducts []struct {
 		ID      string
 		Name    string
-		Avatar  string
 		Sold    int64
 		Revenue float64
 	}
 	s.db.WithContext(ctx).Table("products").
-		Select(`products.id, products.name, products.avatar,
+		Select(`products.id, products.name,
 			COALESCE(SUM(product_variants.sold), 0) as sold,
 			COALESCE(SUM(product_variants.sold * product_variants.price), 0) as revenue`).
 		Joins("LEFT JOIN product_variants ON products.id = product_variants.product_id").
@@ -91,10 +90,43 @@ func (s *DashboardService) GetStats(ctx context.Context) (*dto.DashboardStatsDTO
 		stats.TopProducts = append(stats.TopProducts, dto.TopProductDTO{
 			ID:      p.ID,
 			Name:    p.Name,
-			Avatar:  p.Avatar,
 			Sold:    p.Sold,
 			Revenue: p.Revenue,
 		})
+	}
+
+	// Enrich top products with uploads
+	var topIDs []string
+	for _, p := range stats.TopProducts {
+		topIDs = append(topIDs, p.ID)
+	}
+	if len(topIDs) > 0 {
+		var uploads []struct {
+			ModelID      string
+			ID           string
+			OriginalName string
+			FilePath     string
+			FileSize     int64
+			MimeType     string
+		}
+		s.db.WithContext(ctx).Table("uploads").
+			Select("model_id, id, original_name, file_path, file_size, mime_type").
+			Where("model_type IN ? AND model_id IN ? AND deleted_at IS NULL", []string{"product", "product_variant"}, topIDs).
+			Order("created_at DESC").
+			Scan(&uploads)
+		uploadMap := make(map[string][]*dto.UploadDTO)
+		for _, u := range uploads {
+			uploadMap[u.ModelID] = append(uploadMap[u.ModelID], &dto.UploadDTO{
+				ID:           u.ID,
+				OriginalName: u.OriginalName,
+				FilePath:     u.FilePath,
+				FileSize:     u.FileSize,
+				MimeType:     u.MimeType,
+			})
+		}
+		for _, p := range stats.TopProducts {
+			p.Images = uploadMap[p.ID]
+		}
 	}
 
 	// Orders by status

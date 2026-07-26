@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
+import { formatPrice } from '@/lib/format';
 import type { ApiResponse, Order, Product } from '@/types/api';
 
 interface RichOrderItem {
@@ -235,9 +236,9 @@ export default function OrderDetailPage() {
                   {items.map((item) => (
                     <tr key={item.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">{item.productName}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{item.price.toLocaleString('vi-VN')}₫</td>
+                      <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{formatPrice(item.price, order.currency_type)}</td>
                       <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{item.quantity}</td>
-                      <td className="px-6 py-4 text-sm font-medium text-blue-600 whitespace-nowrap">{(item.price * item.quantity).toLocaleString('vi-VN')}₫</td>
+                      <td className="px-6 py-4 text-sm font-medium text-blue-600 whitespace-nowrap">{formatPrice(item.price * item.quantity, order.currency_type)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -245,13 +246,13 @@ export default function OrderDetailPage() {
             </div>
             <div className="p-6 border-t border-gray-200 space-y-2 text-sm">
               <div className="flex justify-between text-gray-600">
-                <span>Tạm tính</span><span>{subtotal.toLocaleString('vi-VN')}₫</span>
+                <span>Tạm tính</span><span>{formatPrice(subtotal, order.currency_type)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
-                <span>Phí vận chuyển</span><span>{shippingFee === 0 ? 'Miễn phí' : `${shippingFee.toLocaleString('vi-VN')}₫`}</span>
+                <span>Phí vận chuyển</span><span>{shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee, order.currency_type)}</span>
               </div>
               <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t border-gray-200">
-                <span>Tổng cộng</span><span className="text-blue-600">{order.total_price.toLocaleString('vi-VN')}₫</span>
+                <span>Tổng cộng</span><span className="text-blue-600">{formatPrice(order.total_price, order.currency_type)}</span>
               </div>
             </div>
           </div>

@@ -8,7 +8,7 @@ import { api } from "@/lib/api";
 import { isLoggedIn } from "@/lib/auth";
 import { useCart } from "@/context/cart-context";
 import type { ApiResponse, Cart, CartItem, Product } from "@/types/api";
-import { formatPrice, getCartCurrencyType, getEffectiveShipping, getFreeShippingThreshold, PRODUCT_TYPE_JAPANESE, PRODUCT_TYPE_VIETNAMESE } from "@/lib/format";
+import { formatPrice, getCartCurrencyType, getEffectiveShipping, getFreeShippingThreshold, getFirstImageUrl, PRODUCT_TYPE_JAPANESE, PRODUCT_TYPE_VIETNAMESE } from "@/lib/format";
 
 interface RichCartItem extends CartItem {
   productName: string;
@@ -103,7 +103,7 @@ export default function CartPage() {
               return {
                 ...item,
                 productName: pRes.data.name,
-                productImage: pRes.data.avatar,
+                productImage: getFirstImageUrl(pRes.data.images) ?? pRes.data.avatar,
                 variantName,
                 shippingCost: pRes.data.shipping_cost ?? 0,
                 productType: pRes.data.product_type ?? 2,

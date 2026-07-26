@@ -5,6 +5,7 @@ import { Monitor, Smartphone } from "lucide-react";
 import { api } from "@/lib/api";
 import { ProductItem } from "@/components/ProductItem";
 import type { Product, Tag } from "@/types/api";
+import { getFirstImageUrl } from "@/lib/format";
 
 type DeviceMode = "desktop" | "mobile";
 
@@ -101,7 +102,7 @@ export function NewProductPreview({ tagIds, quantity, columns }: Props) {
               price={`${p.sale_price.toLocaleString()}d`}
               originalPrice={p.discount_percent > 0 ? `${p.default_price.toLocaleString()}d` : undefined}
               discountPercent={p.discount_percent > 0 ? p.discount_percent : undefined}
-              image={p.avatar}
+              image={getFirstImageUrl(p.images) ?? p.avatar}
             />
           ))}
         </div>

@@ -7,7 +7,7 @@ import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { products } from "@/lib/api-resources";
 import type { Product } from "@/types/api";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, getFirstImageUrl } from "@/lib/format";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -91,9 +91,9 @@ export function SearchDropdown() {
               onClick={handleSelect}
               className="flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors"
             >
-              {product.avatar && (
+              {(getFirstImageUrl(product.images) ?? product.avatar) && (
                 <Image
-                  src={product.avatar}
+                  src={getFirstImageUrl(product.images) ?? product.avatar ?? ""}
                   alt={product.name}
                   width={48}
                   height={48}
