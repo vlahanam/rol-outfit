@@ -20,7 +20,6 @@ type CreateVariantRequest struct {
 	Attributes      json.RawMessage `json:"attributes"`
 	Price           float64         `json:"price"`
 	Stock           int             `json:"stock"`
-	Avatar          string          `json:"avatar"`
 	DiscountPercent float64         `json:"discount_percent"`
 	DiscountStartAt *time.Time      `json:"discount_start_at"`
 	DiscountEndAt   *time.Time      `json:"discount_end_at"`
@@ -54,7 +53,6 @@ type UpdateVariantRequest struct {
 	Attributes      json.RawMessage `json:"attributes"`
 	Price           *float64        `json:"price"`
 	Stock           *int            `json:"stock"`
-	Avatar          *string         `json:"avatar"`
 	Status          *int8           `json:"status"`
 	DiscountPercent *float64        `json:"discount_percent"`
 	DiscountStartAt *time.Time      `json:"discount_start_at"`

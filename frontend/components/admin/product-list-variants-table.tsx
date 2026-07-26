@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { ImageIcon, Edit, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import type { AdminProduct } from "@/types/api";
-import { formatPrice } from "@/lib/format";
+import type { AdminProduct, UploadDTO } from "@/types/api";
+import { formatPrice, getUploadUrl } from "@/lib/format";
 
 type Props = {
   product: AdminProduct;
@@ -17,7 +17,8 @@ function stockBadge(stock: number) {
   return { label: "Còn hàng", cls: "bg-green-100 text-green-700" };
 }
 
-function VariantAvatarCell({ src }: { src?: string }) {
+function VariantAvatarCell({ images }: { images?: UploadDTO[] }) {
+  const src = getUploadUrl(images?.[0]);
   if (!src)
     return (
       <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center">
@@ -66,7 +67,7 @@ export function ProductListVariantsTable({ product, onDeleteVariant }: Props) {
                     {variant.id.slice(0, 8)}
                   </td>
                   <td className="px-4 py-2 whitespace-nowrap">
-                    <VariantAvatarCell src={variant.avatar} />
+                    <VariantAvatarCell images={variant.images} />
                   </td>
                   {product.attribute_names.map((attr) => (
                     <td key={attr} className="px-4 py-2 text-xs text-gray-900 whitespace-nowrap">

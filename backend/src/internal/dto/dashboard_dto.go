@@ -20,11 +20,11 @@ type RecentOrderDTO struct {
 }
 
 type TopProductDTO struct {
-	ID       string  `json:"id"`
-	Name     string  `json:"name"`
-	Avatar   string  `json:"avatar"`
-	Sold     int64   `json:"sold"`
-	Revenue  float64 `json:"revenue"`
+	ID       string       `json:"id"`
+	Name     string       `json:"name"`
+	Images   []*UploadDTO `json:"images,omitempty"`
+	Sold     int64        `json:"sold"`
+	Revenue  float64      `json:"revenue"`
 }
 
 type OrderStatusCountDTO struct {

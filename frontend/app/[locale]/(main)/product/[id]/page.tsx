@@ -18,7 +18,7 @@ import { isLoggedIn } from "@/lib/auth";
 import { useCart } from "@/context/cart-context";
 import { useFlyToCart } from "@/hooks/use-fly-to-cart";
 import type { ApiResponse, Product, ProductVariant, SizeGuideEntry, DeliveryInfoEntry } from "@/types/api";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, getUploadUrl } from "@/lib/format";
 
 const DEFAULT_SIZE_GUIDE: SizeGuideEntry[] = [
   { size: "M", height: "1m60 - 1m68", weight: "50 - 60kg" },
@@ -38,8 +38,21 @@ const DEFAULT_DELIVERY_INFO_JP: DeliveryInfoEntry[] = [
 
 function buildImages(p: Product | null, vs: ProductVariant[]): string[] {
   const out = new Set<string>();
+  if (p?.images) {
+    for (const img of p.images) {
+      const url = getUploadUrl(img);
+      if (url) out.add(url);
+    }
+  }
   if (p?.avatar) out.add(p.avatar);
-  for (const v of vs) if (v.avatar) out.add(v.avatar);
+  for (const v of vs) {
+    if (v.images) {
+      for (const img of v.images) {
+        const url = getUploadUrl(img);
+        if (url) out.add(url);
+      }
+    }
+  }
   return [...out];
 }
 
@@ -197,8 +210,9 @@ export default function ProductDetailPage() {
 
   // jump gallery to selected variant's image
   useEffect(() => {
-    if (variant?.avatar) {
-      const idx = images.indexOf(variant.avatar);
+    const variantImage = getUploadUrl(variant?.images?.[0]) ?? variant?.avatar;
+    if (variantImage) {
+      const idx = images.indexOf(variantImage);
       if (idx >= 0) setImageIdx(idx);
     }
   }, [variant, images]);
@@ -221,7 +235,7 @@ export default function ProductDetailPage() {
         quantity,
       });
       incrementCart(quantity);
-      flyToCart(images[imageIdx] ?? product.avatar ?? "");
+      flyToCart(images[imageIdx] ?? getUploadUrl(product.images?.[0]) ?? product.avatar ?? "");
       toast.success(t("addedToCart"));
     } catch {
       toast.error(t("addToCartFailed"));

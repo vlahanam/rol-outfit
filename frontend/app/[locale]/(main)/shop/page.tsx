@@ -8,7 +8,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import type { ApiResponse, Product, Category, Tag } from "@/types/api";
-import { formatPrice, PRODUCT_TYPE_JAPANESE, PRODUCT_TYPE_VIETNAMESE } from "@/lib/format";
+import { formatPrice, PRODUCT_TYPE_JAPANESE, PRODUCT_TYPE_VIETNAMESE, getFirstImageUrl } from "@/lib/format";
 
 function effectivePrice(p: Product): number {
   return p.sale_price ?? p.default_price;
@@ -234,7 +234,7 @@ export default function ShopPage() {
                       ? Math.round((1 - product.sale_price / product.default_price) * 100)
                       : undefined
                   }
-                  image={product.avatar}
+                  image={getFirstImageUrl(product.images) ?? product.avatar}
                   tags={product.tags}
                   maxTags={2}
                 />

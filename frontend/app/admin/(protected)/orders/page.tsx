@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Eye, Search, Calendar, ArrowUpDown, X, ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { formatPrice } from '@/lib/format';
 import type { ApiResponse, Order } from '@/types/api';
 
 // status code → label (matches backend models/order.go)
@@ -235,7 +236,7 @@ export default function ListOrderPage() {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">{order.shipping_address}</td>
                       <td className="px-6 py-4 text-sm font-medium text-blue-600 whitespace-nowrap">
-                        {order.total_price.toLocaleString('vi-VN')}₫
+                        {formatPrice(order.total_price, order.currency_type)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {order.transfer_bill ? (

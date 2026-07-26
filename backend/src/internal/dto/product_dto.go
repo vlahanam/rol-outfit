@@ -21,7 +21,7 @@ type ProductDTO struct {
 	Status          int8            `json:"status"`
 	ProductType     int8            `json:"product_type"`
 	AttributeNames  []string        `json:"attribute_names"`
-	Avatar          string          `json:"avatar,omitempty"`
+	Images          []*UploadDTO    `json:"images,omitempty"`
 	DiscountPercent float64         `json:"discount_percent"`
 	DiscountStartAt string          `json:"discount_start_at,omitempty"`
 	DiscountEndAt   string          `json:"discount_end_at,omitempty"`
@@ -60,7 +60,7 @@ func ToProductDTO(p *models.Product) *ProductDTO {
 		Status:          p.Status,
 		ProductType:     p.ProductType,
 		AttributeNames:  attrNames,
-		Avatar:          p.Avatar,
+		Images:          mapUploads(p.Uploads),
 		DiscountPercent: p.DiscountPercent,
 		DiscountStartAt: formatTimePtr(p.DiscountStartAt),
 		DiscountEndAt:   formatTimePtr(p.DiscountEndAt),
@@ -86,7 +86,7 @@ type LocalizedProductDTO struct {
 	Status          int8               `json:"status"`
 	ProductType     int8               `json:"product_type"`
 	AttributeNames  []string           `json:"attribute_names"`
-	Avatar          string             `json:"avatar,omitempty"`
+	Images          []*UploadDTO       `json:"images,omitempty"`
 	DiscountPercent float64            `json:"discount_percent"`
 	DiscountStartAt string             `json:"discount_start_at,omitempty"`
 	DiscountEndAt   string             `json:"discount_end_at,omitempty"`
@@ -117,7 +117,7 @@ func (p *ProductDTO) ToLocalized(lang string) *LocalizedProductDTO {
 		Status:          p.Status,
 		ProductType:     p.ProductType,
 		AttributeNames:  p.AttributeNames,
-		Avatar:          p.Avatar,
+		Images:          p.Images,
 		DiscountPercent: p.DiscountPercent,
 		DiscountStartAt: p.DiscountStartAt,
 		DiscountEndAt:   p.DiscountEndAt,
@@ -128,6 +128,17 @@ func (p *ProductDTO) ToLocalized(lang string) *LocalizedProductDTO {
 		CreatedAt:       p.CreatedAt,
 		UpdatedAt:       p.UpdatedAt,
 	}
+}
+
+func mapUploads(uploads []*models.Upload) []*UploadDTO {
+	if len(uploads) == 0 {
+		return nil
+	}
+	result := make([]*UploadDTO, 0, len(uploads))
+	for i := range uploads {
+		result = append(result, ToUploadDTO(uploads[i]))
+	}
+	return result
 }
 
 func getLocalizedJSON(vi, ja json.RawMessage, lang string) json.RawMessage {
@@ -151,7 +162,7 @@ type ProductWithVariantsDTO struct {
 	Status          int8                 `json:"status"`
 	ProductType     int8                 `json:"product_type"`
 	AttributeNames  []string             `json:"attribute_names"`
-	Avatar          string               `json:"avatar,omitempty"`
+	Images          []*UploadDTO         `json:"images,omitempty"`
 	DiscountPercent float64              `json:"discount_percent"`
 	DiscountStartAt string               `json:"discount_start_at,omitempty"`
 	DiscountEndAt   string               `json:"discount_end_at,omitempty"`
@@ -196,7 +207,7 @@ func ToProductWithVariantsDTO(p *models.ProductWithVariants) *ProductWithVariant
 		Status:          p.Status,
 		ProductType:     p.ProductType,
 		AttributeNames:  attrNames,
-		Avatar:          p.Avatar,
+		Images:          mapUploads(p.Uploads),
 		DiscountPercent: p.DiscountPercent,
 		DiscountStartAt: formatTimePtr(p.DiscountStartAt),
 		DiscountEndAt:   formatTimePtr(p.DiscountEndAt),

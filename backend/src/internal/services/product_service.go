@@ -28,19 +28,34 @@ type ProductService interface {
 }
 
 type productService struct {
-	repo repositories.ProductRepository
+	repo       repositories.ProductRepository
+	uploadRepo repositories.UploadRepository
 }
 
-func NewProductService(repo repositories.ProductRepository) ProductService {
-	return &productService{repo: repo}
+func NewProductService(repo repositories.ProductRepository, uploadRepo repositories.UploadRepository) ProductService {
+	return &productService{repo: repo, uploadRepo: uploadRepo}
 }
 
 func (s *productService) List(ctx context.Context, categoryID, search string, tagSlugs []string, sortMode string, productType int8, offset, limit int) ([]*models.Product, int64, error) {
-	return s.repo.ListProducts(ctx, categoryID, search, tagSlugs, sortMode, productType, offset, limit)
+	products, total, err := s.repo.ListProducts(ctx, categoryID, search, tagSlugs, sortMode, productType, offset, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+	if err := s.enrichProducts(ctx, products); err != nil {
+		return nil, 0, err
+	}
+	return products, total, nil
 }
 
 func (s *productService) AdminList(ctx context.Context, categoryID, search string, offset, limit int) ([]*models.ProductWithVariants, int64, error) {
-	return s.repo.ListAdminProductsWithVariants(ctx, categoryID, search, offset, limit)
+	products, total, err := s.repo.ListAdminProductsWithVariants(ctx, categoryID, search, offset, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+	if err := s.enrichProductVariants(ctx, products); err != nil {
+		return nil, 0, err
+	}
+	return products, total, nil
 }
 
 func (s *productService) GetByID(ctx context.Context, id string) (*models.Product, error) {
@@ -51,6 +66,11 @@ func (s *productService) GetByID(ctx context.Context, id string) (*models.Produc
 	if p == nil {
 		return nil, ErrProductNotFound
 	}
+	uploads, err := s.uploadRepo.ListUploadsByModel(ctx, "product", id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get product uploads: %w", err)
+	}
+	p.Uploads = uploads
 	return p, nil
 }
 
@@ -61,6 +81,9 @@ func (s *productService) AdminGetByID(ctx context.Context, id string) (*models.P
 	}
 	if pw == nil {
 		return nil, ErrProductNotFound
+	}
+	if err := s.enrichSingleProductVariants(ctx, pw); err != nil {
+		return nil, err
 	}
 	return pw, nil
 }
@@ -94,7 +117,6 @@ func (s *productService) Create(ctx context.Context, req *requests.CreateProduct
 		ShippingCost:    req.ShippingCost,
 		Description:     req.Description,
 		DescriptionJa:   req.DescriptionJa,
-		Avatar:          req.Avatar,
 		Status:          models.PRODUCT_STATUS_ACTIVE,
 		ProductType:     productType,
 		AttributeNames:  models.StringSlice(req.AttributeNames),
@@ -161,9 +183,6 @@ func (s *productService) Update(ctx context.Context, id string, req *requests.Up
 	if req.AttributeNames != nil {
 		fields["attribute_names"] = models.StringSlice(req.AttributeNames)
 	}
-	if req.Avatar != nil {
-		fields["avatar"] = *req.Avatar
-	}
 	if req.DiscountPercent != nil {
 		fields["discount_percent"] = *req.DiscountPercent
 		fields["discount_start_at"] = req.DiscountStartAt
@@ -197,4 +216,77 @@ func (s *productService) Delete(ctx context.Context, id string) error {
 		return ErrProductNotFound
 	}
 	return s.repo.SoftDeleteProduct(ctx, id)
+}
+
+func (s *productService) enrichProducts(ctx context.Context, products []*models.Product) error {
+	if len(products) == 0 {
+		return nil
+	}
+	ids := make([]string, len(products))
+	for i, p := range products {
+		ids[i] = p.ID
+	}
+	uploadMap, err := s.uploadRepo.ListUploadsByModels(ctx, "product", ids)
+	if err != nil {
+		return fmt.Errorf("failed to enrich products with uploads: %w", err)
+	}
+	for _, p := range products {
+		p.Uploads = uploadMap[p.ID]
+	}
+	return nil
+}
+
+func (s *productService) enrichProductVariants(ctx context.Context, products []*models.ProductWithVariants) error {
+	if len(products) == 0 {
+		return nil
+	}
+	prodIDs := make([]string, len(products))
+	var variantIDs []string
+	for i, pw := range products {
+		prodIDs[i] = pw.ID
+		for _, v := range pw.Variants {
+			variantIDs = append(variantIDs, v.ID)
+		}
+	}
+	prodUploadMap, err := s.uploadRepo.ListUploadsByModels(ctx, "product", prodIDs)
+	if err != nil {
+		return fmt.Errorf("failed to enrich product uploads: %w", err)
+	}
+	for _, pw := range products {
+		pw.Uploads = prodUploadMap[pw.ID]
+	}
+	if len(variantIDs) > 0 {
+		variantUploadMap, err := s.uploadRepo.ListUploadsByModels(ctx, "product_variant", variantIDs)
+		if err != nil {
+			return fmt.Errorf("failed to enrich variant uploads: %w", err)
+		}
+		for _, pw := range products {
+			for _, v := range pw.Variants {
+				v.Uploads = variantUploadMap[v.ID]
+			}
+		}
+	}
+	return nil
+}
+
+func (s *productService) enrichSingleProductVariants(ctx context.Context, pw *models.ProductWithVariants) error {
+	productUploads, err := s.uploadRepo.ListUploadsByModel(ctx, "product", pw.ID)
+	if err != nil {
+		return fmt.Errorf("failed to get product uploads: %w", err)
+	}
+	pw.Uploads = productUploads
+	if len(pw.Variants) > 0 {
+		var variantIDs []string
+		for _, v := range pw.Variants {
+			variantIDs = append(variantIDs, v.ID)
+		}
+		variantUploadMap, err := s.uploadRepo.ListUploadsByModels(ctx, "product_variant", variantIDs)
+		if err != nil {
+			return fmt.Errorf("failed to get variant uploads: %w", err)
+		}
+		for _, v := range pw.Variants {
+			v.Uploads = variantUploadMap[v.ID]
+		}
+	}
+	return nil
 }

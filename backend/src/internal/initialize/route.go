@@ -89,7 +89,7 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	cart.Delete("/items/:itemID", controllers.RemoveCartItem(db))
 
 	// Upload service (used by orders for bill upload and admin uploads)
-	uploadSvc, err := services.NewUploadService(cfg.AWSRegion, cfg.AWSAccessKeyID, cfg.AWSSecretAccessKey, cfg.AWSBucket, repo)
+	uploadSvc, err := services.NewUploadService(cfg.UploadDriver, cfg.AWSRegion, cfg.AWSAccessKeyID, cfg.AWSSecretAccessKey, cfg.AWSBucket, cfg.UploadDir, cfg.UploadURL, repo)
 	if err != nil {
 		panic(err)
 	}
@@ -157,6 +157,9 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	)
 	adminProductsGroup.Get("/", controllers.AdminListProducts(db))
 	adminProductsGroup.Get("/:id", controllers.AdminGetProduct(db))
+
+	// Public file serving (proxy for S3)
+	v1.Get("/files/*", controllers.GetFile(uploadSvc))
 
 	// Uploads (admin-only)
 	adminUploads := v1.Group("/uploads",

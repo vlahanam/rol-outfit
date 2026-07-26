@@ -81,6 +81,7 @@ export function BannerSliderEditor({ slides, onChange, activeIndex, onActiveChan
             value={slide.image}
             onChange={(url) => update({ image: url })}
             required
+            modelType="banner-slider"
           />
 
           <div className="grid gap-3">

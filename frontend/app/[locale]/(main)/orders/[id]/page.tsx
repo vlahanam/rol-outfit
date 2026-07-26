@@ -13,7 +13,7 @@ import { OrderStatusTimeline } from "@/components/orders/order-status-timeline";
 import { RefundRequestButton } from "@/components/orders/refund-request-button";
 import { CancelOrderModal } from "@/components/orders/cancel-order-modal";
 import type { ApiResponse, Order, Product } from "@/types/api";
-import { formatPrice, getCartCurrencyType } from "@/lib/format";
+import { formatPrice, getCartCurrencyType, getFirstImageUrl } from "@/lib/format";
 
 const ORDER_STATUS_AWAITING_PAYMENT = 1;
 const ORDER_STATUS_PAYMENT_SUBMITTED = 2;
@@ -65,7 +65,7 @@ export default function OrderDetailPage() {
               return {
                 ...item,
                 productName: pRes.data.name,
-                productImage: pRes.data.avatar,
+                productImage: getFirstImageUrl(pRes.data.images) ?? pRes.data.avatar,
                 productType: pRes.data.product_type ?? 2,
               };
             } catch {

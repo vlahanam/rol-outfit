@@ -22,7 +22,6 @@ type CreateProductRequest struct {
 	ShippingCost    float64         `json:"shipping_cost"`
 	Description     string          `json:"description"`
 	DescriptionJa   string          `json:"description_ja"`
-	Avatar          string          `json:"avatar"`
 	AttributeNames  []string        `json:"attribute_names"`
 	ProductType     int8            `json:"product_type"`
 	DiscountPercent float64         `json:"discount_percent"`
@@ -49,9 +48,6 @@ func (r CreateProductRequest) Validate() error {
 		validation.Field(&r.ShippingCost,
 			validation.Min(float64(0)).Error("validation.shipping_cost.invalid"),
 		),
-		validation.Field(&r.Avatar,
-			validation.Required.Error("validation.avatar.required"),
-		),
 		validation.Field(&r.DiscountPercent,
 			validation.Min(float64(0)).Error("validation.discount.invalid"),
 			validation.Max(float64(100)).Error("validation.discount.invalid"),
@@ -70,7 +66,6 @@ type UpdateProductRequest struct {
 	ShippingCost    *float64        `json:"shipping_cost"`
 	Description     *string         `json:"description"`
 	DescriptionJa   *string         `json:"description_ja"`
-	Avatar          *string         `json:"avatar"`
 	Status          *int8           `json:"status"`
 	ProductType     *int8           `json:"product_type"`
 	AttributeNames  []string        `json:"attribute_names"`

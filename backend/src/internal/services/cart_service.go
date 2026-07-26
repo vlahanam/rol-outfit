@@ -33,6 +33,7 @@ type cartService struct {
 	productRepo  repositories.ProductRepository
 	variantRepo  repositories.ProductVariantRepository
 	userRepo     repositories.UserRepository
+	uploadRepo   repositories.UploadRepository
 }
 
 func NewCartService(
@@ -40,12 +41,14 @@ func NewCartService(
 	cartItemRepo repositories.CartItemRepository,
 	productRepo repositories.ProductRepository,
 	variantRepo repositories.ProductVariantRepository,
+	uploadRepo repositories.UploadRepository,
 ) CartService {
 	return &cartService{
 		cartRepo:     cartRepo,
 		cartItemRepo: cartItemRepo,
 		productRepo:  productRepo,
 		variantRepo:  variantRepo,
+		uploadRepo:   uploadRepo,
 	}
 }
 
@@ -54,6 +57,7 @@ func NewCartServiceWithUserRepo(
 	cartItemRepo repositories.CartItemRepository,
 	productRepo repositories.ProductRepository,
 	variantRepo repositories.ProductVariantRepository,
+	uploadRepo repositories.UploadRepository,
 	userRepo repositories.UserRepository,
 ) CartService {
 	return &cartService{
@@ -61,6 +65,7 @@ func NewCartServiceWithUserRepo(
 		cartItemRepo: cartItemRepo,
 		productRepo:  productRepo,
 		variantRepo:  variantRepo,
+		uploadRepo:   uploadRepo,
 		userRepo:     userRepo,
 	}
 }
@@ -245,10 +250,13 @@ func (s *cartService) GetCartByID(ctx context.Context, cartID string) (*dto.Admi
 
 		product, _ := s.productRepo.FindProductByID(ctx, item.ProductID)
 		productName := ""
-		productImage := ""
+		var productImages []*dto.UploadDTO
 		if product != nil {
 			productName = product.Name
-			productImage = product.Avatar
+			uploads, _ := s.uploadRepo.ListUploadsByModel(ctx, "product", product.ID)
+			for _, u := range uploads {
+				productImages = append(productImages, dto.ToUploadDTO(u))
+			}
 		}
 
 		attrID := ""
@@ -262,15 +270,15 @@ func (s *cartService) GetCartByID(ctx context.Context, cartID string) (*dto.Admi
 		}
 
 		dtoItems = append(dtoItems, &dto.AdminCartItemDTO{
-			ID:           item.ID,
-			ProductID:    item.ProductID,
-			ProductName:  productName,
-			ProductImage: productImage,
-			AttrID:       attrID,
-			AttrName:     attrName,
-			PriceAtAdd:   item.PriceAtAdd,
-			Quantity:     item.Quantity,
-			Subtotal:     subtotal,
+			ID:            item.ID,
+			ProductID:     item.ProductID,
+			ProductName:   productName,
+			ProductImages: productImages,
+			AttrID:        attrID,
+			AttrName:      attrName,
+			PriceAtAdd:    item.PriceAtAdd,
+			Quantity:      item.Quantity,
+			Subtotal:      subtotal,
 		})
 	}
 

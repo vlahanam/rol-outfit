@@ -27,12 +27,13 @@ type ProductVariantService interface {
 }
 
 type productVariantService struct {
-	repo     repositories.ProductVariantRepository
-	prodRepo repositories.ProductRepository
+	repo       repositories.ProductVariantRepository
+	prodRepo   repositories.ProductRepository
+	uploadRepo repositories.UploadRepository
 }
 
-func NewProductVariantService(repo repositories.ProductVariantRepository, prodRepo repositories.ProductRepository) ProductVariantService {
-	return &productVariantService{repo: repo, prodRepo: prodRepo}
+func NewProductVariantService(repo repositories.ProductVariantRepository, prodRepo repositories.ProductRepository, uploadRepo repositories.UploadRepository) ProductVariantService {
+	return &productVariantService{repo: repo, prodRepo: prodRepo, uploadRepo: uploadRepo}
 }
 
 // validateAttributes ensures raw JSON keys match product's attribute_names exactly.
@@ -60,7 +61,14 @@ func validateAttributes(raw json.RawMessage, attrNames models.StringSlice) error
 }
 
 func (s *productVariantService) List(ctx context.Context, productID string, offset, limit int) ([]*models.ProductVariant, int64, error) {
-	return s.repo.ListVariants(ctx, productID, offset, limit)
+	variants, total, err := s.repo.ListVariants(ctx, productID, offset, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+	if err := s.enrichVariants(ctx, variants); err != nil {
+		return nil, 0, err
+	}
+	return variants, total, nil
 }
 
 func (s *productVariantService) GetByID(ctx context.Context, productID, id string) (*models.ProductVariant, error) {
@@ -74,6 +82,11 @@ func (s *productVariantService) GetByID(ctx context.Context, productID, id strin
 	if v.ProductID != productID {
 		return nil, ErrVariantForbidden
 	}
+	uploads, err := s.uploadRepo.ListUploadsByModel(ctx, "product_variant", id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get variant uploads: %w", err)
+	}
+	v.Uploads = uploads
 	return v, nil
 }
 
@@ -97,7 +110,6 @@ func (s *productVariantService) Create(ctx context.Context, productID string, re
 		Attributes:      req.Attributes,
 		Price:           req.Price,
 		Stock:           req.Stock,
-		Avatar:          req.Avatar,
 		Status:          models.VARIANT_STATUS_ACTIVE,
 		DiscountPercent: req.DiscountPercent,
 		DiscountStartAt: req.DiscountStartAt,
@@ -147,9 +159,6 @@ func (s *productVariantService) Update(ctx context.Context, productID, id string
 	if req.Stock != nil {
 		fields["stock"] = *req.Stock
 	}
-	if req.Avatar != nil {
-		fields["avatar"] = *req.Avatar
-	}
 	if req.Status != nil {
 		fields["status"] = *req.Status
 	}
@@ -177,4 +186,22 @@ func (s *productVariantService) Delete(ctx context.Context, productID, id string
 		return ErrVariantForbidden
 	}
 	return s.repo.DeleteVariant(ctx, id)
+}
+
+func (s *productVariantService) enrichVariants(ctx context.Context, variants []*models.ProductVariant) error {
+	if len(variants) == 0 {
+		return nil
+	}
+	ids := make([]string, len(variants))
+	for i, v := range variants {
+		ids[i] = v.ID
+	}
+	uploadMap, err := s.uploadRepo.ListUploadsByModels(ctx, "product_variant", ids)
+	if err != nil {
+		return fmt.Errorf("failed to enrich variants with uploads: %w", err)
+	}
+	for _, v := range variants {
+		v.Uploads = uploadMap[v.ID]
+	}
+	return nil
 }

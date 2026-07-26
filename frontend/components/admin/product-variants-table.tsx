@@ -9,10 +9,11 @@ import { api } from "@/lib/api";
 import { createVariantSchema } from "@/lib/validations";
 import { ImageUploader } from "@/components/admin/image-uploader";
 import { DeleteConfirmModal } from "@/components/admin/DeleteConfirmModal";
-import type { AdminProduct, ProductVariant } from "@/types/api";
-import { formatPrice } from "@/lib/format";
+import type { AdminProduct, ProductVariant, UploadDTO } from "@/types/api";
+import { formatPrice, getUploadUrl } from "@/lib/format";
 
-function VariantAvatarCell({ src }: { src?: string }) {
+function VariantAvatarCell({ images }: { images?: UploadDTO[] }) {
+  const src = getUploadUrl(images?.[0]);
   if (!src)
     return (
       <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center">
@@ -157,7 +158,7 @@ export function ProductVariantsTable({
                       </td>
                     ))}
                     <td className="px-4 py-2 whitespace-nowrap">
-                      <VariantAvatarCell src={v.avatar} />
+                      <VariantAvatarCell images={v.images} />
                     </td>
                     <td className="px-4 py-2 font-medium whitespace-nowrap">
                       {formatPrice(v.price, product.product_type)}

@@ -21,8 +21,8 @@ server {
     server_name roloutfit.io.vn;
 
     # SSL certificates (Cloudflare Origin)
-    ssl_certificate /etc/nginx/ssl/origin.pem;
-    ssl_certificate_key /etc/nginx/ssl/origin-key.pem;
+    ssl_certificate /etc/nginx/ssl/cf-roloutfit-cert.pem;
+    ssl_certificate_key /etc/nginx/ssl/cf-roloutfit-key.pem;
 
     # SSL settings
     ssl_protocols TLSv1.2 TLSv1.3;

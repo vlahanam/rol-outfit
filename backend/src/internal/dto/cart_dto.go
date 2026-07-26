@@ -70,13 +70,13 @@ type AdminCartDetailDTO struct {
 }
 
 type AdminCartItemDTO struct {
-	ID           string  `json:"id"`
-	ProductID    string  `json:"product_id"`
-	ProductName  string  `json:"product_name"`
-	ProductImage string  `json:"product_image"`
-	AttrID       string  `json:"attr_id,omitempty"`
-	AttrName     string  `json:"attr_name,omitempty"`
-	PriceAtAdd   float64 `json:"price_at_add"`
-	Quantity     int     `json:"quantity"`
-	Subtotal     float64 `json:"subtotal"`
+	ID            string       `json:"id"`
+	ProductID     string       `json:"product_id"`
+	ProductName   string       `json:"product_name"`
+	ProductImages []*UploadDTO `json:"product_images,omitempty"`
+	AttrID        string       `json:"attr_id,omitempty"`
+	AttrName      string       `json:"attr_name,omitempty"`
+	PriceAtAdd    float64      `json:"price_at_add"`
+	Quantity      int          `json:"quantity"`
+	Subtotal      float64      `json:"subtotal"`
 }

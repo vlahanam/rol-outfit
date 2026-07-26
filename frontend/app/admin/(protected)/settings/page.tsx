@@ -44,7 +44,7 @@ export default function SettingsPage() {
 
   const handleUploadVietQR = async (file: File) => {
     try {
-      const url = await uploads.upload(file);
+      const url = await uploads.upload(file, "settings");
       setQrData((prev) => ({ ...prev, viet_url: url }));
       toast.success('Đã tải lên ảnh QR Việt');
     } catch {

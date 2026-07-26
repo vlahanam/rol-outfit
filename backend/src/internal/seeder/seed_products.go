@@ -105,7 +105,6 @@ func SeedProducts(db *gorm.DB) (Result, error) {
 			Status:          models.PRODUCT_STATUS_ACTIVE,
 			ProductType:     p.ProductType,
 			AttributeNames:  p.AttributeNames,
-			Avatar:          "",
 			DiscountPercent: p.DiscountPercent,
 		}
 		if err := db.Create(&row).Error; err != nil {

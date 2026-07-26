@@ -15,6 +15,11 @@ import (
 	"gorm.io/gorm"
 )
 
+func variantServiceFromDB(db *gorm.DB) services.ProductVariantService {
+	repo := repositories.NewPostgreSQLStorage(db)
+	return services.NewProductVariantService(repo, repo, repo)
+}
+
 // ListVariants GET /api/v1/products/:productID/variants?page=&limit=
 func ListVariants(db *gorm.DB) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
@@ -34,7 +39,7 @@ func ListVariants(db *gorm.DB) fiber.Handler {
 		offset := (p.Page - 1) * p.Limit
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductVariantService(repo, repo)
+		svc := variantServiceFromDB(db)
 
 		variants, total, err := svc.List(ctx.Context(), productID, offset, p.Limit)
 		if err != nil {
@@ -70,7 +75,7 @@ func GetVariant(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductVariantService(repo, repo)
+		svc := variantServiceFromDB(db)
 
 		v, err := svc.GetByID(ctx.Context(), productID, id)
 		if err != nil {
@@ -114,8 +119,7 @@ func CreateVariant(db *gorm.DB) fiber.Handler {
 			return ctx.Status(fiber.StatusBadRequest).JSON(resp)
 		}
 
-		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductVariantService(repo, repo)
+		svc := variantServiceFromDB(db)
 
 		v, err := svc.Create(ctx.Context(), productID, &req)
 		if err != nil {
@@ -161,8 +165,7 @@ func UpdateVariant(db *gorm.DB) fiber.Handler {
 			return ctx.Status(fiber.StatusBadRequest).JSON(resp)
 		}
 
-		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductVariantService(repo, repo)
+		svc := variantServiceFromDB(db)
 
 		if err := svc.Update(ctx.Context(), productID, id, &req); err != nil {
 			if errors.Is(err, services.ErrVariantNotFound) || errors.Is(err, services.ErrVariantForbidden) {
@@ -197,8 +200,7 @@ func DeleteVariant(db *gorm.DB) fiber.Handler {
 			}
 		}
 
-		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewProductVariantService(repo, repo)
+		svc := variantServiceFromDB(db)
 
 		if err := svc.Delete(ctx.Context(), productID, id); err != nil {
 			if errors.Is(err, services.ErrVariantNotFound) || errors.Is(err, services.ErrVariantForbidden) {

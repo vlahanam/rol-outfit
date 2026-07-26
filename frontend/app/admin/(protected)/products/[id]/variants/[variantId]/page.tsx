@@ -7,7 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { ImageUploader } from "@/components/admin/image-uploader";
 import type { AdminProduct, ProductVariant } from "@/types/api";
-import { getCurrencyLabel } from "@/lib/format";
+import { getCurrencyLabel, getUploadUrl } from "@/lib/format";
 
 export default function EditVariantPage() {
   const router = useRouter();
@@ -41,7 +41,7 @@ export default function EditVariantPage() {
         setAttributes(v.attributes ?? {});
         setPrice(String(v.price));
         setStock(String(v.stock));
-        setAvatar(v.avatar ?? "");
+        setAvatar(getUploadUrl(v.images?.[0]) ?? v.avatar ?? "");
         setStatus(String(v.status));
         setDiscountPercent(String(v.discount_percent ?? 0));
         setDiscountStartAt(v.discount_start_at ? v.discount_start_at.slice(0, 16) : "");
@@ -122,6 +122,8 @@ export default function EditVariantPage() {
           value={avatar}
           onChange={setAvatar}
           label="Ảnh biến thể"
+          modelType="product_variant"
+          modelID={variantId}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
