@@ -1,0 +1,107 @@
+{
+  "validation.failed": "入力データが正しくありません",
+
+  "validation.full_name.required": "氏名は必須です",
+  "validation.full_name.length": "氏名は2文字以上255文字以下で入力してください",
+
+  "validation.email.required": "メールアドレスは必須です",
+  "validation.email.invalid": "メールアドレスの形式が正しくありません",
+
+  "validation.password.required": "パスワードは必須です",
+  "validation.password.length": "パスワードは8文字以上100文字以下で入力してください",
+
+  "validation.address.required": "住所は必須です",
+  "validation.postal_code.required": "郵便番号は必須です",
+  "validation.postal_code.empty": "郵便番号は必須です",
+  "validation.postal_code.invalid": "郵便番号が無効です",
+
+  "validation.phone.required": "電話番号は必須です",
+  "validation.phone.length": "電話番号は20文字以下で入力してください",
+
+  "validation.name.required": "名前は必須です",
+  "validation.name.length": "名前は2文字以上255文字以下で入力してください",
+
+  "validation.category_id.required": "カテゴリは必須です",
+  "validation.price.invalid": "価格が正しくありません",
+  "validation.avatar.required": "商品画像は必須です",
+
+  "validation.product_id.required": "商品は必須です",
+  "validation.quantity.min": "数量は1以上にしてください",
+
+  "validation.shipping_address.required": "配送先住所は必須です",
+
+  "error.invalid_payload": "リクエストの形式が正しくありません",
+  "error.invalid_id": "IDが無効です",
+  "error.email_already_exists": "このメールアドレスはすでに登録されています",
+  "error.phone_already_exists": "この電話番号はすでに別のアカウントで使用されています",
+  "error.invalid_credentials": "メールアドレスまたはパスワードが正しくありません",
+  "error.account_disabled": "アカウントが無効化されています",
+
+  "error.missing_token": "認証トークンがありません",
+  "error.invalid_token": "トークンが無効または期限切れです",
+  "error.forbidden": "この操作を行う権限がありません",
+
+  "error.category_not_found": "カテゴリが見つかりません",
+  "error.category_slug_taken": "このカテゴリURLはすでに使用されています",
+
+  "error.product_not_found": "商品が見つかりません",
+  "error.product_slug_taken": "この商品URLはすでに使用されています",
+
+  "error.cart_item_not_found": "カートの商品が見つかりません",
+  "error.cart_item_not_owned": "この操作を行う権限がありません",
+
+  "error.order_not_found": "注文が見つかりません",
+  "error.order_not_owned": "この注文を閲覧する権限がありません",
+  "error.cart_empty": "カートが空です",
+  "error.cannot_cancel": "現在のステータスでは注文をキャンセルできません",
+  "error.cannot_update_shipping": "処理中の注文の配送情報は変更できません",
+  "error.invalid_order_status": "注文ステータスが正しくありません",
+
+  "validation.order_status.required": "注文ステータスは必須です",
+  "validation.order_status.invalid": "注文ステータスは1から8の間で入力してください",
+  "error.not_awaiting_payment": "注文は支払い待ち状態ではありません",
+  "error.invalid_transition": "無効なステータス変更です",
+  "error.cannot_request_refund": "完了した注文のみ返金申請できます",
+  "error.not_refund_request": "注文は返金承認待ち状態ではありません",
+  "error.reason_required": "キャンセル理由を入力してください",
+  "error.invalid_status_transition": "無効なステータス変更です",
+
+  "error.user_not_found": "ユーザーが見つかりません",
+  "error.user_email_taken": "このメールアドレスはすでに別のアカウントで使用されています",
+  "error.invalid_password": "現在のパスワードが正しくありません",
+
+  "validation.current_password.required": "現在のパスワードを入力してください",
+  "validation.avatar.length": "プロフィール画像のURLが長すぎます",
+
+  "error.widget_not_found": "ウィジェットが見つかりません",
+
+  "validation.type.required": "ウィジェットタイプは必須です",
+  "validation.type.invalid": "ウィジェットタイプが無効です",
+  "validation.display_order.min": "表示順は0以上である必要があります",
+
+  "error.variant_not_found": "商品バリエーションが見つかりません",
+  "error.variant_attributes_mismatch": "バリアント属性が商品の属性名と一致しません",
+  "validation.attributes.required": "バリエーションの属性は必須です",
+  "validation.attributes.invalid": "バリエーションの属性が正しくありません",
+  "validation.stock.min": "在庫数は0以上にしてください",
+
+  "error.refresh_token_invalid": "リフレッシュトークンが無効です",
+  "error.refresh_token_expired": "リフレッシュトークンの有効期限が切れました",
+  "error.token_family_revoked": "セッションが失効しました。再度ログインしてください",
+  "validation.refresh_token.required": "リフレッシュトークンは必須です",
+
+  "error.tag_not_found": "タグが見つかりません",
+  "error.tag_slug_taken": "タグのスラッグは既に存在します",
+  "error.tag_invalid_window": "表示期間が無効です",
+
+  "error.too_many_tags": "1商品につき最大3タグまで",
+  "validation.tags.max_3": "最大3タグ",
+
+  "auth.oauth_failed": "ログインに失敗しました。もう一度お試しください。",
+  "auth.admin_oauth_forbidden": "管理者アカウントはOAuthでログインできません。",
+  "auth.cannot_unlink_last_method": "最後のログイン方法を解除することはできません。",
+
+  "error.file_required": "ファイルを選択してください",
+  "error.file_too_large": "ファイルサイズが大きすぎます",
+  "error.file_type_not_allowed": "このファイル形式はサポートされていません"
+}

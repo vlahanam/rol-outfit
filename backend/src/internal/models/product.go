@@ -1,0 +1,169 @@
+package models
+
+import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
+	"strings"
+	"time"
+
+	"gorm.io/gorm"
+)
+
+const (
+	PRODUCT_STATUS_ACTIVE = int8(1)
+	PRODUCT_STATUS_HIDDEN = int8(2)
+
+	PRODUCT_TYPE_JAPANESE   = int8(1)
+	PRODUCT_TYPE_VIETNAMESE = int8(2)
+)
+
+// StringSlice maps a Go []string to a PostgreSQL TEXT[] column.
+type StringSlice []string
+
+func (s StringSlice) Value() (driver.Value, error) {
+	if len(s) == 0 {
+		return "{}", nil
+	}
+	elems := make([]string, len(s))
+	for i, v := range s {
+		elems[i] = `"` + strings.ReplaceAll(strings.ReplaceAll(v, `\`, `\\`), `"`, `\"`) + `"`
+	}
+	return "{" + strings.Join(elems, ",") + "}", nil
+}
+
+func (s *StringSlice) Scan(src interface{}) error {
+	if src == nil {
+		*s = StringSlice{}
+		return nil
+	}
+	var str string
+	switch v := src.(type) {
+	case string:
+		str = v
+	case []byte:
+		str = string(v)
+	default:
+		return fmt.Errorf("StringSlice.Scan: unsupported type %T", src)
+	}
+	str = strings.TrimSpace(str)
+	if str == "{}" || str == "" {
+		*s = StringSlice{}
+		return nil
+	}
+	if !strings.HasPrefix(str, "{") || !strings.HasSuffix(str, "}") {
+		return fmt.Errorf("StringSlice.Scan: invalid array format")
+	}
+	*s = parseStringArray(str[1 : len(str)-1])
+	return nil
+}
+
+func parseStringArray(s string) StringSlice {
+	if s == "" {
+		return StringSlice{}
+	}
+	var result StringSlice
+	var cur strings.Builder
+	inQuote := false
+	escaped := false
+	for _, c := range s {
+		if escaped {
+			cur.WriteRune(c)
+			escaped = false
+			continue
+		}
+		switch c {
+		case '\\':
+			escaped = true
+		case '"':
+			inQuote = !inQuote
+		case ',':
+			if !inQuote {
+				result = append(result, cur.String())
+				cur.Reset()
+			} else {
+				cur.WriteRune(c)
+			}
+		default:
+			cur.WriteRune(c)
+		}
+	}
+	result = append(result, cur.String())
+	return result
+}
+
+// JSONB maps a Go value to a PostgreSQL JSONB column.
+type JSONB json.RawMessage
+
+func (j JSONB) Value() (driver.Value, error) {
+	if len(j) == 0 {
+		return nil, nil
+	}
+	return []byte(j), nil
+}
+
+func (j *JSONB) Scan(src interface{}) error {
+	if src == nil {
+		*j = nil
+		return nil
+	}
+	switch v := src.(type) {
+	case []byte:
+		*j = append((*j)[0:0], v...)
+	case string:
+		*j = []byte(v)
+	default:
+		return fmt.Errorf("JSONB.Scan: unsupported type %T", src)
+	}
+	return nil
+}
+
+func (j JSONB) MarshalJSON() ([]byte, error) {
+	if len(j) == 0 {
+		return []byte("null"), nil
+	}
+	return j, nil
+}
+
+func (j *JSONB) UnmarshalJSON(data []byte) error {
+	if j == nil {
+		return fmt.Errorf("JSONB.UnmarshalJSON: nil pointer")
+	}
+	*j = append((*j)[0:0], data...)
+	return nil
+}
+
+type Product struct {
+	ID              string         `gorm:"type:uuid;primaryKey"`
+	CategoryID      string         `gorm:"column:category_id;type:uuid"`
+	Name            string         `gorm:"column:name"`
+	NameJa          string         `gorm:"column:name_ja"`
+	Slug            string         `gorm:"column:slug"`
+	DefaultPrice    float64        `gorm:"column:default_price;type:numeric(12,2)"`
+	Description     string         `gorm:"column:description"`
+	DescriptionJa   string         `gorm:"column:description_ja"`
+	Status          int8           `gorm:"column:status"`
+	ProductType     int8           `gorm:"column:product_type"`
+	AttributeNames  StringSlice    `gorm:"column:attribute_names;type:text[]"`
+	DiscountPercent float64        `gorm:"column:discount_percent;type:numeric(5,2)"`
+	DiscountStartAt *time.Time     `gorm:"column:discount_start_at"`
+	DiscountEndAt   *time.Time     `gorm:"column:discount_end_at"`
+	ShippingCost    float64        `gorm:"column:shipping_cost;type:numeric(12,2);default:0"`
+	SizeGuide       JSONB          `gorm:"column:size_guide;type:jsonb"`
+	SizeGuideJa     JSONB          `gorm:"column:size_guide_ja;type:jsonb"`
+	DeliveryInfo    JSONB          `gorm:"column:delivery_info;type:jsonb"`
+	DeliveryInfoJa  JSONB          `gorm:"column:delivery_info_ja;type:jsonb"`
+	CreatedAt       time.Time      `gorm:"column:created_at"`
+	UpdatedAt       time.Time      `gorm:"column:updated_at"`
+	DeletedAt       gorm.DeletedAt `gorm:"column:deleted_at;index"`
+	Tags            []Tag          `gorm:"-"`
+	Uploads         []*Upload      `gorm:"-"`
+}
+
+func (Product) TableName() string { return "products" }
+
+// ProductWithVariants is used by admin queries that need product + all its variants.
+type ProductWithVariants struct {
+	*Product
+	Variants []*ProductVariant
+}

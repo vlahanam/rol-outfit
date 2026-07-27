@@ -1,0 +1,9 @@
+.claude/
+docker/.env
+docker/.env.prod
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Production SSL certificates
+nginx/ssl/*.pem
+nginx/ssl/*.key
