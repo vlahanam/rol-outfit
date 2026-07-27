@@ -22,29 +22,11 @@ func RunAll(db *gorm.DB) error {
 	}
 	log.Printf("[users] tạo mới: %d, bỏ qua: %d", usersRes.Created, usersRes.Skipped)
 
-	catsRes, err := SeedCategories(db)
-	if err != nil {
-		return err
-	}
-	log.Printf("[categories] tạo mới: %d, bỏ qua: %d", catsRes.Created, catsRes.Skipped)
-
 	tagsRes, err := SeedTags(db)
 	if err != nil {
 		return err
 	}
 	log.Printf("[tags] tạo mới: %d, bỏ qua: %d", tagsRes.Created, tagsRes.Skipped)
-
-	prodsRes, err := SeedProducts(db)
-	if err != nil {
-		return err
-	}
-	log.Printf("[products] tạo mới: %d, bỏ qua: %d", prodsRes.Created, prodsRes.Skipped)
-
-	variantsRes, err := SeedProductVariants(db)
-	if err != nil {
-		return err
-	}
-	log.Printf("[product_variants] tạo mới: %d, bỏ qua: %d", variantsRes.Created, variantsRes.Skipped)
 
 	productTagsRes, err := SeedProductTags(db)
 	if err != nil {
