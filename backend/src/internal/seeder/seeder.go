@@ -16,23 +16,11 @@ type Result struct {
 func RunAll(db *gorm.DB) error {
 	log.Println("=== bắt đầu seed dữ liệu ===")
 
-	usersRes, err := SeedUsers(db)
-	if err != nil {
-		return err
-	}
-	log.Printf("[users] tạo mới: %d, bỏ qua: %d", usersRes.Created, usersRes.Skipped)
-
 	tagsRes, err := SeedTags(db)
 	if err != nil {
 		return err
 	}
 	log.Printf("[tags] tạo mới: %d, bỏ qua: %d", tagsRes.Created, tagsRes.Skipped)
-
-	productTagsRes, err := SeedProductTags(db)
-	if err != nil {
-		return err
-	}
-	log.Printf("[product_tags] tạo mới: %d, bỏ qua: %d", productTagsRes.Created, productTagsRes.Skipped)
 
 	widgetsRes, err := SeedWidgets(db)
 	if err != nil {
