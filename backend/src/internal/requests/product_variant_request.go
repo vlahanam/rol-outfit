@@ -23,6 +23,7 @@ type CreateVariantRequest struct {
 	DiscountPercent float64         `json:"discount_percent"`
 	DiscountStartAt *time.Time      `json:"discount_start_at"`
 	DiscountEndAt   *time.Time      `json:"discount_end_at"`
+	UploadIDs       []string        `json:"upload_ids"`
 }
 
 func (r CreateVariantRequest) Validate() error {
@@ -57,6 +58,7 @@ type UpdateVariantRequest struct {
 	DiscountPercent *float64        `json:"discount_percent"`
 	DiscountStartAt *time.Time      `json:"discount_start_at"`
 	DiscountEndAt   *time.Time      `json:"discount_end_at"`
+	UploadIDs       []string        `json:"upload_ids"`
 }
 
 func (r UpdateVariantRequest) Validate() error {

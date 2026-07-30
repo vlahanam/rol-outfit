@@ -118,6 +118,13 @@ func (s *productVariantService) Create(ctx context.Context, productID string, re
 	if err := s.repo.CreateVariant(ctx, v); err != nil {
 		return nil, fmt.Errorf("failed to create variant: %w", err)
 	}
+
+	if len(req.UploadIDs) > 0 {
+		if err := s.uploadRepo.UpdateUploadsModelID(ctx, req.UploadIDs, "product_variant", v.ID); err != nil {
+			return nil, fmt.Errorf("failed to link variant uploads: %w", err)
+		}
+	}
+
 	return v, nil
 }
 
@@ -168,10 +175,27 @@ func (s *productVariantService) Update(ctx context.Context, productID, id string
 		fields["discount_end_at"] = req.DiscountEndAt
 	}
 
-	if len(fields) == 0 {
-		return nil
+	if len(fields) > 0 {
+		if err := s.repo.UpdateVariant(ctx, id, fields); err != nil {
+			return err
+		}
 	}
-	return s.repo.UpdateVariant(ctx, id, fields)
+
+	if len(req.UploadIDs) > 0 {
+		oldUploads, err := s.uploadRepo.ListUploadsByModel(ctx, "product_variant", id)
+		if err == nil {
+			oldIDs := make([]string, 0, len(oldUploads))
+			for _, u := range oldUploads {
+				oldIDs = append(oldIDs, u.ID)
+			}
+			_ = s.uploadRepo.ClearUploadsModelID(ctx, oldIDs)
+		}
+		if err := s.uploadRepo.UpdateUploadsModelID(ctx, req.UploadIDs, "product_variant", id); err != nil {
+			return fmt.Errorf("failed to link variant uploads: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func (s *productVariantService) Delete(ctx context.Context, productID, id string) error {

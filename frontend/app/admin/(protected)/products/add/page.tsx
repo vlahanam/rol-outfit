@@ -27,6 +27,7 @@ export default function AddProductPage() {
   const [description, setDescription] = useState("");
   const [descriptionJa, setDescriptionJa] = useState("");
   const [productAvatar, setProductAvatar] = useState("");
+  const [productUploadId, setProductUploadId] = useState("");
   const [productType, setProductType] = useState("2");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -167,8 +168,9 @@ export default function AddProductPage() {
         description,
         description_ja: descriptionJa || undefined,
         attribute_names: attributeNames,
-        avatar: productAvatar,
-        product_type: Number(productType) || 2,
+      avatar: productAvatar,
+      upload_ids: productUploadId ? [productUploadId] : [],
+      product_type: Number(productType) || 2,
         discount_percent: Number(discountPercent) || 0,
         discount_start_at: discountStartAt ? new Date(discountStartAt).toISOString() : null,
         discount_end_at: discountEndAt ? new Date(discountEndAt).toISOString() : null,
@@ -180,11 +182,13 @@ export default function AddProductPage() {
             const attrs = Object.fromEntries(
               attributeNames.map((k) => [k, v[k]]),
             );
+            const variantUploadId = (v as Record<string, string>).upload_id || "";
             return api.adminProducts.createVariant(created.id, {
               attributes: attrs,
               price: Number(v.price),
               stock: Number(v.stock),
               avatar: v.avatar || undefined,
+              upload_ids: variantUploadId ? [variantUploadId] : [],
             });
           }),
         );
@@ -239,6 +243,8 @@ export default function AddProductPage() {
               setProductAvatar(url);
               if (url) setFieldErrors((p) => { const n = { ...p }; delete n.avatar; return n; });
             }}
+            onUpload={(result) => setProductUploadId(result.id)}
+            modelType="product"
             required
             label="Ảnh sản phẩm"
             error={fieldErrors.avatar}
@@ -546,6 +552,8 @@ export default function AddProductPage() {
                     <ImageUploader
                       value={variant.avatar ?? ""}
                       onChange={(url) => updateVariant(i, "avatar", url)}
+                      onUpload={(result) => updateVariant(i, "upload_id", result.id)}
+                      modelType="product_variant"
                       label="Ảnh"
                     />
                   </div>

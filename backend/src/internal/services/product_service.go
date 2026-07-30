@@ -131,6 +131,13 @@ func (s *productService) Create(ctx context.Context, req *requests.CreateProduct
 	if err := s.repo.CreateProduct(ctx, p); err != nil {
 		return nil, fmt.Errorf("failed to create product: %w", err)
 	}
+
+	if len(req.UploadIDs) > 0 {
+		if err := s.uploadRepo.UpdateUploadsModelID(ctx, req.UploadIDs, "product", p.ID); err != nil {
+			return nil, fmt.Errorf("failed to link product uploads: %w", err)
+		}
+	}
+
 	return p, nil
 }
 
@@ -201,10 +208,27 @@ func (s *productService) Update(ctx context.Context, id string, req *requests.Up
 		fields["delivery_info_ja"] = models.JSONB(req.DeliveryInfoJa)
 	}
 
-	if len(fields) == 0 {
-		return nil
+	if len(fields) > 0 {
+		if err := s.repo.UpdateProduct(ctx, id, fields); err != nil {
+			return err
+		}
 	}
-	return s.repo.UpdateProduct(ctx, id, fields)
+
+	if len(req.UploadIDs) > 0 {
+		oldUploads, err := s.uploadRepo.ListUploadsByModel(ctx, "product", id)
+		if err == nil {
+			oldIDs := make([]string, 0, len(oldUploads))
+			for _, u := range oldUploads {
+				oldIDs = append(oldIDs, u.ID)
+			}
+			_ = s.uploadRepo.ClearUploadsModelID(ctx, oldIDs)
+		}
+		if err := s.uploadRepo.UpdateUploadsModelID(ctx, req.UploadIDs, "product", id); err != nil {
+			return fmt.Errorf("failed to link product uploads: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func (s *productService) Delete(ctx context.Context, id string) error {

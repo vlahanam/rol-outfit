@@ -259,6 +259,7 @@ export interface CreateProductPayload {
   description?: string;
   description_ja?: string;
   avatar: string;
+  upload_ids: string[];
   attribute_names: string[];
   product_type?: number;
   discount_percent?: number;
@@ -275,6 +276,7 @@ export interface UpdateProductPayload {
   description?: string;
   description_ja?: string;
   avatar?: string;
+  upload_ids?: string[];
   status?: number;
   product_type?: number;
   attribute_names?: string[];
@@ -294,6 +296,7 @@ export interface CreateVariantPayload {
   price: number;
   stock: number;
   avatar?: string;
+  upload_ids?: string[];
   discount_percent?: number;
   discount_start_at?: string | null;
   discount_end_at?: string | null;
@@ -306,6 +309,7 @@ export interface UpdateVariantPayload {
   price?: number;
   stock?: number;
   avatar?: string;
+  upload_ids?: string[];
   status?: number;
   discount_percent?: number;
   discount_start_at?: string | null;
