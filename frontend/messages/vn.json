@@ -212,7 +212,14 @@
     "maxAddresses": "Tối đa 5 địa chỉ",
     "confirmDelete": "Xóa địa chỉ này?",
     "noAddresses": "Chưa có địa chỉ nào",
-    "addFirst": "Thêm địa chỉ để dễ dàng thanh toán"
+    "addFirst": "Thêm địa chỉ để dễ dàng thanh toán",
+    "recipientNameRequired": "Vui lòng nhập tên người nhận",
+    "recipientNameTooShort": "Tên người nhận phải có ít nhất 2 ký tự",
+    "invalidPhone": "Số điện thoại không hợp lệ",
+    "addressTooShort": "Địa chỉ phải có ít nhất 10 ký tự",
+    "addressTooLong": "Địa chỉ không được quá 500 ký tự",
+    "postalCodeRequired": "Vui lòng nhập mã bưu điện",
+    "invalidPostalCode": "Mã bưu điện không hợp lệ (5-10 chữ số)"
   },
   "ProfilePage": {
     "title": "Thông tin tài khoản",

@@ -6,6 +6,8 @@ import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { isLoggedIn } from "@/lib/auth";
 import { userAddresses } from "@/lib/api-resources";
+import { ApiError } from "@/lib/api-client";
+import { createAddressSchema } from "@/lib/validations";
 import type { UserAddress } from "@/types/api";
 
 export default function AddressesPage() {
@@ -18,6 +20,8 @@ export default function AddressesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     recipient_name: "",
     phone: "",
@@ -48,6 +52,20 @@ export default function AddressesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setFieldErrors({});
+
+    const schema = createAddressSchema(t);
+    const result = schema.safeParse(formData);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        if (issue.path[0]) errors[issue.path[0] as string] = issue.message;
+      });
+      setFieldErrors(errors);
+      return;
+    }
+
     setSubmitting(true);
     try {
       if (editingId) {
@@ -57,8 +75,16 @@ export default function AddressesPage() {
       }
       await fetchAddresses();
       resetForm();
-    } catch {
-      // Handle error silently
+    } catch (err) {
+      if (err instanceof ApiError && err.details) {
+        const normalized: Record<string, string> = {};
+        for (const [key, msg] of Object.entries(err.details)) {
+          const snakeKey = key.replace(/([A-Z])/g, "_$1").toLowerCase().replace(/^_/, "");
+          normalized[snakeKey] = msg;
+        }
+        setFieldErrors(normalized);
+      }
+      setError(err instanceof ApiError ? err.message : tCommon("errorLoading"));
     } finally {
       setSubmitting(false);
     }
@@ -69,8 +95,8 @@ export default function AddressesPage() {
     try {
       await userAddresses.remove(id);
       await fetchAddresses();
-    } catch {
-      // Handle error silently
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : tCommon("errorLoading"));
     }
   };
 
@@ -78,8 +104,8 @@ export default function AddressesPage() {
     try {
       await userAddresses.setDefault(id);
       await fetchAddresses();
-    } catch {
-      // Handle error silently
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : tCommon("errorLoading"));
     }
   };
 
@@ -99,6 +125,8 @@ export default function AddressesPage() {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
+    setFieldErrors({});
+    setError(null);
     setFormData({ recipient_name: "", phone: "", address: "", postal_code: "", latitude: undefined, longitude: undefined });
   };
 
@@ -142,6 +170,11 @@ export default function AddressesPage() {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
+                  {error}
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t("recipientName")} *
@@ -149,10 +182,15 @@ export default function AddressesPage() {
                 <input
                   type="text"
                   value={formData.recipient_name}
-                  onChange={(e) => setFormData({ ...formData, recipient_name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, recipient_name: e.target.value });
+                    setFieldErrors((p) => ({ ...p, recipient_name: "" }));
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${fieldErrors.recipient_name ? "border-red-500" : "border-gray-300"}`}
                 />
+                {fieldErrors.recipient_name && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.recipient_name}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -161,10 +199,15 @@ export default function AddressesPage() {
                 <input
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, phone: e.target.value });
+                    setFieldErrors((p) => ({ ...p, phone: "" }));
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${fieldErrors.phone ? "border-red-500" : "border-gray-300"}`}
                 />
+                {fieldErrors.phone && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.phone}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -172,12 +215,17 @@ export default function AddressesPage() {
                 </label>
                 <textarea
                   value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  onChange={(e) => {
+                    setFormData({ ...formData, address: e.target.value });
+                    setFieldErrors((p) => ({ ...p, address: "" }));
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${fieldErrors.address ? "border-red-500" : "border-gray-300"}`}
                   rows={3}
                   placeholder={t("enterAddress")}
-                  required
                 />
+                {fieldErrors.address && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.address}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -186,11 +234,16 @@ export default function AddressesPage() {
                 <input
                   type="text"
                   value={formData.postal_code}
-                  onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    setFormData({ ...formData, postal_code: e.target.value });
+                    setFieldErrors((p) => ({ ...p, postal_code: "" }));
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${fieldErrors.postal_code ? "border-red-500" : "border-gray-300"}`}
                   placeholder="123-4567"
-                  required
                 />
+                {fieldErrors.postal_code && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.postal_code}</p>
+                )}
               </div>
               <div className="flex gap-3">
                 <button

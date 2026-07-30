@@ -21,6 +21,15 @@ export function createRegisterSchema(t: (key: string) => string) {
     });
 }
 
+export function createAddressSchema(t: (key: string) => string) {
+  return z.object({
+    recipient_name: z.string().min(1, t("recipientNameRequired")).min(2, t("recipientNameTooShort")),
+    phone: z.string().regex(/^[0-9]{9,15}$/, t("invalidPhone")),
+    address: z.string().min(10, t("addressTooShort")).max(500, t("addressTooLong")),
+    postal_code: z.string().min(1, t("postalCodeRequired")).regex(/^\d{5,10}$/, t("invalidPostalCode")),
+  });
+}
+
 export function createCheckoutSchema(t: (key: string) => string) {
   return z.object({
     shipping_address: z

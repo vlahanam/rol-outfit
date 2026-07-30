@@ -10,12 +10,19 @@
   "validation.password.required": "パスワードは必須です",
   "validation.password.length": "パスワードは8文字以上100文字以下で入力してください",
 
+  "validation.recipient_name.required": "受取人名は必須です",
+  "validation.recipient_name.empty": "受取人名は必須です",
+  "validation.recipient_name.length": "受取人名は1文字以上100文字以下で入力してください",
+
   "validation.address.required": "住所は必須です",
+  "validation.address.empty": "住所は必須です",
+  "validation.address.length": "住所は10文字以上500文字以下で入力してください",
   "validation.postal_code.required": "郵便番号は必須です",
   "validation.postal_code.empty": "郵便番号は必須です",
   "validation.postal_code.invalid": "郵便番号が無効です",
 
   "validation.phone.required": "電話番号は必須です",
+  "validation.phone.empty": "電話番号は必須です",
   "validation.phone.length": "電話番号は20文字以下で入力してください",
 
   "validation.name.required": "名前は必須です",
