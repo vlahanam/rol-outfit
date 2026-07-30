@@ -212,7 +212,14 @@
     "maxAddresses": "住所は最大5件まで",
     "confirmDelete": "この住所を削除しますか？",
     "noAddresses": "住所が登録されていません",
-    "addFirst": "住所を追加して簡単にチェックアウト"
+    "addFirst": "住所を追加して簡単にチェックアウト",
+    "recipientNameRequired": "受取人名を入力してください",
+    "recipientNameTooShort": "受取人名は2文字以上で入力してください",
+    "invalidPhone": "電話番号が無効です",
+    "addressTooShort": "住所は10文字以上で入力してください",
+    "addressTooLong": "住所は500文字以内で入力してください",
+    "postalCodeRequired": "郵便番号を入力してください",
+    "invalidPostalCode": "郵便番号が無効です（5〜10桁）"
   },
   "ProfilePage": {
     "title": "アカウント情報",

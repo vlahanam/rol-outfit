@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminHeader } from './AdminHeader';
-import { isAdmin, isLoggedIn } from '@/lib/auth';
+import { isAdmin, isLoggedIn, isTokenExpired, isTokenExpiringSoon, clearAuth } from '@/lib/auth';
+import { ensureTokenRefreshed } from '@/lib/api-client';
 import { useTokenRefresh } from '@/hooks/use-token-refresh';
 
 interface AdminLayoutProps {
@@ -17,18 +18,37 @@ export function AdminLayoutWrapper({ children }: AdminLayoutProps) {
   const [authorized, setAuthorized] = useState(false);
 
   const handleAuthFailure = useCallback(() => {
+    clearAuth();
     router.replace('/admin/login');
   }, [router]);
 
-  // Auto-refresh token and handle auth events (logout sync across tabs)
   useTokenRefresh({ enabled: authorized, requireAuth: true, onAuthFailure: handleAuthFailure });
 
   useEffect(() => {
-    if (!isLoggedIn() || !isAdmin()) {
-      router.replace('/admin/login');
-    } else {
-      setAuthorized(true);
+    let cancelled = false;
+
+    async function initAuth() {
+      if (!isLoggedIn() || !isAdmin()) {
+        if (!cancelled) router.replace('/admin/login');
+        return;
+      }
+
+      if (isTokenExpired() || isTokenExpiringSoon()) {
+        try {
+          await ensureTokenRefreshed();
+        } catch {
+          clearAuth();
+          if (!cancelled) router.replace('/admin/login');
+          return;
+        }
+      }
+
+      if (!cancelled) setAuthorized(true);
     }
+
+    initAuth();
+
+    return () => { cancelled = true; };
   }, [router]);
 
   if (!authorized) {

@@ -10,12 +10,19 @@
   "validation.password.required": "Mật khẩu không được để trống",
   "validation.password.length": "Mật khẩu phải từ 8 đến 100 ký tự",
 
+  "validation.recipient_name.required": "Tên người nhận không được để trống",
+  "validation.recipient_name.empty": "Tên người nhận không được để trống",
+  "validation.recipient_name.length": "Tên người nhận phải từ 1 đến 100 ký tự",
+
   "validation.address.required": "Địa chỉ không được để trống",
+  "validation.address.empty": "Địa chỉ không được để trống",
+  "validation.address.length": "Địa chỉ phải từ 10 đến 500 ký tự",
   "validation.postal_code.required": "Mã bưu điện không được để trống",
   "validation.postal_code.empty": "Mã bưu điện không được để trống",
   "validation.postal_code.invalid": "Mã bưu điện không hợp lệ",
 
   "validation.phone.required": "Số điện thoại không được để trống",
+  "validation.phone.empty": "Số điện thoại không được để trống",
   "validation.phone.length": "Số điện thoại tối đa 20 ký tự",
 
   "validation.name.required": "Tên không được để trống",

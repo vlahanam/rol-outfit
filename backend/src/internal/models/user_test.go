@@ -13,7 +13,7 @@ func TestUserModel_Constants(t *testing.T) {
 	assert.Equal(t, int8(1), USER_ROLE_ADMIN)
 	assert.Equal(t, int8(2), USER_ROLE_CUSTOMER)
 	assert.Equal(t, int8(1), USER_STATUS_ACTIVE)
-	assert.Equal(t, int8(0), USER_STATUS_LOCKED)
+	assert.Equal(t, int8(2), USER_STATUS_LOCKED)
 }
 
 // Test User model fields

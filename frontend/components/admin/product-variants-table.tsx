@@ -49,6 +49,7 @@ export function ProductVariantsTable({
 
   const [showAdd, setShowAdd] = useState(false);
   const [newVariant, setNewVariant] = useState<Record<string, string>>({});
+  const [variantUploadIds, setVariantUploadIds] = useState<Record<string, string>>({});
   const [addErrors, setAddErrors] = useState<Record<string, string>>({});
   const [addApiError, setAddApiError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -83,6 +84,7 @@ export function ProductVariantsTable({
     setAddApiError(null);
     try {
       const attrs = Object.fromEntries(attrNames.map((k) => [k, newVariant[k]]));
+      const uploadId = newVariant.avatar ? variantUploadIds[newVariant.avatar] : "";
       const { data: created } = await api.adminProducts.createVariant(
         product.id,
         {
@@ -90,6 +92,7 @@ export function ProductVariantsTable({
           price: Number(newVariant.price),
           stock: Number(newVariant.stock),
           avatar: newVariant.avatar || undefined,
+          upload_ids: uploadId ? [uploadId] : [],
         },
       );
       onVariantAdded(created);
@@ -214,6 +217,8 @@ export function ProductVariantsTable({
                     <ImageUploader
                       value={newVariant.avatar ?? ""}
                       onChange={(url) => setNewVariant((p) => ({ ...p, avatar: url }))}
+                      onUpload={(result) => setVariantUploadIds((p) => ({ ...p, [result.url]: result.id }))}
+                      modelType="product_variant"
                       label=""
                     />
                   </td>

@@ -222,7 +222,7 @@ export const adminCarts = {
 };
 
 export const uploads = {
-  async upload(file: File, modelType?: string, modelID?: string): Promise<string> {
+  async upload(file: File, modelType?: string, modelID?: string): Promise<{ id: string; url: string }> {
     const token = getToken();
     const form = new FormData();
     form.append("file", file);
@@ -249,7 +249,7 @@ export const uploads = {
     }
 
     const body = await res.json();
-    return body.data?.url ?? "";
+    return { id: body.data?.id ?? "", url: body.data?.url ?? "" };
   },
 
   delete(filename: string): Promise<void> {

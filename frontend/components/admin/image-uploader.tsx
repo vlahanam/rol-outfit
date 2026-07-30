@@ -5,12 +5,17 @@ import Image from "next/image";
 import { ImageIcon } from "lucide-react";
 import { api } from "@/lib/api";
 
+type UploadResult = { id: string; url: string };
+
 type Props = {
   value: string;
   onChange: (url: string) => void;
   required?: boolean;
   label?: string;
   error?: string;
+  modelType?: string;
+  modelID?: string;
+  onUpload?: (result: UploadResult) => void;
 };
 
 function filenameFromUrl(url: string): string {
@@ -26,7 +31,8 @@ export function ImageUploader({
   error,
   modelType,
   modelID,
-}: Props & { modelType?: string; modelID?: string }) {
+  onUpload,
+}: Props) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -42,11 +48,12 @@ export function ImageUploader({
     setUploading(true);
     setUploadError(null);
     try {
-      const newUrl = await api.uploads.upload(file, modelType, modelID);
+      const uploadResult = await api.uploads.upload(file, modelType, modelID);
       if (value) {
         api.uploads.delete(filenameFromUrl(value)).catch(() => {});
       }
-      onChange(newUrl);
+      onChange(uploadResult.url);
+      onUpload?.(uploadResult);
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Upload thất bại");
     } finally {

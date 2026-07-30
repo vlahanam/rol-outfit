@@ -19,11 +19,17 @@ func NewDashboardService(db *gorm.DB) *DashboardService {
 func (s *DashboardService) GetStats(ctx context.Context) (*dto.DashboardStatsDTO, error) {
 	stats := &dto.DashboardStatsDTO{}
 
-	// Total revenue from completed orders
+	// Total revenue JPY from completed orders
 	s.db.WithContext(ctx).Model(&models.Order{}).
-		Where("status = ?", models.ORDER_STATUS_COMPLETED).
-		Select("COALESCE(SUM(total_price + shipping_cost), 0)").
-		Scan(&stats.TotalRevenue)
+		Where("status = ? AND currency_type = ?", models.ORDER_STATUS_COMPLETED, models.PRODUCT_TYPE_JAPANESE).
+		Select("COALESCE(SUM(total_price), 0)").
+		Scan(&stats.TotalRevenueJPY)
+
+	// Total revenue VND from completed orders
+	s.db.WithContext(ctx).Model(&models.Order{}).
+		Where("status = ? AND currency_type = ?", models.ORDER_STATUS_COMPLETED, models.PRODUCT_TYPE_VIETNAMESE).
+		Select("COALESCE(SUM(total_price), 0)").
+		Scan(&stats.TotalRevenueVND)
 
 	// Total orders count
 	s.db.WithContext(ctx).Model(&models.Order{}).Count(&stats.TotalOrders)
@@ -36,15 +42,16 @@ func (s *DashboardService) GetStats(ctx context.Context) (*dto.DashboardStatsDTO
 
 	// Recent orders (last 10)
 	var recentOrders []struct {
-		ID         string
-		OrderCode  *string
-		FullName   string
-		TotalPrice float64
-		Status     int8
-		CreatedAt  string
+		ID           string
+		OrderCode    *string
+		FullName     string
+		TotalPrice   float64
+		CurrencyType int8
+		Status       int8
+		CreatedAt    string
 	}
 	s.db.WithContext(ctx).Table("orders").
-		Select("orders.id, orders.order_code, users.full_name, orders.total_price, orders.status, TO_CHAR(orders.created_at, 'DD/MM/YYYY') as created_at").
+		Select("orders.id, orders.order_code, users.full_name, orders.total_price, orders.currency_type, orders.status, TO_CHAR(orders.created_at, 'DD/MM/YYYY') as created_at").
 		Joins("LEFT JOIN users ON orders.user_id = users.id").
 		Where("orders.deleted_at IS NULL").
 		Order("orders.created_at DESC").
@@ -58,12 +65,13 @@ func (s *DashboardService) GetStats(ctx context.Context) (*dto.DashboardStatsDTO
 			orderCode = *o.OrderCode
 		}
 		stats.RecentOrders = append(stats.RecentOrders, dto.RecentOrderDTO{
-			ID:         o.ID,
-			OrderCode:  orderCode,
-			Customer:   o.FullName,
-			TotalPrice: o.TotalPrice,
-			Status:     o.Status,
-			CreatedAt:  o.CreatedAt,
+			ID:           o.ID,
+			OrderCode:    orderCode,
+			Customer:     o.FullName,
+			TotalPrice:   o.TotalPrice,
+			CurrencyType: o.CurrencyType,
+			Status:       o.Status,
+			CreatedAt:    o.CreatedAt,
 		})
 	}
 

@@ -6,15 +6,7 @@ import { Users, Package, ShoppingCart, DollarSign, TrendingUp, Loader2 } from 'l
 import { adminDashboard } from '@/lib/api-resources';
 import { OrderStatusBadge } from '@/components/orders/order-status-badge';
 import type { DashboardStats } from '@/types/api';
-import { getUploadUrl } from '@/lib/format';
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0,
-  }).format(value);
-}
+import { formatPrice, getUploadUrl } from '@/lib/format';
 
 function formatNumber(value: number): string {
   return new Intl.NumberFormat('vi-VN').format(value);
@@ -56,7 +48,8 @@ export default function DashboardPage() {
   }
 
   const statCards = [
-    { icon: DollarSign, label: 'Tổng Doanh Thu', value: formatCurrency(stats.total_revenue), bgColor: 'bg-green-50', iconColor: 'text-green-600' },
+    { icon: DollarSign, label: 'Doanh Thu (JPY)', value: formatPrice(stats.total_revenue_jpy, 1), bgColor: 'bg-red-50', iconColor: 'text-red-600' },
+    { icon: DollarSign, label: 'Doanh Thu (VND)', value: formatPrice(stats.total_revenue_vnd, 2), bgColor: 'bg-green-50', iconColor: 'text-green-600' },
     { icon: ShoppingCart, label: 'Đơn Hàng', value: formatNumber(stats.total_orders), bgColor: 'bg-blue-50', iconColor: 'text-blue-600' },
     { icon: Users, label: 'Người Dùng', value: formatNumber(stats.total_users), bgColor: 'bg-purple-50', iconColor: 'text-purple-600' },
     { icon: Package, label: 'Sản Phẩm', value: formatNumber(stats.total_products), bgColor: 'bg-orange-50', iconColor: 'text-orange-600' },
@@ -69,7 +62,7 @@ export default function DashboardPage() {
         <p className="text-gray-600">Tổng quan về hoạt động kinh doanh</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         {statCards.map((stat, index) => (
           <div key={index} className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
@@ -118,7 +111,7 @@ export default function DashboardPage() {
                         </Link>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{order.customer || 'N/A'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{formatCurrency(order.total_price)}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{formatPrice(order.total_price, order.currency_type)}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <OrderStatusBadge status={order.status} />
                       </td>
@@ -163,7 +156,7 @@ export default function DashboardPage() {
                       </Link>
                       <p className="text-xs text-gray-500">Đã bán: {formatNumber(product.sold)} sản phẩm</p>
                     </div>
-                    <p className="text-sm font-semibold text-blue-600 flex-shrink-0">{formatCurrency(product.revenue)}</p>
+                    <p className="text-sm font-semibold text-blue-600 flex-shrink-0">{formatPrice(product.revenue)}</p>
                   </div>
                 ))}
               </div>

@@ -31,6 +31,7 @@ type CreateProductRequest struct {
 	SizeGuideJa     json.RawMessage `json:"size_guide_ja"`
 	DeliveryInfo    json.RawMessage `json:"delivery_info"`
 	DeliveryInfoJa  json.RawMessage `json:"delivery_info_ja"`
+	UploadIDs       []string        `json:"upload_ids"`
 }
 
 func (r CreateProductRequest) Validate() error {
@@ -76,6 +77,7 @@ type UpdateProductRequest struct {
 	SizeGuideJa     json.RawMessage `json:"size_guide_ja"`
 	DeliveryInfo    json.RawMessage `json:"delivery_info"`
 	DeliveryInfoJa  json.RawMessage `json:"delivery_info_ja"`
+	UploadIDs       []string        `json:"upload_ids"`
 }
 
 func (r UpdateProductRequest) Validate() error {
