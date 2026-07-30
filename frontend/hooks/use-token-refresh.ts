@@ -27,6 +27,7 @@ interface UseTokenRefreshOptions {
 export function useTokenRefresh(options: UseTokenRefreshOptions = {}) {
   const { enabled = true, requireAuth = false, onAuthFailure } = options;
   const refreshingRef = useRef(false);
+  const versionRef = useRef(0);
 
   const doRefresh = useCallback(async (): Promise<boolean> => {
     if (refreshingRef.current) return true;
@@ -47,7 +48,11 @@ export function useTokenRefresh(options: UseTokenRefreshOptions = {}) {
   useEffect(() => {
     if (!enabled) return;
 
+    const myVersion = ++versionRef.current;
+
     const checkAndRefresh = async () => {
+      if (versionRef.current !== myVersion) return;
+
       if (!isLoggedIn()) {
         if (requireAuth && onAuthFailure) {
           onAuthFailure();
