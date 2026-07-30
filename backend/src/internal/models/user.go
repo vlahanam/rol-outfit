@@ -10,7 +10,7 @@ const USER_ROLE_ADMIN = int8(1)
 const USER_ROLE_CUSTOMER = int8(2)
 
 const USER_STATUS_ACTIVE = int8(1)
-const USER_STATUS_LOCKED = int8(0)
+const USER_STATUS_LOCKED = int8(2)
 
 // AuthTokens chứa access token và refresh token
 type AuthTokens struct {

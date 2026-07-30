@@ -472,7 +472,8 @@ export interface ApiErrorBody {
 
 // Dashboard
 export interface DashboardStats {
-  total_revenue: number;
+  total_revenue_jpy: number;
+  total_revenue_vnd: number;
   total_orders: number;
   total_users: number;
   total_products: number;
@@ -486,6 +487,7 @@ export interface RecentOrder {
   order_code: string;
   customer: string;
   total_price: number;
+  currency_type: number;
   status: number;
   created_at: string;
 }
