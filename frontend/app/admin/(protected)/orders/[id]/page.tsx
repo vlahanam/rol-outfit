@@ -102,9 +102,10 @@ export default function OrderDetailPage() {
     setUpdating(true);
     setStatusError(null);
     try {
-      const res = await api.put<ApiResponse<Order>>(`/admin/orders/${id}/status`, {
+      await api.put(`/admin/orders/${id}/status`, {
         status: newStatus,
       });
+      const res = await api.get<ApiResponse<Order>>(`/admin/orders/${id}`);
       setOrder(res.data);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Không thể cập nhật trạng thái';

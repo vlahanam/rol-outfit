@@ -125,6 +125,11 @@ func (s *productVariantService) Create(ctx context.Context, productID string, re
 		}
 	}
 
+	uploads, err := s.uploadRepo.ListUploadsByModel(ctx, "product_variant", v.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get variant uploads: %w", err)
+	}
+	v.Uploads = uploads
 	return v, nil
 }
 

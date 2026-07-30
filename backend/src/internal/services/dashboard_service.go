@@ -22,7 +22,7 @@ func (s *DashboardService) GetStats(ctx context.Context) (*dto.DashboardStatsDTO
 	// Total revenue from completed orders
 	s.db.WithContext(ctx).Model(&models.Order{}).
 		Where("status = ?", models.ORDER_STATUS_COMPLETED).
-		Select("COALESCE(SUM(total_price + shipping_cost), 0)").
+		Select("COALESCE(SUM(total_price), 0)").
 		Scan(&stats.TotalRevenue)
 
 	// Total orders count
