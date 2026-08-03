@@ -96,6 +96,8 @@ func uploadSubdir(modelType string) string {
 		return "products"
 	case "product_variant":
 		return "product-variants"
+	case "description":
+		return "descriptions"
 	case "banner-slider":
 		return "widgets/banner-sliders"
 	case "trend-hot":
