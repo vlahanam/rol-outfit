@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/vlahanam/rol-outfit/src/internal/models"
@@ -12,6 +13,11 @@ import (
 )
 
 var ErrWidgetNotFound = errors.New("widget not found")
+
+// widgetUploadTypes are the upload model types whose files may be referenced by widget settings.
+var widgetUploadTypes = []string{
+	"banner-slider", "trend-hot", "collection-grid", "new-product",
+}
 
 type WidgetService interface {
 	List(ctx context.Context, parentID *string, offset, limit int) ([]*models.Widget, int64, error)
@@ -24,11 +30,12 @@ type WidgetService interface {
 }
 
 type widgetService struct {
-	repo repositories.WidgetRepository
+	repo    repositories.WidgetRepository
+	cleaner UploadCleaner
 }
 
-func NewWidgetService(repo repositories.WidgetRepository) WidgetService {
-	return &widgetService{repo: repo}
+func NewWidgetService(repo repositories.WidgetRepository, cleaner UploadCleaner) WidgetService {
+	return &widgetService{repo: repo, cleaner: cleaner}
 }
 
 func (s *widgetService) List(ctx context.Context, parentID *string, offset, limit int) ([]*models.Widget, int64, error) {
@@ -132,7 +139,13 @@ func (s *widgetService) Update(ctx context.Context, id string, req *requests.Upd
 	if len(fields) == 0 {
 		return nil
 	}
-	return s.repo.UpdateWidget(ctx, id, fields)
+	if err := s.repo.UpdateWidget(ctx, id, fields); err != nil {
+		return err
+	}
+	if req.Settings != nil {
+		s.reconcileImages(ctx)
+	}
+	return nil
 }
 
 func (s *widgetService) Delete(ctx context.Context, id string) error {
@@ -143,5 +156,28 @@ func (s *widgetService) Delete(ctx context.Context, id string) error {
 	if existing == nil {
 		return ErrWidgetNotFound
 	}
-	return s.repo.DeleteWidget(ctx, id)
+	if err := s.repo.DeleteWidget(ctx, id); err != nil {
+		return err
+	}
+	s.reconcileImages(ctx)
+	return nil
+}
+
+// reconcileImages deletes widget image uploads whose files are not referenced by any widget settings/metadata.
+func (s *widgetService) reconcileImages(ctx context.Context) {
+	widgets, err := s.repo.ListAllWidgets(ctx)
+	if err != nil {
+		slog.Warn("failed to list widgets for image cleanup", "error", err)
+		return
+	}
+	texts := make([]string, 0, len(widgets)*2)
+	for _, w := range widgets {
+		texts = append(texts, string(w.Settings), string(w.Metadata))
+	}
+	keepKeys := s.cleaner.ExtractKeys(texts...)
+	for _, t := range widgetUploadTypes {
+		if err := s.cleaner.DeleteUnusedForType(ctx, t, keepKeys); err != nil {
+			slog.Warn("failed to clean unused widget uploads", "type", t, "error", err)
+		}
+	}
 }

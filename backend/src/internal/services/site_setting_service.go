@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/vlahanam/rol-outfit/src/internal/repositories"
 	"gorm.io/gorm"
@@ -35,11 +36,12 @@ type SiteSettingService interface {
 }
 
 type siteSettingService struct {
-	repo repositories.SiteSettingRepository
+	repo    repositories.SiteSettingRepository
+	cleaner UploadCleaner
 }
 
-func NewSiteSettingService(repo repositories.SiteSettingRepository) SiteSettingService {
-	return &siteSettingService{repo: repo}
+func NewSiteSettingService(repo repositories.SiteSettingRepository, cleaner UploadCleaner) SiteSettingService {
+	return &siteSettingService{repo: repo, cleaner: cleaner}
 }
 
 func (s *siteSettingService) GetSocialLinks(ctx context.Context) (*SocialLinksData, error) {
@@ -132,6 +134,10 @@ func (s *siteSettingService) UpdateQRData(ctx context.Context, data *QRData) err
 	}
 	if err := s.repo.UpdateSettings(ctx, settings); err != nil {
 		return fmt.Errorf("failed to update QR data: %w", err)
+	}
+	keepKeys := s.cleaner.ExtractKeys(data.VietURL)
+	if err := s.cleaner.DeleteUnusedForType(ctx, "settings", keepKeys); err != nil {
+		slog.Warn("failed to clean unused settings uploads", "error", err)
 	}
 	return nil
 }

@@ -16,13 +16,13 @@ import (
 	"gorm.io/gorm"
 )
 
-func productServiceFromDB(db *gorm.DB) services.ProductService {
+func productServiceFromDB(db *gorm.DB, cleaner services.UploadCleaner) services.ProductService {
 	repo := repositories.NewPostgreSQLStorage(db)
-	return services.NewProductService(repo, repo)
+	return services.NewProductService(repo, repo, cleaner)
 }
 
 // ListProducts GET /api/v1/products?category_id=&search=&tags=&tag=&sort=&product_type=&page=&limit=
-func ListProducts(db *gorm.DB) fiber.Handler {
+func ListProducts(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		var p common.Paging
 		if err := ctx.Bind().Query(&p); err != nil {
@@ -55,7 +55,7 @@ func ListProducts(db *gorm.DB) fiber.Handler {
 			tagSlugs = []string{singleTag}
 		}
 
-		svc := productServiceFromDB(db)
+		svc := productServiceFromDB(db, cleaner)
 
 		products, total, err := svc.List(ctx.Context(), categoryID, search, tagSlugs, sortMode, productType, offset, p.Limit)
 		if err != nil {
@@ -74,7 +74,7 @@ func ListProducts(db *gorm.DB) fiber.Handler {
 }
 
 // GetProduct GET /api/v1/products/:id
-func GetProduct(db *gorm.DB) fiber.Handler {
+func GetProduct(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		id := ctx.Params("id")
@@ -86,7 +86,7 @@ func GetProduct(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := productServiceFromDB(db)
+		svc := productServiceFromDB(db, cleaner)
 
 		p, err := svc.GetByID(ctx.Context(), id)
 		if err != nil {
@@ -110,7 +110,7 @@ func GetProduct(db *gorm.DB) fiber.Handler {
 }
 
 // CreateProduct POST /api/v1/products [admin]
-func CreateProduct(db *gorm.DB) fiber.Handler {
+func CreateProduct(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 
@@ -129,7 +129,7 @@ func CreateProduct(db *gorm.DB) fiber.Handler {
 			return ctx.Status(fiber.StatusBadRequest).JSON(resp)
 		}
 
-		svc := productServiceFromDB(db)
+		svc := productServiceFromDB(db, cleaner)
 
 		p, err := svc.Create(ctx.Context(), &req)
 		if err != nil {
@@ -146,7 +146,7 @@ func CreateProduct(db *gorm.DB) fiber.Handler {
 }
 
 // UpdateProduct PUT /api/v1/products/:id [admin]
-func UpdateProduct(db *gorm.DB) fiber.Handler {
+func UpdateProduct(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		id := ctx.Params("id")
@@ -172,7 +172,7 @@ func UpdateProduct(db *gorm.DB) fiber.Handler {
 			return ctx.Status(fiber.StatusBadRequest).JSON(resp)
 		}
 
-		svc := productServiceFromDB(db)
+		svc := productServiceFromDB(db, cleaner)
 
 		if err := svc.Update(ctx.Context(), id, &req); err != nil {
 			if errors.Is(err, services.ErrProductNotFound) {
@@ -193,7 +193,7 @@ func UpdateProduct(db *gorm.DB) fiber.Handler {
 }
 
 // DeleteProduct DELETE /api/v1/products/:id [admin]
-func DeleteProduct(db *gorm.DB) fiber.Handler {
+func DeleteProduct(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		id := ctx.Params("id")
@@ -204,7 +204,7 @@ func DeleteProduct(db *gorm.DB) fiber.Handler {
 			)
 		}
 
-		svc := productServiceFromDB(db)
+		svc := productServiceFromDB(db, cleaner)
 
 		if err := svc.Delete(ctx.Context(), id); err != nil {
 			if errors.Is(err, services.ErrProductNotFound) {
@@ -220,7 +220,7 @@ func DeleteProduct(db *gorm.DB) fiber.Handler {
 }
 
 // AdminGetProduct GET /api/v1/admin/products/:id [admin]
-func AdminGetProduct(db *gorm.DB) fiber.Handler {
+func AdminGetProduct(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		id := ctx.Params("id")
@@ -232,7 +232,7 @@ func AdminGetProduct(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := productServiceFromDB(db)
+		svc := productServiceFromDB(db, cleaner)
 
 		pw, err := svc.AdminGetByID(ctx.Context(), id)
 		if err != nil {
@@ -257,7 +257,7 @@ func AdminGetProduct(db *gorm.DB) fiber.Handler {
 
 // AdminListProducts GET /api/v1/admin/products?category_id=&search=&page=&limit= [admin]
 // Returns products with their variants, aggregated stock/sold totals, suitable for admin management.
-func AdminListProducts(db *gorm.DB) fiber.Handler {
+func AdminListProducts(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		var p common.Paging
 		if err := ctx.Bind().Query(&p); err != nil {
@@ -269,7 +269,7 @@ func AdminListProducts(db *gorm.DB) fiber.Handler {
 		search := ctx.Query("search")
 		offset := (p.Page - 1) * p.Limit
 
-		svc := productServiceFromDB(db)
+		svc := productServiceFromDB(db, cleaner)
 
 		products, total, err := svc.AdminList(ctx.Context(), categoryID, search, offset, p.Limit)
 		if err != nil {

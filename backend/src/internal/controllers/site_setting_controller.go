@@ -12,10 +12,10 @@ import (
 )
 
 // GetSocialLinks GET /api/v1/settings/social-links (public)
-func GetSocialLinks(db *gorm.DB) fiber.Handler {
+func GetSocialLinks(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewSiteSettingService(repo)
+		svc := services.NewSiteSettingService(repo, cleaner)
 
 		data, err := svc.GetSocialLinks(ctx.Context())
 		if err != nil {
@@ -27,7 +27,7 @@ func GetSocialLinks(db *gorm.DB) fiber.Handler {
 }
 
 // UpdateSocialLinks PUT /api/v1/admin/settings/social-links (admin)
-func UpdateSocialLinks(db *gorm.DB) fiber.Handler {
+func UpdateSocialLinks(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 
@@ -39,7 +39,7 @@ func UpdateSocialLinks(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewSiteSettingService(repo)
+		svc := services.NewSiteSettingService(repo, cleaner)
 
 		if err := svc.UpdateSocialLinks(ctx.Context(), &req); err != nil {
 			slog.Error("UpdateSocialLinks failed", "error", err)
@@ -50,10 +50,10 @@ func UpdateSocialLinks(db *gorm.DB) fiber.Handler {
 }
 
 // GetChatURL GET /api/v1/settings/chat-url (public)
-func GetChatURL(db *gorm.DB) fiber.Handler {
+func GetChatURL(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewSiteSettingService(repo)
+		svc := services.NewSiteSettingService(repo, cleaner)
 
 		url, err := svc.GetChatURL(ctx.Context())
 		if err != nil {
@@ -65,7 +65,7 @@ func GetChatURL(db *gorm.DB) fiber.Handler {
 }
 
 // UpdateChatURL PUT /api/v1/admin/settings/chat-url (admin)
-func UpdateChatURL(db *gorm.DB) fiber.Handler {
+func UpdateChatURL(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 
@@ -79,7 +79,7 @@ func UpdateChatURL(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewSiteSettingService(repo)
+		svc := services.NewSiteSettingService(repo, cleaner)
 
 		if err := svc.UpdateChatURL(ctx.Context(), req.ChatURL); err != nil {
 			slog.Error("UpdateChatURL failed", "error", err)
@@ -90,10 +90,10 @@ func UpdateChatURL(db *gorm.DB) fiber.Handler {
 }
 
 // GetQRData GET /api/v1/settings/qr (public)
-func GetQRData(db *gorm.DB) fiber.Handler {
+func GetQRData(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewSiteSettingService(repo)
+		svc := services.NewSiteSettingService(repo, cleaner)
 
 		data, err := svc.GetQRData(ctx.Context())
 		if err != nil {
@@ -105,7 +105,7 @@ func GetQRData(db *gorm.DB) fiber.Handler {
 }
 
 // UpdateQRData PUT /api/v1/admin/settings/qr (admin)
-func UpdateQRData(db *gorm.DB) fiber.Handler {
+func UpdateQRData(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 
@@ -117,7 +117,7 @@ func UpdateQRData(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewSiteSettingService(repo)
+		svc := services.NewSiteSettingService(repo, cleaner)
 
 		if err := svc.UpdateQRData(ctx.Context(), &req); err != nil {
 			slog.Error("UpdateQRData failed", "error", err)

@@ -16,7 +16,7 @@ import (
 )
 
 // AdminListWidgets GET /api/v1/admin/widgets [admin]
-func AdminListWidgets(db *gorm.DB) fiber.Handler {
+func AdminListWidgets(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		var p common.Paging
 		if err := ctx.Bind().Query(&p); err != nil {
@@ -37,7 +37,7 @@ func AdminListWidgets(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewWidgetService(repo)
+		svc := services.NewWidgetService(repo, cleaner)
 
 		widgets, total, err := svc.ListAdmin(ctx.Context(), parentID, offset, p.Limit)
 		if err != nil {
@@ -55,7 +55,7 @@ func AdminListWidgets(db *gorm.DB) fiber.Handler {
 }
 
 // AdminGetWidget GET /api/v1/admin/widgets/:id [admin]
-func AdminGetWidget(db *gorm.DB) fiber.Handler {
+func AdminGetWidget(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		id := ctx.Params("id")
@@ -67,7 +67,7 @@ func AdminGetWidget(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewWidgetService(repo)
+		svc := services.NewWidgetService(repo, cleaner)
 
 		w, err := svc.GetByIDAdmin(ctx.Context(), id)
 		if err != nil {
@@ -84,7 +84,7 @@ func AdminGetWidget(db *gorm.DB) fiber.Handler {
 }
 
 // ListWidgets GET /api/v1/widgets?parent_id=<uuid>
-func ListWidgets(db *gorm.DB) fiber.Handler {
+func ListWidgets(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		var p common.Paging
 		if err := ctx.Bind().Query(&p); err != nil {
@@ -105,7 +105,7 @@ func ListWidgets(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewWidgetService(repo)
+		svc := services.NewWidgetService(repo, cleaner)
 
 		widgets, total, err := svc.List(ctx.Context(), parentID, offset, p.Limit)
 		if err != nil {
@@ -124,7 +124,7 @@ func ListWidgets(db *gorm.DB) fiber.Handler {
 }
 
 // GetWidget GET /api/v1/widgets/:id
-func GetWidget(db *gorm.DB) fiber.Handler {
+func GetWidget(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		id := ctx.Params("id")
@@ -136,7 +136,7 @@ func GetWidget(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewWidgetService(repo)
+		svc := services.NewWidgetService(repo, cleaner)
 
 		w, err := svc.GetByID(ctx.Context(), id)
 		if err != nil {
@@ -153,7 +153,7 @@ func GetWidget(db *gorm.DB) fiber.Handler {
 }
 
 // CreateWidget POST /api/v1/widgets [admin]
-func CreateWidget(db *gorm.DB) fiber.Handler {
+func CreateWidget(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 
@@ -182,7 +182,7 @@ func CreateWidget(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewWidgetService(repo)
+		svc := services.NewWidgetService(repo, cleaner)
 
 		w, err := svc.Create(ctx.Context(), &req)
 		if err != nil {
@@ -199,7 +199,7 @@ func CreateWidget(db *gorm.DB) fiber.Handler {
 }
 
 // UpdateWidget PUT /api/v1/widgets/:id [admin]
-func UpdateWidget(db *gorm.DB) fiber.Handler {
+func UpdateWidget(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		id := ctx.Params("id")
@@ -226,7 +226,7 @@ func UpdateWidget(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewWidgetService(repo)
+		svc := services.NewWidgetService(repo, cleaner)
 
 		if err := svc.Update(ctx.Context(), id, &req); err != nil {
 			if errors.Is(err, services.ErrWidgetNotFound) {
@@ -242,7 +242,7 @@ func UpdateWidget(db *gorm.DB) fiber.Handler {
 }
 
 // DeleteWidget DELETE /api/v1/widgets/:id [admin]
-func DeleteWidget(db *gorm.DB) fiber.Handler {
+func DeleteWidget(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		id := ctx.Params("id")
@@ -254,7 +254,7 @@ func DeleteWidget(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := services.NewWidgetService(repo)
+		svc := services.NewWidgetService(repo, cleaner)
 
 		if err := svc.Delete(ctx.Context(), id); err != nil {
 			if errors.Is(err, services.ErrWidgetNotFound) {

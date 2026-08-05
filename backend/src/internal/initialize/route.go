@@ -29,6 +29,12 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 
 	api := app.Group("/api")
 
+	// Upload service (used by orders for bill upload, admin uploads, and orphan cleanup)
+	uploadSvc, err := services.NewUploadService(cfg.UploadDriver, cfg.AWSRegion, cfg.AWSAccessKeyID, cfg.AWSSecretAccessKey, cfg.AWSBucket, cfg.UploadDir, cfg.UploadURL, repo)
+	if err != nil {
+		panic(err)
+	}
+
 	api.Get("/health", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"status": "ok"})
 	})
@@ -60,20 +66,20 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	jwtAuth := middleware.JWTAuth(jwtSecret)
 	requireAdmin := middleware.RequireRole(float64(models.USER_ROLE_ADMIN))
 	prods := v1.Group("/products")
-	prods.Get("/", controllers.ListProducts(db))
-	prods.Get("/:id", controllers.GetProduct(db))
-	prods.Post("/", jwtAuth, requireAdmin, controllers.CreateProduct(db))
-	prods.Put("/:id", jwtAuth, requireAdmin, controllers.UpdateProduct(db))
+	prods.Get("/", controllers.ListProducts(db, uploadSvc))
+	prods.Get("/:id", controllers.GetProduct(db, uploadSvc))
+	prods.Post("/", jwtAuth, requireAdmin, controllers.CreateProduct(db, uploadSvc))
+	prods.Put("/:id", jwtAuth, requireAdmin, controllers.UpdateProduct(db, uploadSvc))
 	prods.Put("/:id/tags", jwtAuth, requireAdmin, controllers.AssignProductTags(db))
-	prods.Delete("/:id", jwtAuth, requireAdmin, controllers.DeleteProduct(db))
+	prods.Delete("/:id", jwtAuth, requireAdmin, controllers.DeleteProduct(db, uploadSvc))
 
 	// Product Variants (nested under products)
 	variants := v1.Group("/products/:productID/variants")
-	variants.Get("/", controllers.ListVariants(db))
-	variants.Get("/:id", controllers.GetVariant(db))
-	variants.Post("/", jwtAuth, requireAdmin, controllers.CreateVariant(db))
-	variants.Put("/:id", jwtAuth, requireAdmin, controllers.UpdateVariant(db))
-	variants.Delete("/:id", jwtAuth, requireAdmin, controllers.DeleteVariant(db))
+	variants.Get("/", controllers.ListVariants(db, uploadSvc))
+	variants.Get("/:id", controllers.GetVariant(db, uploadSvc))
+	variants.Post("/", jwtAuth, requireAdmin, controllers.CreateVariant(db, uploadSvc))
+	variants.Put("/:id", jwtAuth, requireAdmin, controllers.UpdateVariant(db, uploadSvc))
+	variants.Delete("/:id", jwtAuth, requireAdmin, controllers.DeleteVariant(db, uploadSvc))
 
 	// Product Reviews (public read, auth for write)
 	prods.Get("/:id/reviews", controllers.ListProductReviews(db))
@@ -89,11 +95,6 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	cart.Delete("/items/:itemID", controllers.RemoveCartItem(db))
 
 	// Upload service (used by orders for bill upload and admin uploads)
-	uploadSvc, err := services.NewUploadService(cfg.UploadDriver, cfg.AWSRegion, cfg.AWSAccessKeyID, cfg.AWSSecretAccessKey, cfg.AWSBucket, cfg.UploadDir, cfg.UploadURL, repo)
-	if err != nil {
-		panic(err)
-	}
-
 	// Email service (used for order notifications)
 	emailSvc := services.NewEmailService(
 		cfg.SmtpHost, cfg.SmtpPort, cfg.SmtpUser, cfg.SmtpPassword,
@@ -155,8 +156,8 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 		middleware.JWTAuth(jwtSecret),
 		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
 	)
-	adminProductsGroup.Get("/", controllers.AdminListProducts(db))
-	adminProductsGroup.Get("/:id", controllers.AdminGetProduct(db))
+	adminProductsGroup.Get("/", controllers.AdminListProducts(db, uploadSvc))
+	adminProductsGroup.Get("/:id", controllers.AdminGetProduct(db, uploadSvc))
 
 	// Public file serving (proxy for S3)
 	v1.Get("/files/*", controllers.GetFile(uploadSvc))
@@ -191,17 +192,17 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 		middleware.JWTAuth(jwtSecret),
 		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
 	)
-	adminWidgetsGroup.Get("/", controllers.AdminListWidgets(db))
-	adminWidgetsGroup.Get("/:id", controllers.AdminGetWidget(db))
+	adminWidgetsGroup.Get("/", controllers.AdminListWidgets(db, uploadSvc))
+	adminWidgetsGroup.Get("/:id", controllers.AdminGetWidget(db, uploadSvc))
 
 	// Widgets
 	widgets := v1.Group("/widgets")
-	widgets.Get("/", controllers.ListWidgets(db))
-	widgets.Get("/:id", controllers.GetWidget(db))
+	widgets.Get("/", controllers.ListWidgets(db, uploadSvc))
+	widgets.Get("/:id", controllers.GetWidget(db, uploadSvc))
 	adminWidgets := widgets.Use(middleware.JWTAuth(jwtSecret), middleware.RequireRole(float64(models.USER_ROLE_ADMIN)))
-	adminWidgets.Post("/", controllers.CreateWidget(db))
-	adminWidgets.Put("/:id", controllers.UpdateWidget(db))
-	adminWidgets.Delete("/:id", controllers.DeleteWidget(db))
+	adminWidgets.Post("/", controllers.CreateWidget(db, uploadSvc))
+	adminWidgets.Put("/:id", controllers.UpdateWidget(db, uploadSvc))
+	adminWidgets.Delete("/:id", controllers.DeleteWidget(db, uploadSvc))
 
 	// Users — self profile
 	me := v1.Group("/users", middleware.JWTAuth(jwtSecret))
@@ -231,18 +232,18 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 
 	// Site settings (public)
 	settings := v1.Group("/settings")
-	settings.Get("/social-links", controllers.GetSocialLinks(db))
-	settings.Get("/chat-url", controllers.GetChatURL(db))
-	settings.Get("/qr", controllers.GetQRData(db))
+	settings.Get("/social-links", controllers.GetSocialLinks(db, uploadSvc))
+	settings.Get("/chat-url", controllers.GetChatURL(db, uploadSvc))
+	settings.Get("/qr", controllers.GetQRData(db, uploadSvc))
 
 	// Admin settings
 	adminSettings := v1.Group("/admin/settings",
 		middleware.JWTAuth(jwtSecret),
 		middleware.RequireRole(float64(models.USER_ROLE_ADMIN)),
 	)
-	adminSettings.Put("/social-links", controllers.UpdateSocialLinks(db))
-	adminSettings.Put("/chat-url", controllers.UpdateChatURL(db))
-	adminSettings.Put("/qr", controllers.UpdateQRData(db))
+	adminSettings.Put("/social-links", controllers.UpdateSocialLinks(db, uploadSvc))
+	adminSettings.Put("/chat-url", controllers.UpdateChatURL(db, uploadSvc))
+	adminSettings.Put("/qr", controllers.UpdateQRData(db, uploadSvc))
 
 	// Admin reviews
 	adminReviews := v1.Group("/admin/reviews",

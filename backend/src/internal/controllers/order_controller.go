@@ -279,6 +279,12 @@ func UploadOrderBill(db *gorm.DB, svc services.UploadService, maxSize int64) fib
 			slog.Error("UploadOrderBill: upload failed", "error", err)
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
+
+		keepKeys := svc.ExtractKeys(result.URL)
+		if err := svc.DeleteUnusedForModel(ctx.Context(), "order", orderID, keepKeys); err != nil {
+			slog.Warn("UploadOrderBill: failed to delete old bill uploads", "order_id", orderID, "error", err)
+		}
+
 		return ctx.JSON(common.ResponseData(result))
 	}
 }

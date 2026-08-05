@@ -15,13 +15,13 @@ import (
 	"gorm.io/gorm"
 )
 
-func variantServiceFromDB(db *gorm.DB) services.ProductVariantService {
+func variantServiceFromDB(db *gorm.DB, cleaner services.UploadCleaner) services.ProductVariantService {
 	repo := repositories.NewPostgreSQLStorage(db)
-	return services.NewProductVariantService(repo, repo, repo)
+	return services.NewProductVariantService(repo, repo, repo, cleaner)
 }
 
 // ListVariants GET /api/v1/products/:productID/variants?page=&limit=
-func ListVariants(db *gorm.DB) fiber.Handler {
+func ListVariants(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		productID := ctx.Params("productID")
@@ -39,7 +39,7 @@ func ListVariants(db *gorm.DB) fiber.Handler {
 		offset := (p.Page - 1) * p.Limit
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := variantServiceFromDB(db)
+		svc := variantServiceFromDB(db, cleaner)
 
 		variants, total, err := svc.List(ctx.Context(), productID, offset, p.Limit)
 		if err != nil {
@@ -60,7 +60,7 @@ func ListVariants(db *gorm.DB) fiber.Handler {
 }
 
 // GetVariant GET /api/v1/products/:productID/variants/:id
-func GetVariant(db *gorm.DB) fiber.Handler {
+func GetVariant(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		productID := ctx.Params("productID")
@@ -75,7 +75,7 @@ func GetVariant(db *gorm.DB) fiber.Handler {
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
-		svc := variantServiceFromDB(db)
+		svc := variantServiceFromDB(db, cleaner)
 
 		v, err := svc.GetByID(ctx.Context(), productID, id)
 		if err != nil {
@@ -94,7 +94,7 @@ func GetVariant(db *gorm.DB) fiber.Handler {
 }
 
 // CreateVariant POST /api/v1/products/:productID/variants [admin]
-func CreateVariant(db *gorm.DB) fiber.Handler {
+func CreateVariant(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		productID := ctx.Params("productID")
@@ -119,7 +119,7 @@ func CreateVariant(db *gorm.DB) fiber.Handler {
 			return ctx.Status(fiber.StatusBadRequest).JSON(resp)
 		}
 
-		svc := variantServiceFromDB(db)
+		svc := variantServiceFromDB(db, cleaner)
 
 		v, err := svc.Create(ctx.Context(), productID, &req)
 		if err != nil {
@@ -136,7 +136,7 @@ func CreateVariant(db *gorm.DB) fiber.Handler {
 }
 
 // UpdateVariant PUT /api/v1/products/:productID/variants/:id [admin]
-func UpdateVariant(db *gorm.DB) fiber.Handler {
+func UpdateVariant(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		productID := ctx.Params("productID")
@@ -165,7 +165,7 @@ func UpdateVariant(db *gorm.DB) fiber.Handler {
 			return ctx.Status(fiber.StatusBadRequest).JSON(resp)
 		}
 
-		svc := variantServiceFromDB(db)
+		svc := variantServiceFromDB(db, cleaner)
 
 		if err := svc.Update(ctx.Context(), productID, id, &req); err != nil {
 			if errors.Is(err, services.ErrVariantNotFound) || errors.Is(err, services.ErrVariantForbidden) {
@@ -186,7 +186,7 @@ func UpdateVariant(db *gorm.DB) fiber.Handler {
 }
 
 // DeleteVariant DELETE /api/v1/products/:productID/variants/:id [admin]
-func DeleteVariant(db *gorm.DB) fiber.Handler {
+func DeleteVariant(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		productID := ctx.Params("productID")
@@ -200,7 +200,7 @@ func DeleteVariant(db *gorm.DB) fiber.Handler {
 			}
 		}
 
-		svc := variantServiceFromDB(db)
+		svc := variantServiceFromDB(db, cleaner)
 
 		if err := svc.Delete(ctx.Context(), productID, id); err != nil {
 			if errors.Is(err, services.ErrVariantNotFound) || errors.Is(err, services.ErrVariantForbidden) {

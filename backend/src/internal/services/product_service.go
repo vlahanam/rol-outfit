@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/vlahanam/rol-outfit/src/internal/common"
@@ -30,10 +31,11 @@ type ProductService interface {
 type productService struct {
 	repo       repositories.ProductRepository
 	uploadRepo repositories.UploadRepository
+	cleaner    UploadCleaner
 }
 
-func NewProductService(repo repositories.ProductRepository, uploadRepo repositories.UploadRepository) ProductService {
-	return &productService{repo: repo, uploadRepo: uploadRepo}
+func NewProductService(repo repositories.ProductRepository, uploadRepo repositories.UploadRepository, cleaner UploadCleaner) ProductService {
+	return &productService{repo: repo, uploadRepo: uploadRepo, cleaner: cleaner}
 }
 
 func (s *productService) List(ctx context.Context, categoryID, search string, tagSlugs []string, sortMode string, productType int8, offset, limit int) ([]*models.Product, int64, error) {
@@ -214,18 +216,31 @@ func (s *productService) Update(ctx context.Context, id string, req *requests.Up
 		}
 	}
 
-	if len(req.UploadIDs) > 0 {
+	if req.UploadIDs != nil {
 		oldUploads, err := s.uploadRepo.ListUploadsByModel(ctx, "product", id)
-		if err == nil {
-			oldIDs := make([]string, 0, len(oldUploads))
-			for _, u := range oldUploads {
-				oldIDs = append(oldIDs, u.ID)
+		if err != nil {
+			return fmt.Errorf("failed to list product uploads: %w", err)
+		}
+		keep := make(map[string]struct{}, len(req.UploadIDs))
+		for _, uid := range req.UploadIDs {
+			keep[uid] = struct{}{}
+		}
+		keepKeys := make([]string, 0, len(oldUploads))
+		for _, u := range oldUploads {
+			if _, ok := keep[u.ID]; ok {
+				keepKeys = append(keepKeys, u.FilePath)
 			}
-			_ = s.uploadRepo.ClearUploadsModelID(ctx, oldIDs)
 		}
 		if err := s.uploadRepo.UpdateUploadsModelID(ctx, req.UploadIDs, "product", id); err != nil {
 			return fmt.Errorf("failed to link product uploads: %w", err)
 		}
+		if err := s.cleaner.DeleteUnusedForModel(ctx, "product", id, keepKeys); err != nil {
+			slog.Warn("failed to delete unused product uploads", "product_id", id, "error", err)
+		}
+	}
+
+	if req.Description != nil || req.DescriptionJa != nil {
+		s.cleanupDescriptionUploads(ctx)
 	}
 
 	return nil
@@ -239,7 +254,44 @@ func (s *productService) Delete(ctx context.Context, id string) error {
 	if existing == nil {
 		return ErrProductNotFound
 	}
-	return s.repo.SoftDeleteProduct(ctx, id)
+
+	variantIDs, err := s.repo.ListVariantIDsByProduct(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to list product variants: %w", err)
+	}
+	for _, variantID := range variantIDs {
+		if err := s.cleaner.DeleteUnusedForModel(ctx, "product_variant", variantID, nil); err != nil {
+			slog.Warn("failed to delete variant uploads", "variant_id", variantID, "error", err)
+		}
+	}
+
+	if err := s.repo.SoftDeleteProduct(ctx, id); err != nil {
+		return err
+	}
+
+	if err := s.cleaner.DeleteUnusedForModel(ctx, "product", id, nil); err != nil {
+		slog.Warn("failed to delete product uploads", "product_id", id, "error", err)
+	}
+	s.cleanupDescriptionUploads(ctx)
+	return nil
+}
+
+// cleanupDescriptionUploads deletes description uploads whose file is not referenced
+// by any product description — runs after descriptions are edited or products are removed.
+func (s *productService) cleanupDescriptionUploads(ctx context.Context) {
+	products, err := s.repo.ListAllProductDescriptions(ctx)
+	if err != nil {
+		slog.Warn("failed to list product descriptions", "error", err)
+		return
+	}
+	texts := make([]string, 0, len(products)*2)
+	for _, p := range products {
+		texts = append(texts, p.Description, p.DescriptionJa)
+	}
+	keepKeys := s.cleaner.ExtractKeys(texts...)
+	if err := s.cleaner.DeleteUnusedForType(ctx, "description", keepKeys); err != nil {
+		slog.Warn("failed to clean unused description uploads", "error", err)
+	}
 }
 
 func (s *productService) enrichProducts(ctx context.Context, products []*models.Product) error {
