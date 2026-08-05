@@ -49,18 +49,20 @@ func (s *emailService) SendNewOrderNotification(order *models.Order, items []*mo
 	var itemRows strings.Builder
 	for _, item := range items {
 		subtotal := item.Price * float64(item.Quantity)
-		name := item.ProductName
-		if item.VariantName != "" {
-			name = name + " - " + item.VariantName
+		variant := item.VariantName
+		if variant == "" {
+			variant = "-"
 		}
 		itemRows.WriteString(fmt.Sprintf(`
 			<tr>
+				<td style="padding:8px;border-bottom:1px solid #eee">%s</td>
 				<td style="padding:8px;border-bottom:1px solid #eee">%s</td>
 				<td style="padding:8px;border-bottom:1px solid #eee;text-align:center">%d</td>
 				<td style="padding:8px;border-bottom:1px solid #eee;text-align:right">%s %s</td>
 				<td style="padding:8px;border-bottom:1px solid #eee;text-align:right">%s %s</td>
 			</tr>`,
-			name,
+			item.ProductName,
+			variant,
 			item.Quantity,
 			formatPrice(item.Price), currency,
 			formatPrice(subtotal), currency,
@@ -94,6 +96,7 @@ func (s *emailService) SendNewOrderNotification(order *models.Order, items []*mo
 			<thead>
 				<tr style="background:#f1f1f1">
 					<th style="padding:8px;text-align:left">Sản phẩm</th>
+					<th style="padding:8px;text-align:left">Biến thể</th>
 					<th style="padding:8px;text-align:center">SL</th>
 					<th style="padding:8px;text-align:right">Đơn giá</th>
 					<th style="padding:8px;text-align:right">Thành tiền</th>
