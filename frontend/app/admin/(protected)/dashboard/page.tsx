@@ -156,7 +156,7 @@ export default function DashboardPage() {
                       </Link>
                       <p className="text-xs text-gray-500">Đã bán: {formatNumber(product.sold)} sản phẩm</p>
                     </div>
-                    <p className="text-sm font-semibold text-blue-600 flex-shrink-0">{formatPrice(product.revenue)}</p>
+                    <p className="text-sm font-semibold text-blue-600 flex-shrink-0">{formatPrice(product.revenue, product.product_type)}</p>
                   </div>
                 ))}
               </div>

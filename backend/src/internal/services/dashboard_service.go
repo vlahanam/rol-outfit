@@ -77,13 +77,14 @@ func (s *DashboardService) GetStats(ctx context.Context) (*dto.DashboardStatsDTO
 
 	// Top selling products (by total sold from variants)
 	var topProducts []struct {
-		ID      string
-		Name    string
-		Sold    int64
-		Revenue float64
+		ID          string
+		Name        string
+		ProductType int8
+		Sold        int64
+		Revenue     float64
 	}
 	s.db.WithContext(ctx).Table("products").
-		Select(`products.id, products.name,
+		Select(`products.id, products.name, products.product_type,
 			COALESCE(SUM(product_variants.sold), 0) as sold,
 			COALESCE(SUM(product_variants.sold * product_variants.price), 0) as revenue`).
 		Joins("LEFT JOIN product_variants ON products.id = product_variants.product_id").
@@ -96,10 +97,11 @@ func (s *DashboardService) GetStats(ctx context.Context) (*dto.DashboardStatsDTO
 	stats.TopProducts = make([]dto.TopProductDTO, 0, len(topProducts))
 	for _, p := range topProducts {
 		stats.TopProducts = append(stats.TopProducts, dto.TopProductDTO{
-			ID:      p.ID,
-			Name:    p.Name,
-			Sold:    p.Sold,
-			Revenue: p.Revenue,
+			ID:          p.ID,
+			Name:        p.Name,
+			ProductType: p.ProductType,
+			Sold:        p.Sold,
+			Revenue:     p.Revenue,
 		})
 	}
 
