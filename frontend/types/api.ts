@@ -497,6 +497,7 @@ export interface TopProduct {
   name: string;
   avatar?: string;
   images?: UploadDTO[];
+  product_type: number;
   sold: number;
   revenue: number;
 }
