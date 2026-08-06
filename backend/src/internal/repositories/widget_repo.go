@@ -16,6 +16,7 @@ type WidgetRepository interface {
 	FindWidgetByIDAdmin(ctx context.Context, id string) (*models.Widget, error)
 	ListWidgets(ctx context.Context, parentID *string, offset, limit int) ([]*models.Widget, int64, error)
 	ListWidgetsAdmin(ctx context.Context, parentID *string, offset, limit int) ([]*models.Widget, int64, error)
+	ListAllWidgets(ctx context.Context) ([]*models.Widget, error)
 	MaxWidgetDisplayOrder(ctx context.Context, parentID *string) (int, error)
 	UpdateWidget(ctx context.Context, id string, fields map[string]interface{}) error
 	DeleteWidget(ctx context.Context, id string) error
@@ -92,6 +93,14 @@ func (r *postgreStorage) ListWidgetsAdmin(ctx context.Context, parentID *string,
 		return nil, 0, fmt.Errorf("failed to list widgets (admin): %w", err)
 	}
 	return widgets, total, nil
+}
+
+func (r *postgreStorage) ListAllWidgets(ctx context.Context) ([]*models.Widget, error) {
+	var widgets []*models.Widget
+	if err := r.db.WithContext(ctx).Model(&models.Widget{}).Find(&widgets).Error; err != nil {
+		return nil, fmt.Errorf("failed to list all widgets: %w", err)
+	}
+	return widgets, nil
 }
 
 func (r *postgreStorage) MaxWidgetDisplayOrder(ctx context.Context, parentID *string) (int, error) {

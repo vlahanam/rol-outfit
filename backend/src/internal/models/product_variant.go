@@ -2,6 +2,8 @@ package models
 
 import (
 	"encoding/json"
+	"sort"
+	"strings"
 	"time"
 )
 
@@ -29,3 +31,24 @@ type ProductVariant struct {
 }
 
 func (ProductVariant) TableName() string { return "product_variants" }
+
+// DisplayName returns the variant name derived from attributes (e.g. "M, Đen"),
+// falling back to the Name column when attributes are empty.
+func (v *ProductVariant) DisplayName() string {
+	if len(v.Attributes) > 0 {
+		var attrs map[string]string
+		if err := json.Unmarshal(v.Attributes, &attrs); err == nil {
+			keys := make([]string, 0, len(attrs))
+			for k := range attrs {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			values := make([]string, 0, len(keys))
+			for _, k := range keys {
+				values = append(values, attrs[k])
+			}
+			return strings.Join(values, ", ")
+		}
+	}
+	return v.Name
+}

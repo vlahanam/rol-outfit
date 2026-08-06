@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/vlahanam/rol-outfit/src/internal/models"
@@ -30,10 +31,11 @@ type productVariantService struct {
 	repo       repositories.ProductVariantRepository
 	prodRepo   repositories.ProductRepository
 	uploadRepo repositories.UploadRepository
+	cleaner    UploadCleaner
 }
 
-func NewProductVariantService(repo repositories.ProductVariantRepository, prodRepo repositories.ProductRepository, uploadRepo repositories.UploadRepository) ProductVariantService {
-	return &productVariantService{repo: repo, prodRepo: prodRepo, uploadRepo: uploadRepo}
+func NewProductVariantService(repo repositories.ProductVariantRepository, prodRepo repositories.ProductRepository, uploadRepo repositories.UploadRepository, cleaner UploadCleaner) ProductVariantService {
+	return &productVariantService{repo: repo, prodRepo: prodRepo, uploadRepo: uploadRepo, cleaner: cleaner}
 }
 
 // validateAttributes ensures raw JSON keys match product's attribute_names exactly.
@@ -186,17 +188,26 @@ func (s *productVariantService) Update(ctx context.Context, productID, id string
 		}
 	}
 
-	if len(req.UploadIDs) > 0 {
+	if req.UploadIDs != nil {
 		oldUploads, err := s.uploadRepo.ListUploadsByModel(ctx, "product_variant", id)
-		if err == nil {
-			oldIDs := make([]string, 0, len(oldUploads))
-			for _, u := range oldUploads {
-				oldIDs = append(oldIDs, u.ID)
+		if err != nil {
+			return fmt.Errorf("failed to list variant uploads: %w", err)
+		}
+		keep := make(map[string]struct{}, len(req.UploadIDs))
+		for _, uid := range req.UploadIDs {
+			keep[uid] = struct{}{}
+		}
+		keepKeys := make([]string, 0, len(oldUploads))
+		for _, u := range oldUploads {
+			if _, ok := keep[u.ID]; ok {
+				keepKeys = append(keepKeys, u.FilePath)
 			}
-			_ = s.uploadRepo.ClearUploadsModelID(ctx, oldIDs)
 		}
 		if err := s.uploadRepo.UpdateUploadsModelID(ctx, req.UploadIDs, "product_variant", id); err != nil {
 			return fmt.Errorf("failed to link variant uploads: %w", err)
+		}
+		if err := s.cleaner.DeleteUnusedForModel(ctx, "product_variant", id, keepKeys); err != nil {
+			slog.Warn("failed to delete unused variant uploads", "variant_id", id, "error", err)
 		}
 	}
 
@@ -214,7 +225,13 @@ func (s *productVariantService) Delete(ctx context.Context, productID, id string
 	if existing.ProductID != productID {
 		return ErrVariantForbidden
 	}
-	return s.repo.DeleteVariant(ctx, id)
+	if err := s.repo.DeleteVariant(ctx, id); err != nil {
+		return err
+	}
+	if err := s.cleaner.DeleteUnusedForModel(ctx, "product_variant", id, nil); err != nil {
+		slog.Warn("failed to delete variant uploads", "variant_id", id, "error", err)
+	}
+	return nil
 }
 
 func (s *productVariantService) enrichVariants(ctx context.Context, variants []*models.ProductVariant) error {

@@ -21,6 +21,8 @@ type ProductRepository interface {
 	UpdateProduct(ctx context.Context, id string, fields map[string]interface{}) error
 	SoftDeleteProduct(ctx context.Context, id string) error
 	ListAdminProductsWithVariants(ctx context.Context, categoryID, search string, offset, limit int) ([]*models.ProductWithVariants, int64, error)
+	ListVariantIDsByProduct(ctx context.Context, productID string) ([]string, error)
+	ListAllProductDescriptions(ctx context.Context) ([]*models.Product, error)
 }
 
 func (r *postgreStorage) CreateProduct(ctx context.Context, p *models.Product) error {
@@ -185,6 +187,31 @@ func (r *postgreStorage) SoftDeleteProduct(ctx context.Context, id string) error
 		return fmt.Errorf("product not found or already deleted")
 	}
 	return nil
+}
+
+// ListVariantIDsByProduct returns IDs of all variants belonging to a product.
+func (r *postgreStorage) ListVariantIDsByProduct(ctx context.Context, productID string) ([]string, error) {
+	var ids []string
+	if err := r.db.WithContext(ctx).
+		Model(&models.ProductVariant{}).
+		Where("product_id = ?", productID).
+		Pluck("id", &ids).Error; err != nil {
+		return nil, fmt.Errorf("failed to list variant ids: %w", err)
+	}
+	return ids, nil
+}
+
+// ListAllProductDescriptions returns description fields of all non-deleted products — used to detect orphaned description images.
+func (r *postgreStorage) ListAllProductDescriptions(ctx context.Context) ([]*models.Product, error) {
+	var products []*models.Product
+	if err := r.db.WithContext(ctx).
+		Model(&models.Product{}).
+		Where("deleted_at IS NULL").
+		Select("COALESCE(description, '') AS description, COALESCE(description_ja, '') AS description_ja").
+		Find(&products).Error; err != nil {
+		return nil, fmt.Errorf("failed to list product descriptions: %w", err)
+	}
+	return products, nil
 }
 
 // FindProductByIDNoFilter fetches a product by ID ignoring status — used internally (e.g. variant validation).

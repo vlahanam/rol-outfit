@@ -15,6 +15,7 @@ interface RichOrderItem {
   price: number;
   quantity: number;
   productName: string;
+  variantName?: string;
 }
 
 const STATUS_OPTIONS = [
@@ -81,7 +82,20 @@ export default function OrderDetailPage() {
           orderItems.map(async (item) => {
             try {
               const pRes = await api.get<ApiResponse<Product>>(`/products/${item.product_id}`);
-              return { ...item, productName: pRes.data.name };
+              let variantName: string | undefined;
+              if (item.attr_id) {
+                try {
+                  const vRes = await api.get<ApiResponse<{ attributes: Record<string, string> }>>(
+                    `/products/${item.product_id}/variants/${item.attr_id}`,
+                  );
+                  if (vRes.data?.attributes) {
+                    variantName = Object.values(vRes.data.attributes).join(", ");
+                  }
+                } catch {
+                  // ignore variant fetch error
+                }
+              }
+              return { ...item, productName: pRes.data.name, variantName };
             } catch {
               return { ...item, productName: `Product ${item.product_id.slice(0, 8)}` };
             }
@@ -228,6 +242,7 @@ export default function OrderDetailPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Sản Phẩm</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Biến Thể</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Đơn Giá</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">SL</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Thành Tiền</th>
@@ -237,6 +252,7 @@ export default function OrderDetailPage() {
                   {items.map((item) => (
                     <tr key={item.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">{item.productName}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{item.variantName || '-'}</td>
                       <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{formatPrice(item.price, order.currency_type)}</td>
                       <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{item.quantity}</td>
                       <td className="px-6 py-4 text-sm font-medium text-blue-600 whitespace-nowrap">{formatPrice(item.price * item.quantity, order.currency_type)}</td>

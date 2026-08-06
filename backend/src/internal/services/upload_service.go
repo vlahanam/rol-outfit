@@ -43,7 +43,20 @@ type UploadResult struct {
 	URL          string `json:"url"`
 }
 
+// UploadCleaner deletes uploaded objects that are no longer referenced by any entity.
+// UploadService embeds it; services that only need cleanup depend on this narrow interface.
+type UploadCleaner interface {
+	// ExtractKeys pulls file keys out of raw text (HTML descriptions, widget settings JSON, URLs).
+	ExtractKeys(texts ...string) []string
+	// DeleteUnusedForModel deletes uploads linked to a model whose FilePath is not in keepKeys.
+	// Empty keepKeys deletes every upload linked to the model.
+	DeleteUnusedForModel(ctx context.Context, modelType, modelID string, keepKeys []string) error
+	// DeleteUnusedForType deletes uploads of a model type whose FilePath is not in keepKeys.
+	DeleteUnusedForType(ctx context.Context, modelType string, keepKeys []string) error
+}
+
 type UploadService interface {
+	UploadCleaner
 	Save(ctx context.Context, fh *multipart.FileHeader, maxSize int64, modelType, modelID string, metadata map[string]interface{}) (*UploadResult, error)
 	Delete(ctx context.Context, id string) error
 	GetFileURL(ctx context.Context, key string) (string, error)
@@ -96,6 +109,8 @@ func uploadSubdir(modelType string) string {
 		return "products"
 	case "product_variant":
 		return "product-variants"
+	case "description":
+		return "descriptions"
 	case "banner-slider":
 		return "widgets/banner-sliders"
 	case "trend-hot":
@@ -223,15 +238,22 @@ func (s *uploadService) Save(ctx context.Context, fh *multipart.FileHeader, maxS
 func (s *uploadService) Delete(ctx context.Context, id string) error {
 	upload, err := s.repo.FindUploadByID(ctx, id)
 	if err != nil {
-		return ErrFileNotFound
+		upload, err = s.repo.FindUploadByPath(ctx, id)
+		if err != nil {
+			return ErrFileNotFound
+		}
 	}
+	return s.deleteUpload(ctx, upload)
+}
 
+// deleteUpload removes the stored object (S3 or local) and soft-deletes the DB record.
+func (s *uploadService) deleteUpload(ctx context.Context, upload *models.Upload) error {
 	if s.useLocal {
 		if err := os.Remove(filepath.Join(s.uploadDir, upload.FilePath)); err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("delete file: %w", err)
 		}
 	} else {
-		_, err = s.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		_, err := s.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
 			Bucket: aws.String(s.bucket),
 			Key:    aws.String(upload.FilePath),
 		})
@@ -240,11 +262,81 @@ func (s *uploadService) Delete(ctx context.Context, id string) error {
 		}
 	}
 
-	if err := s.repo.SoftDeleteUpload(ctx, id); err != nil {
+	if err := s.repo.SoftDeleteUpload(ctx, upload.ID); err != nil {
 		return fmt.Errorf("soft delete upload record: %w", err)
 	}
-
 	return nil
+}
+
+func (s *uploadService) DeleteUnusedForModel(ctx context.Context, modelType, modelID string, keepKeys []string) error {
+	uploads, err := s.repo.ListUploadsByModel(ctx, modelType, modelID)
+	if err != nil {
+		return fmt.Errorf("failed to list uploads: %w", err)
+	}
+	return s.deleteUnused(ctx, uploads, keepKeys)
+}
+
+func (s *uploadService) DeleteUnusedForType(ctx context.Context, modelType string, keepKeys []string) error {
+	uploads, err := s.repo.ListUploadsByModelType(ctx, modelType)
+	if err != nil {
+		return fmt.Errorf("failed to list uploads: %w", err)
+	}
+	return s.deleteUnused(ctx, uploads, keepKeys)
+}
+
+func (s *uploadService) deleteUnused(ctx context.Context, uploads []*models.Upload, keepKeys []string) error {
+	keep := make(map[string]struct{}, len(keepKeys))
+	for _, k := range keepKeys {
+		keep[k] = struct{}{}
+	}
+	var errs []error
+	for _, u := range uploads {
+		if _, ok := keep[u.FilePath]; ok {
+			continue
+		}
+		if err := s.deleteUpload(ctx, u); err != nil {
+			errs = append(errs, fmt.Errorf("upload %s: %w", u.ID, err))
+		}
+	}
+	return errors.Join(errs...)
+}
+
+// ExtractKeys finds every referenced file key in the given texts (HTML, JSON, plain URLs)
+// by scanning for the service's public URL prefix.
+func (s *uploadService) ExtractKeys(texts ...string) []string {
+	prefix := "/api/v1/files/"
+	if s.useLocal {
+		prefix = s.uploadURL + "/"
+	}
+	var keys []string
+	seen := make(map[string]struct{})
+	for _, text := range texts {
+		rest := text
+		for {
+			idx := strings.Index(rest, prefix)
+			if idx < 0 {
+				break
+			}
+			rest = rest[idx+len(prefix):]
+			var key strings.Builder
+			for _, r := range rest {
+				if r == '"' || r == '\'' || r == ')' || r == '>' || r == '<' ||
+					r == ' ' || r == '\n' || r == '\t' || r == '\\' {
+					break
+				}
+				key.WriteRune(r)
+			}
+			if key.Len() == 0 {
+				continue
+			}
+			k := key.String()
+			if _, ok := seen[k]; !ok {
+				seen[k] = struct{}{}
+				keys = append(keys, k)
+			}
+		}
+	}
+	return keys
 }
 
 func (s *uploadService) GetFileURL(ctx context.Context, key string) (string, error) {

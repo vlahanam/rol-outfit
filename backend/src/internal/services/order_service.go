@@ -170,7 +170,7 @@ func (s *orderService) CreateFromCart(ctx context.Context, userID string, req *r
 			}
 			if ci.AttrID != nil && *ci.AttrID != "" {
 				if variant, err := txRepo.FindVariantByID(ctx, *ci.AttrID); err == nil && variant != nil {
-					item.VariantName = variant.Name
+					item.VariantName = variant.DisplayName()
 				}
 			}
 			orderItems = append(orderItems, item)

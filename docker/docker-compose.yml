@@ -32,16 +32,16 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       OAUTH_ALLOWED_REDIRECT_URIS: ${OAUTH_ALLOWED_REDIRECT_URIS}
       OAUTH_CALLBACK_BASE_URL: ${OAUTH_CALLBACK_BASE_URL}
-      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
       AWS_REGION: ${AWS_REGION}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_S3_BUCKET: ${AWS_S3_BUCKET}
-      UPLOAD_DRIVER: ${UPLOAD_DRIVER}
+      UPLOAD_DRIVER: S3
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USER: ${SMTP_USER}
@@ -65,7 +65,6 @@ services:
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_API_URL: http://localhost/api
-      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
       API_URL: http://backend:8080
     volumes:
       - ../frontend:/app
@@ -81,7 +80,6 @@ services:
       - "80:80"
     volumes:
       - ../nginx/conf.d:/etc/nginx/conf.d:ro
-      - ../backend/uploads:/app/uploads:ro
     depends_on:
       - backend
       - frontend

@@ -131,7 +131,7 @@ export function TiptapEditor({
 
     setUploading(true);
     try {
-      const result = await uploads.upload(file);
+      const result = await uploads.upload(file, "description");
       editor.chain().focus().setImage({ src: result.url }).run();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Upload thất bại");
