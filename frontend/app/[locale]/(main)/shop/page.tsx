@@ -218,7 +218,7 @@ export default function ShopPage() {
             {filtered.map((product) => (
               <div
                 key={product.id}
-                onClick={() => router.push(`/product/${product.id}`)}
+                onClick={() => router.push(`/product/${product.slug}`)}
                 className="cursor-pointer"
               >
                 <ProductItem

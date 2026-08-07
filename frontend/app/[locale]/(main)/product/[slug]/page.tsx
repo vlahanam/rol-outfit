@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { ShoppingCart, Minus, Plus, ArrowLeft, MessageCircle } from "lucide-react";
+import { ShoppingCart, Minus, Plus, ArrowLeft, MessageCircle, Link2 } from "lucide-react";
 import { ImageGallery } from "@/components/product/image-gallery";
 import { TagBadges } from "@/components/product/tag-badges";
 import { DiscountCountdown } from "@/components/product/discount-countdown";
@@ -134,7 +134,7 @@ function DeliveryInfoSection({
 }
 
 export default function ProductDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("ProductDetailPage");
@@ -151,21 +151,33 @@ export default function ProductDetailPage() {
   const { incrementCart } = useCart();
   const { trigger: flyToCart } = useFlyToCart();
 
+  const handleCopyLink = async () => {
+    const url = `${window.location.origin}${window.location.pathname}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(t("linkCopied"));
+    } catch {
+      toast.error(t("copyLinkFailed"));
+    }
+  };
+
   useEffect(() => {
-    if (!id) return;
-    Promise.all([
-      api.get<ApiResponse<Product>>(`/products/${id}`, locale),
-      api.get<ApiResponse<ProductVariant[]>>(`/products/${id}/variants`, locale),
-    ])
-      .then(([pr, vr]) => {
+    if (!slug) return;
+    api
+      .get<ApiResponse<Product>>(`/products/${slug}`, locale)
+      .then(async (pr) => {
         setProduct(pr.data);
+        const vr = await api.get<ApiResponse<ProductVariant[]>>(
+          `/products/${pr.data.id}/variants`,
+          locale,
+        );
         setVariants(vr.data ?? []);
       })
       .catch((err) => {
         if (err instanceof ApiError && err.status === 404) setNotFound(true);
       })
       .finally(() => setLoading(false));
-  }, [id, locale]);
+  }, [slug, locale]);
 
   useEffect(() => {
     adminSettings
@@ -387,6 +399,13 @@ export default function ProductDetailPage() {
                   {t("messageNow")}
                 </a>
               )}
+              <button
+                onClick={handleCopyLink}
+                title={t("copyLink")}
+                className="w-12 border-2 border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center"
+              >
+                <Link2 className="w-5 h-5" />
+              </button>
             </div>
 
             <SizeGuideSection

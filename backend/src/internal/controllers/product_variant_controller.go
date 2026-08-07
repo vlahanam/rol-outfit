@@ -20,14 +20,34 @@ func variantServiceFromDB(db *gorm.DB, cleaner services.UploadCleaner) services.
 	return services.NewProductVariantService(repo, repo, repo, cleaner)
 }
 
-// ListVariants GET /api/v1/products/:productID/variants?page=&limit=
+// resolveProductID accepts a product UUID or slug and returns the product's UUID.
+func resolveProductID(ctx fiber.Ctx, repo repositories.ProductRepository, param string) (string, error) {
+	if _, err := uuid.Parse(param); err == nil {
+		return param, nil
+	}
+	p, err := repo.FindProductBySlug(ctx.Context(), param)
+	if err != nil {
+		return "", err
+	}
+	if p == nil {
+		return "", services.ErrProductNotFound
+	}
+	return p.ID, nil
+}
+
+// ListVariants GET /api/v1/products/:productID|:slug/variants?page=&limit=
 func ListVariants(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
-		productID := ctx.Params("productID")
-		if _, err := uuid.Parse(productID); err != nil {
-			return ctx.Status(fiber.StatusBadRequest).JSON(
-				common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_id")),
+		param := ctx.Params("productID")
+
+		repo := repositories.NewPostgreSQLStorage(db)
+
+		productID, err := resolveProductID(ctx, repo, param)
+		if err != nil {
+			slog.Error("ListVariants resolve product failed", "error", err)
+			return ctx.Status(fiber.StatusNotFound).JSON(
+				common.ErrNotFound.WithReason(i18n.T(lang, "error.product_not_found")),
 			)
 		}
 
@@ -38,7 +58,6 @@ func ListVariants(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 		p.Process()
 		offset := (p.Page - 1) * p.Limit
 
-		repo := repositories.NewPostgreSQLStorage(db)
 		svc := variantServiceFromDB(db, cleaner)
 
 		variants, total, err := svc.List(ctx.Context(), productID, offset, p.Limit)
@@ -59,22 +78,29 @@ func ListVariants(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	}
 }
 
-// GetVariant GET /api/v1/products/:productID/variants/:id
+// GetVariant GET /api/v1/products/:productID|:slug/variants/:id
 func GetVariant(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
-		productID := ctx.Params("productID")
+		param := ctx.Params("productID")
 		id := ctx.Params("id")
 
-		for _, s := range []string{productID, id} {
-			if _, err := uuid.Parse(s); err != nil {
-				return ctx.Status(fiber.StatusBadRequest).JSON(
-					common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_id")),
-				)
-			}
+		if _, err := uuid.Parse(id); err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(
+				common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_id")),
+			)
 		}
 
 		repo := repositories.NewPostgreSQLStorage(db)
+
+		productID, err := resolveProductID(ctx, repo, param)
+		if err != nil {
+			slog.Error("GetVariant resolve product failed", "error", err)
+			return ctx.Status(fiber.StatusNotFound).JSON(
+				common.ErrNotFound.WithReason(i18n.T(lang, "error.product_not_found")),
+			)
+		}
+
 		svc := variantServiceFromDB(db, cleaner)
 
 		v, err := svc.GetByID(ctx.Context(), productID, id)

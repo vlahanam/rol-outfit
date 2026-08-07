@@ -87,7 +87,7 @@ export function SearchDropdown() {
           {results.map((product) => (
             <Link
               key={product.id}
-              href={`/product/${product.id}`}
+              href={`/product/${product.slug}`}
               onClick={handleSelect}
               className="flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors"
             >

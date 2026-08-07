@@ -22,6 +22,7 @@ type ProductService interface {
 	List(ctx context.Context, categoryID, search string, tagSlugs []string, sortMode string, productType int8, offset, limit int) ([]*models.Product, int64, error)
 	AdminList(ctx context.Context, categoryID, search string, offset, limit int) ([]*models.ProductWithVariants, int64, error)
 	GetByID(ctx context.Context, id string) (*models.Product, error)
+	GetBySlug(ctx context.Context, slug string) (*models.Product, error)
 	AdminGetByID(ctx context.Context, id string) (*models.ProductWithVariants, error)
 	Create(ctx context.Context, req *requests.CreateProductRequest) (*models.Product, error)
 	Update(ctx context.Context, id string, req *requests.UpdateProductRequest) error
@@ -69,6 +70,22 @@ func (s *productService) GetByID(ctx context.Context, id string) (*models.Produc
 		return nil, ErrProductNotFound
 	}
 	uploads, err := s.uploadRepo.ListUploadsByModel(ctx, "product", id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get product uploads: %w", err)
+	}
+	p.Uploads = uploads
+	return p, nil
+}
+
+func (s *productService) GetBySlug(ctx context.Context, slug string) (*models.Product, error) {
+	p, err := s.repo.FindProductBySlug(ctx, slug)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get product by slug: %w", err)
+	}
+	if p == nil {
+		return nil, ErrProductNotFound
+	}
+	uploads, err := s.uploadRepo.ListUploadsByModel(ctx, "product", p.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get product uploads: %w", err)
 	}
