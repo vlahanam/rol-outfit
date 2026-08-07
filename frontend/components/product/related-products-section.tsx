@@ -48,7 +48,7 @@ export function RelatedProductsSection({
       </h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {relatedProducts.map((product) => (
-          <Link key={product.id} href={`/product/${product.id}`}>
+          <Link key={product.id} href={`/product/${product.slug}`}>
             <ProductItem
               name={product.name}
               price={formatPrice(

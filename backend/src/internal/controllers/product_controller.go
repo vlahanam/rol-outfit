@@ -10,6 +10,7 @@ import (
 	"github.com/vlahanam/rol-outfit/src/internal/common"
 	"github.com/vlahanam/rol-outfit/src/internal/dto"
 	"github.com/vlahanam/rol-outfit/src/internal/i18n"
+	"github.com/vlahanam/rol-outfit/src/internal/models"
 	"github.com/vlahanam/rol-outfit/src/internal/repositories"
 	"github.com/vlahanam/rol-outfit/src/internal/requests"
 	"github.com/vlahanam/rol-outfit/src/internal/services"
@@ -73,22 +74,24 @@ func ListProducts(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	}
 }
 
-// GetProduct GET /api/v1/products/:id
+// GetProduct GET /api/v1/products/:id|:slug
 func GetProduct(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		id := ctx.Params("id")
 
-		if _, err := uuid.Parse(id); err != nil {
-			return ctx.Status(fiber.StatusBadRequest).JSON(
-				common.ErrBadRequest.WithReason(i18n.T(lang, "error.invalid_id")),
-			)
-		}
-
 		repo := repositories.NewPostgreSQLStorage(db)
 		svc := productServiceFromDB(db, cleaner)
 
-		p, err := svc.GetByID(ctx.Context(), id)
+		var (
+			p   *models.Product
+			err error
+		)
+		if _, parseErr := uuid.Parse(id); parseErr != nil {
+			p, err = svc.GetBySlug(ctx.Context(), id)
+		} else {
+			p, err = svc.GetByID(ctx.Context(), id)
+		}
 		if err != nil {
 			if errors.Is(err, services.ErrProductNotFound) {
 				return ctx.Status(fiber.StatusNotFound).JSON(
@@ -100,7 +103,7 @@ func GetProduct(db *gorm.DB, cleaner services.UploadCleaner) fiber.Handler {
 		}
 
 		tagSvc := services.NewProductTagService(repo, repo, repo)
-		tags, err := tagSvc.GetActiveTags(ctx.Context(), id)
+		tags, err := tagSvc.GetActiveTags(ctx.Context(), p.ID)
 		if err != nil {
 			slog.Error("GetProduct tags failed", "error", err)
 			tags = nil
