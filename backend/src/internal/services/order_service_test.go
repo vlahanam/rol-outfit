@@ -45,6 +45,14 @@ func (m *MockOrderRepository) ListAllOrders(ctx context.Context, status int8, of
 	return args.Get(0).([]*models.Order), args.Get(1).(int64), args.Error(2)
 }
 
+func (m *MockOrderRepository) ListAwaitingPaymentOrders(ctx context.Context) ([]*models.Order, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.Order), args.Error(1)
+}
+
 func (m *MockOrderRepository) UpdateOrder(ctx context.Context, id string, fields map[string]interface{}) error {
 	args := m.Called(ctx, id, fields)
 	return args.Error(0)

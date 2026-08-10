@@ -22,7 +22,7 @@ func newOrderService(db *gorm.DB) services.OrderService {
 }
 
 // CreateOrder POST /api/v1/orders
-func CreateOrder(db *gorm.DB, emailSvc services.EmailService, adminURL string) fiber.Handler {
+func CreateOrder(db *gorm.DB, emailSvc services.EmailService, baseURL string) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		lang := i18n.LangFromHeader(ctx.Get("Accept-Language"))
 		userID, err := userIDFromLocals(ctx)
@@ -57,9 +57,23 @@ func CreateOrder(db *gorm.DB, emailSvc services.EmailService, adminURL string) f
 			return ctx.Status(fiber.StatusInternalServerError).JSON(common.ErrInternalServerError)
 		}
 
+		repo := repositories.NewPostgreSQLStorage(db)
+		user, err := repo.FindByID(ctx.Context(), userID)
+		if err != nil {
+			slog.Warn("CreateOrder: failed to fetch user for email", "user_id", userID, "error", err)
+		}
+
 		go func() {
+			adminURL := fmt.Sprintf("%s/admin/orders", baseURL)
 			if err := emailSvc.SendNewOrderNotification(order, items, adminURL); err != nil {
 				slog.Error("failed to send order notification email", "error", err, "order_code", order.OrderCode)
+			}
+
+			if user != nil && user.Email != "" {
+				orderURL := fmt.Sprintf("%s/orders/%s", baseURL, order.ID)
+				if err := emailSvc.SendBillUploadNotification(user.Email, order, orderURL); err != nil {
+					slog.Error("failed to send bill upload email", "error", err, "order_code", order.OrderCode)
+				}
 			}
 		}()
 

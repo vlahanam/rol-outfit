@@ -41,6 +41,10 @@ type AppConfig struct {
 	SmtpPassword  string
 	SmtpFromEmail string
 	AdminEmail    string
+
+	// Bill reminder cronjob
+	BillReminderTime    string
+	BillReminderEnabled bool
 }
 
 // DSN trả về chuỗi kết nối PostgreSQL cho GORM.
@@ -112,5 +116,9 @@ func LoadConfig() *AppConfig {
 		SmtpPassword:  getEnv("SMTP_PASSWORD", ""),
 		SmtpFromEmail: getEnv("SMTP_FROM_EMAIL", ""),
 		AdminEmail:    getEnv("ADMIN_EMAIL", "roloutfit@gmail.com"),
+
+		// Bill reminder cronjob (10:00 Asia/Tokyo)
+		BillReminderTime:    getEnv("BILL_REMINDER_TIME", "10:00"),
+		BillReminderEnabled: getEnv("BILL_REMINDER_ENABLED", "true") != "false",
 	}
 }

@@ -16,6 +16,7 @@ type OrderRepository interface {
 	FindOrderByID(ctx context.Context, id string) (*models.Order, error)
 	ListOrdersByUser(ctx context.Context, userID string, offset, limit int) ([]*models.Order, int64, error)
 	ListAllOrders(ctx context.Context, status int8, offset, limit int) ([]*models.Order, int64, error)
+	ListAwaitingPaymentOrders(ctx context.Context) ([]*models.Order, error)
 	UpdateOrder(ctx context.Context, id string, fields map[string]interface{}) error
 	SoftDeleteOrder(ctx context.Context, id string) error
 }
@@ -88,6 +89,21 @@ func (r *postgreStorage) ListAllOrders(ctx context.Context, status int8, offset,
 		return nil, 0, fmt.Errorf("failed to list orders: %w", err)
 	}
 	return orders, total, nil
+}
+
+// ListAwaitingPaymentOrders trả về các đơn hàng đang chờ chuyển khoản nhưng
+// chưa upload bill, dùng cho cronjob nhắc nhở khách hàng.
+func (r *postgreStorage) ListAwaitingPaymentOrders(ctx context.Context) ([]*models.Order, error) {
+	var orders []*models.Order
+	err := r.db.WithContext(ctx).
+		Model(&models.Order{}).
+		Where("status = ? AND (transfer_bill IS NULL OR transfer_bill = '') AND deleted_at IS NULL",
+			models.ORDER_STATUS_AWAITING_PAYMENT).
+		Find(&orders).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to list awaiting payment orders: %w", err)
+	}
+	return orders, nil
 }
 
 func (r *postgreStorage) UpdateOrder(ctx context.Context, id string, fields map[string]interface{}) error {

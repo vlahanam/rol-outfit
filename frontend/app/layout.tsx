@@ -3,7 +3,7 @@ import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "RolOutfit - Thời Trang Cao Cấp",
+  title: "RolOutfit - Thời Trang Việt Nhật",
   description: "RoLOutfit chọn lọc những sản phẩm chất lượng.\nChất lượng tốt, giá hợp lý.",
   icons: {
     icon: "/favicon.ico",

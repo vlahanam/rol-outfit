@@ -56,6 +56,14 @@ func (r *testRepo) ListAllOrders(ctx context.Context, status int8, offset, limit
 	return nil, 0, nil
 }
 
+func (r *testRepo) ListAwaitingPaymentOrders(ctx context.Context) ([]*models.Order, error) {
+	var orders []*models.Order
+	err := r.db.WithContext(ctx).
+		Where("status = ? AND (transfer_bill IS NULL OR transfer_bill = '')", models.ORDER_STATUS_AWAITING_PAYMENT).
+		Find(&orders).Error
+	return orders, err
+}
+
 func (r *testRepo) UpdateOrder(ctx context.Context, id string, fields map[string]interface{}) error {
 	return r.db.WithContext(ctx).Model(&models.Order{}).Where("id = ?", id).Updates(fields).Error
 }

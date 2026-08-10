@@ -1,8 +1,6 @@
 package initialize
 
 import (
-	"fmt"
-
 	"github.com/gofiber/fiber/v3"
 	"github.com/vlahanam/rol-outfit/src/internal/controllers"
 	"github.com/vlahanam/rol-outfit/src/internal/middleware"
@@ -13,7 +11,7 @@ import (
 )
 
 // InitRoutes đăng ký toàn bộ route của ứng dụng vào Fiber app.
-func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
+func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig, emailSvc services.EmailService) {
 	jwtSecret := cfg.JWTSecret
 
 	// Create OAuth service
@@ -29,7 +27,8 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 
 	api := app.Group("/api")
 
-	// Upload service (used by orders for bill upload, admin uploads, and orphan cleanup)
+	// Upload service (used by orders for bill upload and admin uploads)
+	// Email service injected from Run() (also used by bill reminder cronjob)
 	uploadSvc, err := services.NewUploadService(cfg.UploadDriver, cfg.AWSRegion, cfg.AWSAccessKeyID, cfg.AWSSecretAccessKey, cfg.AWSBucket, cfg.UploadDir, cfg.UploadURL, repo)
 	if err != nil {
 		panic(err)
@@ -94,17 +93,10 @@ func InitRoutes(app *fiber.App, db *gorm.DB, cfg *AppConfig) {
 	cart.Put("/items/:itemID", controllers.UpdateCartItem(db))
 	cart.Delete("/items/:itemID", controllers.RemoveCartItem(db))
 
-	// Upload service (used by orders for bill upload and admin uploads)
 	// Email service (used for order notifications)
-	emailSvc := services.NewEmailService(
-		cfg.SmtpHost, cfg.SmtpPort, cfg.SmtpUser, cfg.SmtpPassword,
-		cfg.SmtpFromEmail, cfg.AdminEmail,
-	)
-	adminURL := fmt.Sprintf("%s/admin/orders", cfg.OAuthCallbackBaseURL)
-
 	// Orders (user auth required)
 	orders := v1.Group("/orders", middleware.JWTAuth(jwtSecret))
-	orders.Post("/", controllers.CreateOrder(db, emailSvc, adminURL))
+	orders.Post("/", controllers.CreateOrder(db, emailSvc, cfg.OAuthCallbackBaseURL))
 	orders.Get("/", controllers.ListOrders(db))
 	orders.Get("/:id", controllers.GetOrder(db))
 	orders.Put("/:id/shipping", controllers.UpdateOrderShipping(db))
